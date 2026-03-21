@@ -147,7 +147,7 @@ class OpenAIAgent(BaseAgent):
     Args:
         name: Agent name for reporting.
         model_name: OpenAI model identifier (e.g., "gpt-4o", "gpt-5.2").
-        api_key: OpenAI API key.  Falls back to OPENAI_API_KEY env var.
+        api_key: API key. Falls back to OPEN_ROUTER_KEY, then OPENAI_API_KEY.
         system_prompt: System message sent to the model.
         temperature: Sampling temperature.  Default 0.0.
         max_completion_tokens: Maximum tokens the model may generate.
@@ -159,6 +159,7 @@ class OpenAIAgent(BaseAgent):
         name: str = "openai-agent",
         model_name: str = "gpt-4o",
         api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
         system_prompt: str = "You are a helpful assistant.",
         temperature: float = 0.0,
         max_completion_tokens: int = 256,
@@ -166,7 +167,10 @@ class OpenAIAgent(BaseAgent):
     ):
         super().__init__(name=name, **kwargs)
         self.model_name = model_name
-        self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        self.api_key = api_key or os.environ.get("OPEN_ROUTER_KEY") or os.environ.get("OPENAI_API_KEY")
+        self.base_url = base_url or os.environ.get("OPENAI_BASE_URL") or (
+            "https://openrouter.ai/api/v1" if os.environ.get("OPEN_ROUTER_KEY") else None
+        )
         self.system_prompt = system_prompt
         self.temperature = temperature
         self.max_completion_tokens = max_completion_tokens
@@ -184,10 +188,13 @@ class OpenAIAgent(BaseAgent):
             )
         if not self.api_key:
             raise ValueError(
-                "OpenAI API key not found.  "
-                "Set OPENAI_API_KEY or pass api_key to the constructor."
+                "API key not found. Set OPEN_ROUTER_KEY or OPENAI_API_KEY, "
+                "or pass api_key to the constructor."
             )
-        self.client = OpenAI(api_key=self.api_key)
+        client_kwargs = {"api_key": self.api_key}
+        if self.base_url:
+            client_kwargs["base_url"] = self.base_url
+        self.client = OpenAI(**client_kwargs)
         self._is_initialized = True
 
     # ── prediction ────────────────────────────────────────
@@ -265,6 +272,7 @@ class OpenAIAgent(BaseAgent):
                 metadata={
                     "raw_output": raw_output,
                     "model": self.model_name,
+                    "base_url": self.base_url,
                     "prompt_tokens": prompt_tokens,
                     "completion_tokens": completion_tokens,
                     "total_tokens": total_tokens,

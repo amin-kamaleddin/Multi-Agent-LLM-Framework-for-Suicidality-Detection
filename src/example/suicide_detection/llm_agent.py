@@ -1,4 +1,5 @@
 from typing import Optional
+import os
 from EvalRing.agent import OpenAIAgent
 
 
@@ -14,39 +15,50 @@ class OpenAISuicideDetectionAgent(OpenAIAgent):
 
     SYSTEM_PROMPT = """Classify the text into exactly ONE suicide risk category.
 
-**Indicator**: Emotional distress, depression, or self-harm for coping, with NO reference to suicide, dying, ending life, or wanting it to be over. Purely about pain, not about death.
+**Indicator**: Emotional distress, depression, hopelessness, or self-harm for coping, with NO reference to suicide, dying, ending life, or wanting it to be over. Purely about pain, not about death or non-existence.
 
-**Ideation**: ANY mention of suicide, wanting to die, wishing to not exist, wanting "a way out" (of life), wanting "it to end/be over" (in a life-ending sense), asking about methods, thinking about plans, or expressing that death is preferable. Even vague wishes like "I don't want to wake up" or "how much longer do I have to go on" count. If the text references death/suicide/ending life AT ALL — even passively — classify as Ideation, NOT Indicator.
+**Ideation**: The person expresses THOUGHTS, WISHES, or PASSIVE DESIRES about death or suicide — wanting to die, wishing to not exist, wanting "a way out" of life, asking about methods, thinking about plans. This is THINKING/WISHING, not acting. Includes strong language like "all I can think about is ending my life", "I want to be free of these feelings", "hopefully I can be free" — these are still wishes, not actions.
 
-**Behavior**: The person has taken PHYSICAL preparatory actions toward suicide — acquiring means, physically writing/leaving goodbye notes, going to a location, giving away possessions. Requires evidence of concrete actions already performed, not just thoughts or words about plans.
+**Behavior**: The person has already taken CONCRETE PREPARATORY ACTIONS toward a specific plan — acquiring means, writing farewell/goodbye messages addressed to specific named people, giving away possessions, going to a location, setting a specific date ("it has to be today/tonight"). Writing "I miss you [name], I'm sorry" to loved ones = goodbye note = Behavior. Expressing a specific time deadline combined with farewell words = Behavior.
 
-**Attempt**: A suicide attempt has occurred or is actively in progress — the person has ingested substances, cut with lethal intent, jumped, etc.
+**Attempt**: A suicide attempt is ACTIVELY HAPPENING RIGHT NOW or has just occurred — the person has ingested substances, is cutting with lethal intent, has jumped, etc. Requires evidence of an ONGOING or JUST-COMPLETED physical act, not a wish or a plan.
 
 Key rules:
-- "Want a way out", "want it to be over", "give up on life", "don't want to wake up" → Ideation (NOT Indicator)
-- Thinking/talking about writing a will or plans → Ideation (NOT Behavior, since no physical action yet)
+- "All I can think about is ending my life", "I want to be free", "hopefully be free of these feelings" → Ideation (strong wishing, still just thoughts — NOT Attempt)
+- Writing farewell words to specific named people ("I miss you dad, I'm sorry") + a specific date or "today" → Behavior (NOT Ideation)
+- Acquiring a weapon, buying pills, writing a note and placing it → Behavior
+- Currently taking pills, currently cutting → Attempt
+- "Want a way out", "want it to be over", "don't want to wake up" → Ideation (NOT Indicator)
+- Thinking or talking about a plan WITHOUT doing anything physical → Ideation (NOT Behavior)
 - When in doubt between Indicator and Ideation → choose Ideation
 - When in doubt between Ideation and Behavior → choose Ideation
+- When in doubt between Ideation and Attempt → choose Ideation (Attempt requires active physical action NOW)
 
-Respond with ONLY: Ideation, Behavior, Attempt, or Indicator"""
+Respond with ONLY one word: Ideation, Behavior, Attempt, or Indicator"""
 
     VALID_LABELS = ["Ideation", "Behavior", "Indicator", "Attempt"]
 
     def __init__(
         self,
         name: str = "gpt-5-mini-suicide-detector",
-        model_name: str = "gpt-5.2",
+        model_name: Optional[str] = None,
         api_key: Optional[str] = None,
         temperature: float = 0.0,
         **kwargs,
     ):
+        if model_name is None:
+            if os.environ.get("OPEN_ROUTER_KEY"):
+                model_name = os.environ.get("OPEN_ROUTER_MODEL", "openai/gpt-4o-mini")
+            else:
+                model_name = os.environ.get("OPENAI_MODEL", "gpt-5.2")
+
         super().__init__(
             name=name,
             model_name=model_name,
             api_key=api_key,
             system_prompt=self.SYSTEM_PROMPT,
             temperature=temperature,
-            max_completion_tokens=10,
+            max_completion_tokens=500,  # reasoning models (e.g. gpt-5-mini) consume tokens internally before outputting; 500 covers reasoning budget + label output
             **kwargs,
         )
 
