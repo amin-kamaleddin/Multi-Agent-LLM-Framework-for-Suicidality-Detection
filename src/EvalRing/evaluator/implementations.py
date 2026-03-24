@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, List, Optional, Union, Tuple
 
 from .base import BaseEvaluator, EvaluationResult, EvaluationMetrics
+from ..agent import resolve_classification_prediction
 from ..agent.base import BaseAgent, AgentResponse
 from ..dataset.base import BaseDataset, DataSample
 
@@ -25,6 +26,14 @@ class ClassificationEvaluator(BaseEvaluator):
         for attempt in range(max_retries):
             try:
                 response = agent.predict(sample.input_text)
+                resolved = resolve_classification_prediction(response.output)
+                if resolved.label is not None:
+                    response.output = resolved.label
+                if resolved.confidence is not None and response.confidence is None:
+                    response.confidence = resolved.confidence
+                if resolved.class_scores is not None:
+                    response.metadata = response.metadata or {}
+                    response.metadata.setdefault("class_scores", resolved.class_scores)
                 response.input_id = sample.id
                 return sample, response, None
             except Exception as e:
@@ -80,22 +89,27 @@ class ClassificationEvaluator(BaseEvaluator):
                     ground_truth.append(sample.target_output)
                     per_sample_metrics.append({
                         "sample_id": sample.id,
+                        "input_text": sample.input_text,
                         "accuracy": 0.0,
                         "prediction": "Error",
                         "ground_truth": sample.target_output,
                         "error": error
                     })
                 else:
+                    assert response is not None
                     predictions.append(response.output)
                     ground_truth.append(sample.target_output)
                     
                     is_correct = response.output == sample.target_output
                     sample_metric = {
                         "sample_id": sample.id,
+                        "input_text": sample.input_text,
                         "accuracy": 1.0 if is_correct else 0.0,
                         "prediction": response.output,
                         "ground_truth": sample.target_output
                     }
+                    if response.confidence is not None:
+                        sample_metric["prediction_confidence"] = response.confidence
                     if response.metadata:
                         sample_metric.update(response.metadata)
                     per_sample_metrics.append(sample_metric)

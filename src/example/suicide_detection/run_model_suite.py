@@ -46,7 +46,13 @@ def _count_prediction_errors(all_cases_csv: Path) -> int:
     return count
 
 
-def run_suite(n_samples: int = 2, max_workers: int = 32, seed: int = 0) -> int:
+def run_suite(
+    n_samples: int = 2,
+    max_workers: int = 32,
+    seed: int = 0,
+    agent_mode: str = "single-class",
+    base_class: str = "Indicator",
+) -> int:
     script_dir = Path(__file__).resolve().parent
     eval_script = script_dir / "evaluate_rsd15k_main.py"
     runs_root = script_dir / ".EvalRing"
@@ -67,7 +73,10 @@ def run_suite(n_samples: int = 2, max_workers: int = 32, seed: int = 0) -> int:
     print("=" * 80)
     print("Model suite start")
     print(f"timestamp={datetime.now().isoformat()}")
-    print(f"n_samples={n_samples}, max_workers={max_workers}, seed={seed}")
+    print(
+        f"n_samples={n_samples}, max_workers={max_workers}, seed={seed}, "
+        f"agent_mode={agent_mode}, base_class={base_class}"
+    )
     print("=" * 80)
 
     for idx, model_name in enumerate(MODEL_NAMES, start=1):
@@ -87,6 +96,10 @@ def run_suite(n_samples: int = 2, max_workers: int = 32, seed: int = 0) -> int:
             str(max_workers),
             "--seed",
             str(seed),
+            "--agent-mode",
+            str(agent_mode),
+            "--base-class",
+            str(base_class),
         ]
 
         proc = subprocess.run(cmd, cwd=str(script_dir), env=env)
@@ -117,6 +130,8 @@ def run_suite(n_samples: int = 2, max_workers: int = 32, seed: int = 0) -> int:
                 "f1_score": f1,
                 "execution_failures": len(execution_failures),
                 "prediction_errors": prediction_error_count,
+                "agent_mode": agent_mode,
+                "base_class": base_class,
             }
         )
 
@@ -142,6 +157,8 @@ def run_suite(n_samples: int = 2, max_workers: int = 32, seed: int = 0) -> int:
         "timestamp": datetime.now().isoformat(),
         "n_samples": n_samples,
         "max_workers": max_workers,
+        "agent_mode": agent_mode,
+        "base_class": base_class,
         "models": summary_rows,
     }
 
@@ -157,4 +174,12 @@ def run_suite(n_samples: int = 2, max_workers: int = 32, seed: int = 0) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(run_suite(n_samples=1000, max_workers=10, seed=0))
+    raise SystemExit(
+        run_suite(
+            n_samples=1000,
+            max_workers=10,
+            seed=0,
+            agent_mode="single-class",
+            base_class="Indicator",
+        )
+    )

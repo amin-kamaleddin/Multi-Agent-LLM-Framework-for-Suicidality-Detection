@@ -1,6 +1,12 @@
-from typing import Optional
+from typing import Any, Dict, Optional
 import os
+import time
 from EvalRing.agent import OpenAIAgent
+from EvalRing.agent.classification import (
+    aggregate_base_vs_rest_probabilities,
+    parse_json_object,
+)
+from EvalRing.agent.base import AgentResponse
 
 
 class OpenAISuicideDetectionAgent(OpenAIAgent):
@@ -13,30 +19,70 @@ class OpenAISuicideDetectionAgent(OpenAIAgent):
     are domain-specific.
     """
 
-    SYSTEM_PROMPT = """Classify the text into exactly ONE suicide risk category.
+    SYSTEM_PROMPT_SINGLE_CLASS = """Classify the post into exactly ONE class: Indicator, Ideation, Behavior, or Attempt.
 
-**Indicator**: Emotional distress, depression, hopelessness, or self-harm for coping, with NO reference to suicide, dying, ending life, or wanting it to be over. Purely about pain, not about death or non-existence.
+Use these class definitions:
 
-**Ideation**: The person expresses THOUGHTS, WISHES, or PASSIVE DESIRES about death or suicide — wanting to die, wishing to not exist, wanting "a way out" of life, asking about methods, thinking about plans. This is THINKING/WISHING, not acting. Includes strong language like "all I can think about is ending my life", "I want to be free of these feelings", "hopefully I can be free" — these are still wishes, not actions.
+**Indicator**
+- The post does NOT indicate the author's own suicidal risk.
+- Includes: discussion of another person's suicidality, general discussion/news, or explicit denial of own suicidal intent.
+- Also includes concern for someone else at risk.
 
-**Behavior**: The person has already taken CONCRETE PREPARATORY ACTIONS toward a specific plan — acquiring means, writing farewell/goodbye messages addressed to specific named people, giving away possessions, going to a location, setting a specific date ("it has to be today/tonight"). Writing "I miss you [name], I'm sorry" to loved ones = goodbye note = Behavior. Expressing a specific time deadline combined with farewell words = Behavior.
+**Ideation**
+- The author expresses suicidal thoughts, wishes, or desire to die/end life.
+- Includes passive or active suicidal thinking, including hypothetical or unrealistic methods.
+- No concrete self-harm/suicide action has been taken in the post.
 
-**Attempt**: A suicide attempt is ACTIVELY HAPPENING RIGHT NOW or has just occurred — the person has ingested substances, is cutting with lethal intent, has jumped, etc. Requires evidence of an ONGOING or JUST-COMPLETED physical act, not a wish or a plan.
+**Behavior**
+- The author describes preparatory or self-harm behavior beyond verbal thoughts.
+- Includes planning/preparation actions (for example, gathering means, writing notes, preparing for death).
+- Includes non-suicidal self-harm when self-inflicted harm is described, even without explicit intent to die.
 
-Key rules:
-- "All I can think about is ending my life", "I want to be free", "hopefully be free of these feelings" → Ideation (strong wishing, still just thoughts — NOT Attempt)
-- Writing farewell words to specific named people ("I miss you dad, I'm sorry") + a specific date or "today" → Behavior (NOT Ideation)
-- Acquiring a weapon, buying pills, writing a note and placing it → Behavior
-- Currently taking pills, currently cutting → Attempt
-- "Want a way out", "want it to be over", "don't want to wake up" → Ideation (NOT Indicator)
-- Thinking or talking about a plan WITHOUT doing anything physical → Ideation (NOT Behavior)
-- When in doubt between Indicator and Ideation → choose Ideation
-- When in doubt between Ideation and Behavior → choose Ideation
-- When in doubt between Ideation and Attempt → choose Ideation (Attempt requires active physical action NOW)
+**Attempt**
+- The post mentions a suicide attempt (current or past).
+- A past attempt should still be labeled Attempt, even if the current post does not express ongoing suicidal thoughts.
 
-Respond with ONLY one word: Ideation, Behavior, Attempt, or Indicator"""
+Decision rules:
+- If the post contains mixed signals, choose the class supported by the clearest explicit evidence.
+
+Output format:
+- Return ONLY one word: Indicator, Ideation, Behavior, or Attempt."""
+
+    SYSTEM_PROMPT_MULTI_CLASS_CHANCE = """You are a suicide-risk classification assistant.
+
+Classify the post using these 4 classes:
+- Indicator
+- Ideation
+- Behavior
+- Attempt
+
+Use the same definitions and decision rules as the single-label setting:
+- Indicator: no self-risk signal from the author.
+- Ideation: suicidal thoughts/wishes without concrete self-harm action.
+- Behavior: preparatory/self-harm behavior beyond verbal thoughts.
+- Attempt: explicit mention of suicide attempt (current or past).
+
+Output format requirements:
+1) Return ONLY a JSON object.
+2) Include ALL 4 keys: "ideation", "behavior", "indicator", "attempt".
+3) Values must be numbers in [0, 1].
+4) The values should sum to 1.0 (or very close).
+5) No extra text, no markdown, no explanation.
+
+Example:
+{"ideation": 0.80, "behavior": 0.10, "indicator": 0.05, "attempt": 0.05}"""
 
     VALID_LABELS = ["Ideation", "Behavior", "Indicator", "Attempt"]
+    MODE_SINGLE_CLASS = "single-class"
+    MODE_MULTI_CLASS_CHANCE = "multi-class-chance"
+    MODE_BASE_VS_REST_BINARY = "base-vs-rest-binary"
+    VALID_MODES = {MODE_SINGLE_CLASS, MODE_MULTI_CLASS_CHANCE, MODE_BASE_VS_REST_BINARY}
+    LABEL_ALIASES = {
+        "ideation": "Ideation",
+        "behavior": "Behavior",
+        "indicator": "Indicator",
+        "attempt": "Attempt",
+    }
 
     def __init__(
         self,
@@ -44,19 +90,35 @@ Respond with ONLY one word: Ideation, Behavior, Attempt, or Indicator"""
         model_name: Optional[str] = None,
         api_key: Optional[str] = None,
         temperature: float = 0.0,
+        agent_mode: str = MODE_SINGLE_CLASS,
+        base_class: str = "Indicator",
         **kwargs,
     ):
+        if agent_mode not in self.VALID_MODES:
+            raise ValueError(f"Unsupported agent_mode='{agent_mode}'. Valid modes: {sorted(self.VALID_MODES)}")
+
         if model_name is None:
             if os.environ.get("OPEN_ROUTER_KEY"):
                 model_name = os.environ.get("OPEN_ROUTER_MODEL", "openai/gpt-4o-mini")
             else:
                 model_name = os.environ.get("OPENAI_MODEL", "gpt-5.2")
 
+        self.agent_mode = agent_mode
+        self.base_class = self.LABEL_ALIASES.get(base_class.lower(), base_class)
+        if self.base_class not in self.VALID_LABELS:
+            raise ValueError(f"Unsupported base_class='{base_class}'. Valid classes: {self.VALID_LABELS}")
+
+        system_prompt = (
+            self.SYSTEM_PROMPT_MULTI_CLASS_CHANCE
+            if agent_mode == self.MODE_MULTI_CLASS_CHANCE
+            else self.SYSTEM_PROMPT_SINGLE_CLASS
+        )
+
         super().__init__(
             name=name,
             model_name=model_name,
             api_key=api_key,
-            system_prompt=self.SYSTEM_PROMPT,
+            system_prompt=system_prompt,
             temperature=temperature,
             max_completion_tokens=500,  # reasoning models (e.g. gpt-5-mini) consume tokens internally before outputting; 500 covers reasoning budget + label output
             **kwargs,
@@ -65,10 +127,186 @@ Respond with ONLY one word: Ideation, Behavior, Attempt, or Indicator"""
     def _build_user_message(self, input_text: str) -> str:
         return f"Text to classify:\n\n{input_text}"
 
-    def _parse_output(self, raw_output: str) -> str:
-        """Ensure the output strictly matches one of the valid labels."""
+    def _parse_single_label(self, raw_output: str) -> str:
         clean = raw_output.strip('\'". \n').lower()
         for label in self.VALID_LABELS:
             if label.lower() in clean:
                 return label
         return "Indicator"  # fallback
+
+    def _parse_multi_class_chance(self, raw_output: str) -> Dict[str, float]:
+        parsed = parse_json_object(raw_output)
+        if not parsed:
+            # Fallback to deterministic one-hot on parsed top label if JSON is malformed.
+            fallback_label = self._parse_single_label(raw_output)
+            return {label: (1.0 if label == fallback_label else 0.0) for label in self.VALID_LABELS}
+
+        scores: Dict[str, float] = {}
+        for key, value in parsed.items():
+            canonical = self.LABEL_ALIASES.get(str(key).strip().lower())
+            if not canonical:
+                continue
+            try:
+                score = float(value)
+            except (TypeError, ValueError):
+                continue
+            scores[canonical] = max(0.0, score)
+
+        # Ensure all expected labels exist and normalize to a probability distribution.
+        for label in self.VALID_LABELS:
+            scores.setdefault(label, 0.0)
+
+        total = sum(scores.values())
+        if total <= 0:
+            return {label: (1.0 if label == "Indicator" else 0.0) for label in self.VALID_LABELS}
+
+        return {label: scores[label] / total for label in self.VALID_LABELS}
+
+    def _parse_output(self, raw_output: str) -> Any:
+        """Parse output based on the selected run mode."""
+        if self.agent_mode == self.MODE_MULTI_CLASS_CHANCE:
+            return self._parse_multi_class_chance(raw_output)
+        return self._parse_single_label(raw_output)
+
+    def _binary_prompt_against_base(self, target_class: str) -> str:
+        base_key = self.base_class.lower()
+        target_key = target_class.lower()
+        return (
+            "You are a suicide-risk classifier.\n"
+            f"Decide whether the post is more likely {self.base_class} or {target_class}.\n"
+            "Return ONLY JSON with exactly these two keys and numeric values in [0,1], summing to 1.\n"
+            f"Keys: \"{base_key}\", \"{target_key}\".\n"
+            f"Example: {{\"{base_key}\": 0.35, \"{target_key}\": 0.65}}"
+        )
+
+    def _parse_binary_json(self, raw_output: str, target_class: str) -> Dict[str, float]:
+        parsed = parse_json_object(raw_output)
+        base_key = self.base_class.lower()
+        target_key = target_class.lower()
+
+        if isinstance(parsed, dict):
+            raw_base = parsed.get(base_key, parsed.get(self.base_class, None))
+            raw_target = parsed.get(target_key, parsed.get(target_class, None))
+            try:
+                p_base = float(raw_base) if raw_base is not None else None
+            except (TypeError, ValueError):
+                p_base = None
+            try:
+                p_target = float(raw_target) if raw_target is not None else None
+            except (TypeError, ValueError):
+                p_target = None
+
+            if p_base is None and p_target is None:
+                pass
+            elif p_base is None and p_target is not None:
+                p_base = 1.0 - p_target
+            elif p_base is not None and p_target is None:
+                p_target = 1.0 - p_base
+
+            if p_base is not None and p_target is not None:
+                p_base = max(0.0, p_base)
+                p_target = max(0.0, p_target)
+                total = p_base + p_target
+                if total > 0:
+                    return {
+                        self.base_class: p_base / total,
+                        target_class: p_target / total,
+                    }
+
+        # Fallback to deterministic parsing if JSON is malformed.
+        label = self._parse_single_label(raw_output)
+        if label == target_class:
+            return {self.base_class: 0.0, target_class: 1.0}
+        return {self.base_class: 1.0, target_class: 0.0}
+
+    def predict(self, input_text: str, **kwargs) -> AgentResponse:
+        if self.agent_mode != self.MODE_BASE_VS_REST_BINARY:
+            return super().predict(input_text, **kwargs)
+
+        if not self._is_initialized:
+            raise RuntimeError("Agent not initialized.  Call initialize() first.")
+
+        if not self.validate_input(input_text):
+            return AgentResponse(
+                input_id="",
+                input_text=input_text,
+                output=None,
+                error="Invalid input",
+            )
+
+        start_time = time.time()
+        prompt_tokens_total = 0
+        completion_tokens_total = 0
+        total_tokens_total = 0
+        pairwise_target_probs: Dict[str, float] = {}
+        pairwise_details = []
+
+        try:
+            targets = [label for label in self.VALID_LABELS if label != self.base_class]
+            for target_class in targets:
+                raw_response = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": self._binary_prompt_against_base(target_class)},
+                        {"role": "user", "content": self._build_user_message(input_text)},
+                    ],
+                    temperature=self.temperature,
+                    max_completion_tokens=self.max_completion_tokens,
+                    stream=False,
+                )
+
+                raw_output = raw_response.choices[0].message.content or ""
+                binary_scores = self._parse_binary_json(raw_output, target_class)
+                pairwise_target_probs[target_class] = binary_scores[target_class]
+
+                usage = getattr(raw_response, "usage", None)
+                if usage is not None:
+                    prompt_tokens_total += getattr(usage, "prompt_tokens", 0) or 0
+                    completion_tokens_total += getattr(usage, "completion_tokens", 0) or 0
+                    total_tokens_total += getattr(usage, "total_tokens", 0) or 0
+
+                pairwise_details.append(
+                    {
+                        "target_class": target_class,
+                        "raw_output": raw_output,
+                        "binary_scores": binary_scores,
+                    }
+                )
+
+            class_scores = aggregate_base_vs_rest_probabilities(
+                base_label=self.base_class,
+                target_vs_base_probs=pairwise_target_probs,
+                all_labels=self.VALID_LABELS,
+            )
+
+            total_time = time.time() - start_time
+            return AgentResponse(
+                input_id="",
+                input_text=input_text,
+                output=class_scores,
+                confidence=max(class_scores.values()) if class_scores else None,
+                processing_time=total_time,
+                metadata={
+                    "raw_output": pairwise_details,
+                    "model": self.model_name,
+                    "base_url": self.base_url,
+                    "prompt_tokens": prompt_tokens_total,
+                    "completion_tokens": completion_tokens_total,
+                    "total_tokens": total_tokens_total,
+                    "ttft": 0.0,
+                    "generation_time": total_time,
+                    "tps": (completion_tokens_total / total_time) if total_time > 0 else 0.0,
+                    "total_time": total_time,
+                    "base_class": self.base_class,
+                    "pairwise_target_probs": pairwise_target_probs,
+                },
+            )
+        except Exception as e:
+            processing_time = time.time() - start_time
+            return AgentResponse(
+                input_id="",
+                input_text=input_text,
+                output="Error",
+                error=str(e),
+                processing_time=processing_time,
+            )

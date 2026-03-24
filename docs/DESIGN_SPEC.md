@@ -55,6 +55,7 @@ Key public types:
 
 - `BaseAgent`
 - `AgentResponse`
+- `ClassificationPrediction`
 - `MockAgent`
 - `RuleBasedAgent`
 - `OpenAIAgent`
@@ -87,6 +88,7 @@ Responsibilities:
 - coordinate concurrency and retries
 - compute task metrics
 - emit evaluation result objects
+- resolve top-class labels from either plain labels or structured class-score outputs
 
 Key public types:
 
@@ -256,11 +258,35 @@ Responsibilities:
 - define task prompt
 - define label space
 - construct user messages
-- parse model output into one of:
-  - `Ideation`
-  - `Behavior`
-  - `Indicator`
-  - `Attempt`
+- support multiple output modes:
+  - single-class label
+  - multi-class probabilities
+  - base-vs-rest binary decomposition
+
+### 7.2.1 Suicide detection modes
+
+Current `OpenAISuicideDetectionAgent` modes:
+
+- `single-class`
+- `multi-class-chance`
+- `base-vs-rest-binary`
+
+`base-vs-rest-binary` takes a configurable `base_class`, runs one binary inference per non-base label, then aggregates the pairwise probabilities into one multi-class distribution.
+
+### 7.2.2 Reusable classification output utilities
+
+Location: [src/EvalRing/agent/classification.py](../src/EvalRing/agent/classification.py)
+
+Core reusable functions:
+
+- `resolve_classification_prediction`
+- `normalize_probability_distribution`
+- `aggregate_base_vs_rest_probabilities`
+
+Design intent:
+
+- future tasks can emit structured class scores without changing evaluator interfaces
+- future tasks can reuse base-vs-rest decomposition and aggregation logic
 
 ## 7.3 Default model resolution
 
@@ -303,6 +329,7 @@ Each run produces a timestamped folder containing:
 
 - run configuration
 - model configuration
+- mode configuration (`agent_mode`, `base_class`)
 - dataset configuration
 - aggregate metrics
 - per-class metrics
@@ -345,6 +372,8 @@ Columns:
 - `ground_truth`
 - `prediction`
 - `correct`
+- `prediction_confidence`
+- `class_scores`
 - `ttft`
 - `tps`
 - `total_time`

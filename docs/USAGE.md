@@ -35,6 +35,7 @@ Use for:
 - one-model benchmark runs
 - report generation
 - in-place retry of failed error rows
+- switching prediction modes
 
 ### 2.2 Sequential model suite runner
 
@@ -45,11 +46,40 @@ File:
 Use for:
 
 - testing multiple models one after another
-- stopping the sequence when a model is not error-free
+- stopping the sequence when a model run is not error-free
 
 ---
 
-## 3. Standard Evaluation Usage
+## 3. Prediction Modes
+
+The suicide detection runner supports three modes via `--agent-mode`.
+
+### 3.1 `single-class`
+
+- Model returns one label directly.
+- Expected labels: `Indicator`, `Ideation`, `Behavior`, `Attempt`.
+
+### 3.2 `multi-class-chance`
+
+- Model returns structured JSON probabilities for all four classes.
+- Example:
+
+```json
+{"ideation": 0.8, "behavior": 0.1, "indicator": 0.05, "attempt": 0.05}
+```
+
+- Evaluator resolves top class automatically for accuracy/F1 metrics.
+
+### 3.3 `base-vs-rest-binary`
+
+- You declare one class as `--base-class`.
+- The agent runs three binary calls: `base vs target` for each non-base class.
+- Pairwise probabilities are aggregated into one 4-class distribution by core utility logic.
+- Evaluator resolves top class automatically for standard classification metrics.
+
+---
+
+## 4. Standard Evaluation Usage
 
 From the EvalRing root:
 
@@ -63,18 +93,40 @@ From the EvalRing root:
 - `--max-workers`: number of parallel worker threads
 - `--max-retries`: retries per sample inside evaluator execution
 - `--seed`: recorded in metadata for reproducibility
+- `--agent-mode`: `single-class`, `multi-class-chance`, or `base-vs-rest-binary`
+- `--base-class`: used by `base-vs-rest-binary`; one of `Indicator`, `Ideation`, `Behavior`, `Attempt`
 - `--retry-failed`: rerun only error cases from an existing run
 - `--meta-path`: specific `Meta.json` to use with `--retry-failed`
 
-### Example
+### Examples
+
+Single-class:
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 20 --max-workers 32 --max-retries 3 --seed 42
+.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 50 --agent-mode single-class
+```
+
+Multi-class chance:
+
+```powershell
+.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 50 --agent-mode multi-class-chance
+```
+
+Base-vs-rest with Indicator as base:
+
+```powershell
+.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 50 --agent-mode base-vs-rest-binary --base-class Indicator
+```
+
+Base-vs-rest with Attempt as base:
+
+```powershell
+.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 50 --agent-mode base-vs-rest-binary --base-class Attempt
 ```
 
 ---
 
-## 4. Output Files
+## 5. Output Files
 
 Each fresh run creates a directory under:
 
@@ -84,47 +136,60 @@ Example layout:
 
 ```text
 run_YYYYMMDD_HHMMSS/
-├── result.md
-├── all_cases.txt
-├── all_cases.csv
-├── failed_cases.txt
-└── Meta.json
+|-- result.md
+|-- all_cases.txt
+|-- all_cases.csv
+|-- failed_cases.txt
+`-- Meta.json
 ```
 
-### `result.md`
+### 5.1 `result.md`
 
 Human-readable run summary:
 
 - model used
+- mode used
+- base class (when relevant)
 - sample count
 - aggregate accuracy / precision / recall / F1
 - per-class metrics
 - confusion matrix
 - per-sample summary table
 
-### `all_cases.csv`
+### 5.2 `all_cases.csv`
 
 Primary machine-readable table for downstream analysis.
 
-Use this file for:
+Key columns include:
 
-- pandas analysis
-- error audits
-- retry selection
-- model comparison
+- `sample_id`
+- `ground_truth`
+- `prediction`
+- `correct`
+- `prediction_confidence`
+- `class_scores`
+- `ttft`
+- `tps`
+- `total_time`
+- `generation_time`
+- `prompt_tokens`
+- `completion_tokens`
+- `total_tokens`
+- `error`
+- `text`
 
-### `failed_cases.txt`
+### 5.3 `failed_cases.txt`
 
 Convenience text file listing failed predictions that remain after the run.
 
-### `Meta.json`
+### 5.4 `Meta.json`
 
 Run manifest and reproducibility record.
 
 Contains:
 
 - `run_config`
-- `model_config`
+- `model_config` (includes `agent_mode`, `base_class`)
 - `dataset_config`
 - `aggregate_metrics`
 - `per_class_metrics`
@@ -133,7 +198,7 @@ Contains:
 
 ---
 
-## 5. Retry Failed Cases In Place
+## 6. Retry Failed Cases In Place
 
 This is the preferred workflow when a small number of samples failed due to provider/API instability.
 
@@ -141,20 +206,14 @@ This is the preferred workflow when a small number of samples failed due to prov
 
 `--retry-failed`:
 
-1. loads an existing run’s `Meta.json`
-2. reuses that run’s configuration
+1. loads an existing run's `Meta.json`
+2. reuses that run's configuration
 3. reads original `all_cases.csv`
 4. selects only rows where:
    - prediction is `Error`, or
    - `error` is non-empty
 5. reruns only those rows
 6. updates the original run directory in place
-
-### Why it exists
-
-Without retry mode, one transient provider error can force a full rerun of 100 or 1000 samples.
-
-Retry mode keeps the original run as the canonical record while repairing only the broken rows.
 
 ### Retry latest run
 
@@ -178,46 +237,26 @@ In the original run directory:
 - `failed_cases.txt`
 - `Meta.json`
 
-### Retry audit trail
-
-Each retry appends to `retry_history` in `Meta.json` with fields such as:
-
-- `retried_cases`
-- `resolved_errors`
-- `remaining_error_cases`
-- `source_meta_path`
-
 ---
 
-## 6. Sequential Multi-Model Suite Usage
+## 7. Sequential Multi-Model Suite Usage
 
 Runner file:
 
 - [src/example/suicide_detection/run_model_suite.py](../src/example/suicide_detection/run_model_suite.py)
 
-Current embedded model list:
+### Programmatic call
 
 ```python
-model_names = [
-    "openai/gpt-5-mini",
-    "openai/gpt-5-mini:provider-azure",
-    "anthropic/claude-haiku-4.5",
-    "google/gemini-3-flash-preview",
-    "x-ai/grok-3-mini",
-]
-```
+from example.suicide_detection.run_model_suite import run_suite
 
-### Current test behavior
-
-The script is currently configured to run:
-
-- `n_samples = 2`
-- `max_workers = 32`
-
-### Run it
-
-```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/run_model_suite.py
+run_suite(
+    n_samples=100,
+    max_workers=10,
+    seed=42,
+    agent_mode="base-vs-rest-binary",
+    base_class="Indicator",
+)
 ```
 
 ### Stop conditions
@@ -241,115 +280,48 @@ with file name pattern:
 
 ---
 
-## 7. Programmatic Usage
+## 8. Reusable Core Behavior for Future Tasks
 
-### Minimal classification example
+Core module:
 
-```python
-from EvalRing.dataset import CSVDataset
-from EvalRing.evaluator import ClassificationEvaluator
-from llm_agent import OpenAISuicideDetectionAgent
+- [src/EvalRing/agent/classification.py](../src/EvalRing/agent/classification.py)
 
+Reusable utilities include:
 
-dataset = CSVDataset(name="demo")
-dataset.load_data(
-    source="data.csv",
-    text_field="text",
-    label_field="label",
-    id_field="id",
-)
+- `resolve_classification_prediction`
+- `normalize_probability_distribution`
+- `aggregate_base_vs_rest_probabilities`
 
-agent = OpenAISuicideDetectionAgent()
-agent.initialize()
+Implication for future domains:
 
-evaluator = ClassificationEvaluator()
-result = evaluator.evaluate(
-    agent=agent,
-    dataset=dataset,
-    task_name="classification",
-    version="v1",
-    max_workers=8,
-    max_retries=3,
-)
-
-print(result.metrics.get_metric("accuracy"))
-```
-
-### DataFrame retry-subset pattern
-
-For partial reruns, the current system uses `DataFrameDataset` with an explicit row ID column.
-
-This pattern is useful whenever:
-
-- dataset IDs are not unique
-- only a subset of rows should be re-evaluated
-- row-position stability matters more than source ID
+- You can return either label strings or class-score mappings from agents.
+- Evaluator-level metric calculation can stay unchanged.
+- Base-vs-rest strategies can be adapted to emotion/intent/categorization tasks with minimal code changes.
 
 ---
 
-## 8. Research Workflow Recommendation
+## 9. Suggested Commands
 
-For publishable experiments, use this cycle:
-
-1. run the benchmark with a fixed sample count and model
-2. inspect `all_cases.csv` and `failed_cases.txt`
-3. if any rows are provider errors, run `--retry-failed`
-4. only after retry, treat the run folder as final
-5. archive or compare final `Meta.json` and `all_cases.csv`
-
-Suggested artifacts to keep under versioned experiment storage:
-
-- final `Meta.json`
-- final `all_cases.csv`
-- final `result.md`
-- prompt version / model version notes
-
----
-
-## 9. Known Operational Caveats
-
-### Duplicate sample IDs in the source dataset
-
-The current suicide detection example uses `users` as `id_field`, which is not guaranteed unique.
-
-Implication:
-
-- do not assume `sample_id` is a primary key across the dataset
-- use CSV row position for repair workflows when necessary
-
-### Root README mismatch
-
-The root [README.md](../README.md) does not fully describe the current code path.
-
-For day-to-day operation, prefer:
-
-- [docs/DESIGN_SPEC.md](DESIGN_SPEC.md)
-- [docs/USAGE.md](USAGE.md)
-
----
-
-## 10. Suggested Commands
-
-### Fast sanity run
+Fast sanity run:
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 2 --max-workers 2
+.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 2 --max-workers 2 --agent-mode single-class
 ```
 
-### Medium run
+Structured chance run:
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 100 --max-workers 10
+.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 20 --max-workers 4 --agent-mode multi-class-chance
 ```
 
-### Retry broken rows only
+Base-vs-rest run:
+
+```powershell
+.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 20 --max-workers 4 --agent-mode base-vs-rest-binary --base-class Indicator
+```
+
+Retry broken rows only:
 
 ```powershell
 .\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --retry-failed
-```
-
-### Multi-model smoke suite
-
-```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/run_model_suite.py
 ```

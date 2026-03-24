@@ -33,7 +33,7 @@ except ImportError as e:
 
 
 def _build_confusion_matrix(y_true, y_pred, labels):
-    matrix = {l: {l2: 0 for l2 in labels} for l in labels}
+    matrix = {label: {pred_label: 0 for pred_label in labels} for label in labels}
     for t, p in zip(y_true, y_pred):
         if t in matrix and p in matrix[t]:
             matrix[t][p] += 1
@@ -56,8 +56,8 @@ def _per_class_metrics(y_true, y_pred, labels):
 
 def _write_confusion_md(f, matrix, labels):
     f.write("| Actual \\ Predicted |")
-    for l in labels:
-        f.write(f" {l} |")
+    for label in labels:
+        f.write(f" {label} |")
     f.write("\n|---|")
     for _ in labels:
         f.write("---|")
@@ -107,11 +107,21 @@ def _read_all_cases_csv(csv_path: Path) -> List[Dict[str, Any]]:
 
     normalized = []
     for r in rows:
+        raw_class_scores = r.get("class_scores")
+        parsed_class_scores = None
+        if raw_class_scores:
+            try:
+                parsed_class_scores = json.loads(raw_class_scores)
+            except Exception:
+                parsed_class_scores = None
+
         normalized.append({
             "sample_id": r.get("sample_id", ""),
             "ground_truth": r.get("ground_truth", ""),
             "prediction": r.get("prediction", ""),
             "correct": _to_int(r.get("correct")) or 0,
+            "prediction_confidence": _to_float(r.get("prediction_confidence")),
+            "class_scores": parsed_class_scores,
             "ttft": _to_float(r.get("ttft")),
             "tps": _to_float(r.get("tps")),
             "total_time": _to_float(r.get("total_time")),
@@ -125,12 +135,15 @@ def _read_all_cases_csv(csv_path: Path) -> List[Dict[str, Any]]:
     return normalized
 
 
-def _build_agent():
+def _build_agent(agent_mode: str = "single-class", base_class: str = "Indicator"):
     api_key = os.environ.get("OPEN_ROUTER_KEY") or os.environ.get("OPENAI_API_KEY")
     if api_key:
         key_source = "OPEN_ROUTER_KEY" if os.environ.get("OPEN_ROUTER_KEY") else "OPENAI_API_KEY"
-        agent = OpenAISuicideDetectionAgent(api_key=api_key)
-        print(f"{key_source} found. Using OpenAISuicideDetectionAgent ({getattr(agent, 'model_name', 'unknown-model')}).")
+        agent = OpenAISuicideDetectionAgent(api_key=api_key, agent_mode=agent_mode, base_class=base_class)
+        print(
+            f"{key_source} found. Using OpenAISuicideDetectionAgent "
+            f"({getattr(agent, 'model_name', 'unknown-model')}, mode={agent_mode}, base={base_class})."
+        )
         agent.initialize()
         return agent
 
@@ -152,6 +165,8 @@ def _write_reports(
     max_workers: int,
     max_retries: int,
     seed: int,
+    agent_mode: str,
+    base_class: str,
     retry_meta: Optional[Dict[str, Any]] = None,
     retry_summary: Optional[Dict[str, Any]] = None,
 ):
@@ -161,7 +176,7 @@ def _write_reports(
 
     LABELS = ["Ideation", "Behavior", "Indicator", "Attempt"]
     observed_labels = sorted(set(y_true_all) | set(y_pred_all))
-    all_labels = [l for l in LABELS if l in observed_labels] + [l for l in observed_labels if l not in LABELS]
+    all_labels = [label for label in LABELS if label in observed_labels] + [label for label in observed_labels if label not in LABELS]
 
     confusion = _build_confusion_matrix(y_true_all, y_pred_all, all_labels)
     per_class = _per_class_metrics(y_true_all, y_pred_all, all_labels)
@@ -216,6 +231,8 @@ def _write_reports(
         f.write(f"**Task:** {result.task_name}\n")
         f.write(f"**Dataset:** rsd_15k.csv (n={len(all_cases)})\n")
         f.write(f"**Duration:** {result.duration:.4f} s\n")
+        f.write(f"**Agent Mode:** {agent_mode}\n")
+        f.write(f"**Base Class:** {base_class}\n")
         f.write(f"**Workers:** {max_workers} | **Retries:** {max_retries} | **Seed:** {seed}\n\n")
 
         if retry_summary:
@@ -259,14 +276,18 @@ def _write_reports(
         f.write("\n")
 
         f.write("## Per-Sample Results\n\n")
-        f.write("| Sample ID | Ground Truth | Prediction | Correct | TTFT (s) | TPS | Tokens |\n")
-        f.write("|---|---|---|---|---|---|---|\n")
+        f.write("| Sample ID | Ground Truth | Prediction | Confidence | Correct | TTFT (s) | TPS | Tokens |\n")
+        f.write("|---|---|---|---|---|---|---|---|\n")
         for c in all_cases:
             ttft_s = f"{c['ttft']:.3f}" if c['ttft'] is not None else "—"
             tps_s = f"{c['tps']:.1f}" if c['tps'] is not None else "—"
             tok_s = str(c['total_tokens']) if c['total_tokens'] is not None else "—"
+            conf_s = f"{c['prediction_confidence']:.3f}" if c.get("prediction_confidence") is not None else "—"
             ok = "✓" if int(c.get("correct", 0)) else "✗"
-            f.write(f"| {c['sample_id']} | {c['ground_truth']} | {c['prediction']} | {ok} | {ttft_s} | {tps_s} | {tok_s} |\n")
+            f.write(
+                f"| {c['sample_id']} | {c['ground_truth']} | {c['prediction']} | "
+                f"{conf_s} | {ok} | {ttft_s} | {tps_s} | {tok_s} |\n"
+            )
 
     all_cases_path = eval_dir / "all_cases.txt"
     with open(all_cases_path, "w", encoding="utf-8") as f:
@@ -281,6 +302,10 @@ def _write_reports(
                 f.write(f"Timing    : TTFT={case['ttft']:.4f}s | Gen={case['generation_time']:.4f}s | TPS={case['tps']:.2f} | Total={case['total_time']:.4f}s\n")
             if case['prompt_tokens'] is not None:
                 f.write(f"Tokens    : Prompt={case['prompt_tokens']} | Completion={case['completion_tokens']} | Total={case['total_tokens']}\n")
+            if case.get("prediction_confidence") is not None:
+                f.write(f"Confidence: {case['prediction_confidence']:.6f}\n")
+            if case.get("class_scores"):
+                f.write(f"ClassDist : {json.dumps(case['class_scores'], ensure_ascii=False)}\n")
             if case['error']:
                 f.write(f"Error     : {case['error']}\n")
             f.write(f"Text:\n{case['text']}\n")
@@ -288,6 +313,7 @@ def _write_reports(
 
     csv_fields = [
         "sample_id", "ground_truth", "prediction", "correct",
+        "prediction_confidence", "class_scores",
         "ttft", "tps", "total_time", "generation_time",
         "prompt_tokens", "completion_tokens", "total_tokens", "error", "text",
     ]
@@ -334,6 +360,8 @@ def _write_reports(
         },
         "model_config": {
             "model_name": getattr(agent, 'model_name', 'N/A'),
+            "agent_mode": agent_mode,
+            "base_class": base_class,
             "temperature": getattr(agent, 'temperature', 'N/A'),
             "max_completion_tokens": getattr(agent, 'max_completion_tokens', 'N/A'),
             "system_prompt": getattr(agent, 'system_prompt', 'N/A'),
@@ -367,6 +395,8 @@ def _write_reports(
     print("SUMMARY")
     print("=" * 60)
     print(f"Agent:    {result.agent_name}  (model: {getattr(agent, 'model_name', 'N/A')})")
+    print(f"Mode:     {agent_mode}")
+    print(f"Base:     {base_class}")
     print(f"Samples:  {len(all_cases)}  |  Failed: {len(failed_cases)}")
     print(f"Accuracy: {metrics_dict.get('accuracy', 0):.4f}  |  F1 (macro): {metrics_dict.get('f1_score', 0):.4f}")
     print(f"Duration: {result.duration:.2f}s  |  Est. Cost: ${cost_usd:.6f}")
@@ -389,12 +419,15 @@ def _run_retry_failed(meta_path: Path):
         return
 
     run_cfg = meta.get("run_config", {})
+    model_cfg = meta.get("model_config", {})
     ds_cfg = meta.get("dataset_config", {})
 
     n_samples = int(run_cfg.get("n_samples", 50))
     max_workers = int(run_cfg.get("max_workers", 5))
     max_retries = int(run_cfg.get("max_retries", 3))
     seed = int(run_cfg.get("seed", 42))
+    agent_mode = str(model_cfg.get("agent_mode", "single-class"))
+    base_class = str(model_cfg.get("base_class", "Indicator"))
 
     data_source = Path(ds_cfg.get("source", current_file.parent / "data" / "rsd_15k.csv"))
 
@@ -431,7 +464,7 @@ def _run_retry_failed(meta_path: Path):
         id_field="retry_row_id",
     )
 
-    agent = _build_agent()
+    agent = _build_agent(agent_mode=agent_mode, base_class=base_class)
     evaluator = ClassificationEvaluator()
 
     start_time = time.time()
@@ -467,6 +500,8 @@ def _run_retry_failed(meta_path: Path):
         all_cases[row_idx]["prompt_tokens"] = sample_res.get("prompt_tokens", None)
         all_cases[row_idx]["completion_tokens"] = sample_res.get("completion_tokens", None)
         all_cases[row_idx]["total_tokens"] = sample_res.get("total_tokens", None)
+        all_cases[row_idx]["prediction_confidence"] = sample_res.get("prediction_confidence", None)
+        all_cases[row_idx]["class_scores"] = sample_res.get("class_scores", None)
 
         if str(pred).strip().lower() == "error" or bool(err):
             still_error += 1
@@ -491,12 +526,21 @@ def _run_retry_failed(meta_path: Path):
         max_workers=max_workers,
         max_retries=max_retries,
         seed=seed,
+        agent_mode=agent_mode,
+        base_class=base_class,
         retry_meta=meta,
         retry_summary=retry_summary,
     )
 
 
-def run_main_eval(n_samples: int = 50, max_workers: int = 5, max_retries: int = 3, seed: int = 42):
+def run_main_eval(
+    n_samples: int = 50,
+    max_workers: int = 5,
+    max_retries: int = 3,
+    seed: int = 42,
+    agent_mode: str = "single-class",
+    base_class: str = "Indicator",
+):
     print(f"Running RSD_15K evaluation — sample limit: {n_samples}")
 
     base_dir = current_file.parent
@@ -519,7 +563,7 @@ def run_main_eval(n_samples: int = 50, max_workers: int = 5, max_retries: int = 
     dataset._samples = dataset._samples[:n_samples]
     print(f"Samples limited to: {len(dataset._samples)}")
 
-    agent = _build_agent()
+    agent = _build_agent(agent_mode=agent_mode, base_class=base_class)
     evaluator = ClassificationEvaluator()
 
     print(f"\nStarting evaluation — workers={max_workers}, retries={max_retries}, seed={seed} ...")
@@ -532,13 +576,14 @@ def run_main_eval(n_samples: int = 50, max_workers: int = 5, max_retries: int = 
         max_retries=max_retries,
         seed=seed,
         n_samples=n_samples,
+        agent_mode=agent_mode,
+        base_class=base_class,
     )
 
     print("\nEvaluation complete. Collecting results...")
     all_cases = []
 
     per_sample_metrics = getattr(result.metrics, "per_sample_metrics", [])
-    id_to_text = {s.id: s.input_text for s in dataset._samples}
 
     for sample_res in per_sample_metrics:
         sid = sample_res["sample_id"]
@@ -553,7 +598,7 @@ def run_main_eval(n_samples: int = 50, max_workers: int = 5, max_retries: int = 
 
         case_data = {
             "sample_id": sid,
-            "text": id_to_text.get(str(sid), "Text not found"),
+            "text": sample_res.get("input_text", "Text not found"),
             "prediction": pred,
             "ground_truth": gt,
             "correct": 1 if float(acc) == 1.0 else 0,
@@ -564,6 +609,8 @@ def run_main_eval(n_samples: int = 50, max_workers: int = 5, max_retries: int = 
             "prompt_tokens": sample_res.get("prompt_tokens", None),
             "completion_tokens": sample_res.get("completion_tokens", None),
             "total_tokens": sample_res.get("total_tokens", None),
+            "prediction_confidence": sample_res.get("prediction_confidence", None),
+            "class_scores": sample_res.get("class_scores", None),
             "error": sample_res.get("error", None),
         }
         all_cases.append(case_data)
@@ -583,6 +630,8 @@ def run_main_eval(n_samples: int = 50, max_workers: int = 5, max_retries: int = 
         max_workers=max_workers,
         max_retries=max_retries,
         seed=seed,
+        agent_mode=agent_mode,
+        base_class=base_class,
     )
 
 
@@ -592,6 +641,20 @@ if __name__ == "__main__":
     parser.add_argument("--max-workers", type=int, default=5, help="Parallel workers (default: 5)")
     parser.add_argument("--max-retries", type=int, default=3, help="Retries per sample on failure (default: 3)")
     parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
+    parser.add_argument(
+        "--agent-mode",
+        type=str,
+        default="single-class",
+        choices=["single-class", "multi-class-chance", "base-vs-rest-binary"],
+        help="Agent output mode: single label or structured class probabilities.",
+    )
+    parser.add_argument(
+        "--base-class",
+        type=str,
+        default="Indicator",
+        choices=["Indicator", "Ideation", "Behavior", "Attempt"],
+        help="Base class used by base-vs-rest-binary mode.",
+    )
     parser.add_argument("--retry-failed", action="store_true", help="Retry only Error cases from an existing run and update that run in place")
     parser.add_argument("--meta-path", type=str, default=None, help="Path to existing Meta.json for retry mode (defaults to latest run)")
     args = parser.parse_args()
@@ -608,4 +671,6 @@ if __name__ == "__main__":
             max_workers=args.max_workers,
             max_retries=args.max_retries,
             seed=args.seed,
+            agent_mode=args.agent_mode,
+            base_class=args.base_class,
         )
