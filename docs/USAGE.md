@@ -48,6 +48,24 @@ Use for:
 - testing multiple models one after another
 - stopping the sequence when a model run is not error-free
 
+### 2.3 Dataset translator for user-round splits
+
+File:
+
+- [src/example/suicide_detection/data_translator.py](../src/example/suicide_detection/data_translator.py)
+
+Use for:
+
+- creating `*_simple.csv` (users appearing exactly once)
+- creating `*_multi_round.csv` (users appearing more than once)
+- preserving original source dataset unchanged
+
+Command:
+
+```powershell
+.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/data_translator.py
+```
+
 ---
 
 ## 3. Prediction Modes

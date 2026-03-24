@@ -1,11 +1,13 @@
 from typing import Any, Dict, Optional
 import os
+import json
 import time
 from EvalRing.agent import OpenAIAgent
 from EvalRing.agent.classification import (
     aggregate_base_vs_rest_probabilities,
     parse_json_object,
 )
+from EvalRing.agent.multi_role import MultiRoleHostOrchestrator, RoleConfig
 from EvalRing.agent.base import AgentResponse
 
 
@@ -76,12 +78,23 @@ Example:
     MODE_SINGLE_CLASS = "single-class"
     MODE_MULTI_CLASS_CHANCE = "multi-class-chance"
     MODE_BASE_VS_REST_BINARY = "base-vs-rest-binary"
-    VALID_MODES = {MODE_SINGLE_CLASS, MODE_MULTI_CLASS_CHANCE, MODE_BASE_VS_REST_BINARY}
+    MODE_MULTI_AGENT_HOST = "multi-agent-host"
+    VALID_MODES = {
+        MODE_SINGLE_CLASS,
+        MODE_MULTI_CLASS_CHANCE,
+        MODE_BASE_VS_REST_BINARY,
+        MODE_MULTI_AGENT_HOST,
+    }
     LABEL_ALIASES = {
         "ideation": "Ideation",
         "behavior": "Behavior",
         "indicator": "Indicator",
         "attempt": "Attempt",
+    }
+    DEFAULT_ROLE_PERSONAS = {
+        "internet_advisor": "Focus on online context clues, posting behavior patterns, and potential environmental triggers.",
+        "mental_health_practitioner": "Use clinical risk reasoning and prioritize safety-relevant evidence in the text.",
+        "language_specialist": "Analyze wording, intensity, ambiguity, and discourse cues in the user's language.",
     }
 
     def __init__(
@@ -92,6 +105,9 @@ Example:
         temperature: float = 0.0,
         agent_mode: str = MODE_SINGLE_CLASS,
         base_class: str = "Indicator",
+        host_model_name: Optional[str] = None,
+        role_model_map: Optional[Dict[str, str]] = None,
+        max_host_iterations: int = 10,
         **kwargs,
     ):
         if agent_mode not in self.VALID_MODES:
@@ -107,6 +123,20 @@ Example:
         self.base_class = self.LABEL_ALIASES.get(base_class.lower(), base_class)
         if self.base_class not in self.VALID_LABELS:
             raise ValueError(f"Unsupported base_class='{base_class}'. Valid classes: {self.VALID_LABELS}")
+        self.max_host_iterations = max(1, min(int(max_host_iterations), 10))
+
+        env_role_model_map = None
+        role_map_json = os.environ.get("SUICIDE_ROLE_MODELS_JSON", "").strip()
+        if role_map_json:
+            try:
+                parsed = json.loads(role_map_json)
+                if isinstance(parsed, dict):
+                    env_role_model_map = {str(k): str(v) for k, v in parsed.items()}
+            except Exception:
+                env_role_model_map = None
+
+        self.role_model_map = role_model_map or env_role_model_map or {}
+        self.host_model_name = host_model_name or os.environ.get("SUICIDE_HOST_MODEL") or model_name
 
         system_prompt = (
             self.SYSTEM_PROMPT_MULTI_CLASS_CHANCE
@@ -168,6 +198,20 @@ Example:
             return self._parse_multi_class_chance(raw_output)
         return self._parse_single_label(raw_output)
 
+    def _build_multi_role_configs(self) -> list[RoleConfig]:
+        role_configs: list[RoleConfig] = []
+        for role_name, persona in self.DEFAULT_ROLE_PERSONAS.items():
+            role_configs.append(
+                RoleConfig(
+                    name=role_name,
+                    persona=persona,
+                    model_name=self.role_model_map.get(role_name, self.model_name),
+                    temperature=self.temperature,
+                    max_completion_tokens=self.max_completion_tokens,
+                )
+            )
+        return role_configs
+
     def _binary_prompt_against_base(self, target_class: str) -> str:
         base_key = self.base_class.lower()
         target_key = target_class.lower()
@@ -220,6 +264,79 @@ Example:
         return {self.base_class: 1.0, target_class: 0.0}
 
     def predict(self, input_text: str, **kwargs) -> AgentResponse:
+        if self.agent_mode == self.MODE_MULTI_AGENT_HOST:
+            if not self._is_initialized:
+                raise RuntimeError("Agent not initialized.  Call initialize() first.")
+
+            if not self.validate_input(input_text):
+                return AgentResponse(
+                    input_id="",
+                    input_text=input_text,
+                    output=None,
+                    error="Invalid input",
+                )
+
+            start_time = time.time()
+            try:
+                orchestrator = MultiRoleHostOrchestrator(
+                    client=self.client,
+                    labels=self.VALID_LABELS,
+                    task_name="suicide_risk_classification",
+                    task_instructions=(
+                        "Classify into exactly one of: Indicator, Ideation, Behavior, Attempt. "
+                        "Use evidence from the text only. Attempt indicates current or past suicide attempt."
+                    ),
+                    host_model_name=self.host_model_name,
+                    role_configs=self._build_multi_role_configs(),
+                    host_temperature=self.temperature,
+                    host_max_completion_tokens=self.max_completion_tokens,
+                    max_iterations=self.max_host_iterations,
+                )
+                run = orchestrator.run_case(input_text)
+
+                total_time = time.time() - start_time
+                token_usage = run.get("token_usage", {})
+                class_scores = run.get(
+                    "class_scores",
+                    {label: (1.0 if label == "Indicator" else 0.0) for label in self.VALID_LABELS},
+                )
+                return AgentResponse(
+                    input_id="",
+                    input_text=input_text,
+                    output=class_scores,
+                    confidence=max(class_scores.values()) if class_scores else None,
+                    processing_time=total_time,
+                    metadata={
+                        "raw_output": {
+                            "role_reviews": run.get("role_reviews", []),
+                            "host_dialogue": run.get("host_dialogue", []),
+                        },
+                        "model": self.model_name,
+                        "host_model": self.host_model_name,
+                        "role_model_map": self.role_model_map,
+                        "base_url": self.base_url,
+                        "prompt_tokens": token_usage.get("prompt_tokens", 0),
+                        "completion_tokens": token_usage.get("completion_tokens", 0),
+                        "total_tokens": token_usage.get("total_tokens", 0),
+                        "ttft": 0.0,
+                        "generation_time": total_time,
+                        "tps": (token_usage.get("completion_tokens", 0) / total_time) if total_time > 0 else 0.0,
+                        "total_time": total_time,
+                        "host_iterations_used": run.get("iterations_used", 0),
+                        "host_max_iterations": self.max_host_iterations,
+                        "host_rationale": run.get("rationale", ""),
+                    },
+                )
+            except Exception as e:
+                processing_time = time.time() - start_time
+                return AgentResponse(
+                    input_id="",
+                    input_text=input_text,
+                    output="Error",
+                    error=str(e),
+                    processing_time=processing_time,
+                )
+
         if self.agent_mode != self.MODE_BASE_VS_REST_BINARY:
             return super().predict(input_text, **kwargs)
 

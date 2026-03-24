@@ -20,6 +20,7 @@ Core package and sample files:
 - [src/example/suicide_detection/llm_agent.py](../../../src/example/suicide_detection/llm_agent.py)
 - [src/example/suicide_detection/evaluate_rsd15k_main.py](../../../src/example/suicide_detection/evaluate_rsd15k_main.py)
 - [src/example/suicide_detection/run_model_suite.py](../../../src/example/suicide_detection/run_model_suite.py)
+- [src/example/suicide_detection/data_translator.py](../../../src/example/suicide_detection/data_translator.py)
 - [src/example/suicide_detection/data/rsd_15k.csv](../../../src/example/suicide_detection/data/rsd_15k.csv)
 
 One can access original dataset from: https://drive.google.com/file/d/1DrWVF28hEj70x3Yxtfonk3pzS0hPOQBT/view?usp=sharing
@@ -30,7 +31,42 @@ Reusable classification helpers used by this sample:
 
 - [src/EvalRing/agent/classification.py](../../../src/EvalRing/agent/classification.py)
 
-## 2. Environment Setup
+## 2. Dataset Translator
+
+Translator file:
+
+- [src/example/suicide_detection/data_translator.py](../../../src/example/suicide_detection/data_translator.py)
+
+Purpose:
+
+- keep original dataset unchanged
+- create `*_simple.csv` with only users that appear once
+- create `*_multi_round.csv` with only users that appear more than once
+
+Default command:
+
+```powershell
+python src/example/suicide_detection/data_translator.py
+```
+
+Dry-run command (no file writing):
+
+```powershell
+python src/example/suicide_detection/data_translator.py --dry-run
+```
+
+With custom source path:
+
+```powershell
+python src/example/suicide_detection/data_translator.py --input-csv src/example/suicide_detection/data/rsd_15k.csv
+```
+
+Default generated files:
+
+- `src/example/suicide_detection/data/rsd_15k_simple.csv`
+- `src/example/suicide_detection/data/rsd_15k_multi_round.csv`
+
+## 3. Environment Setup
 
 From repository root:
 
@@ -56,7 +92,7 @@ Optional model override keys:
 
 The runner will prefer OpenRouter when `OPEN_ROUTER_KEY` is available.
 
-## 3. Standard Evaluation Command
+## 4. Standard Evaluation Command
 
 Main runner:
 
@@ -79,7 +115,7 @@ Supported arguments:
 - `--retry-failed`
 - `--meta-path`
 
-## 4. Agent Modes
+## 5. Agent Modes
 
 ### 4.1 single-class
 
@@ -125,7 +161,7 @@ Behind the scenes:
 3. core aggregation converts pairwise probabilities into one multi-class probability distribution
 4. evaluator resolves top class for standard metrics
 
-## 5. Retry Failed Rows In Place
+## 6. Retry Failed Rows In Place
 
 Retry mode avoids rerunning all rows when only a few API/provider calls failed.
 
@@ -148,7 +184,7 @@ Behavior summary:
 3. rerun only those rows
 4. patch the original run folder files in place
 
-## 6. Multi-Model Suite
+## 7. Multi-Model Suite
 
 Runner:
 
@@ -177,7 +213,7 @@ Suite stop conditions:
 - `execution_failures` found in `Meta.json`
 - `prediction == Error` or non-empty `error` found in `all_cases.csv`
 
-## 7. Artifacts Produced Per Run
+## 8. Artifacts Produced Per Run
 
 Run directories are created at:
 
@@ -198,7 +234,7 @@ Important fields for structured modes:
 - `model_config.agent_mode`
 - `model_config.base_class`
 
-## 8. How Metrics Are Computed With Structured Outputs
+## 9. How Metrics Are Computed With Structured Outputs
 
 The evaluator accepts either:
 
@@ -207,7 +243,7 @@ The evaluator accepts either:
 
 Core resolver in [src/EvalRing/agent/classification.py](../../../src/EvalRing/agent/classification.py) selects the top class for accuracy/precision/recall/F1 while preserving confidence and class scores in per-sample metadata.
 
-## 9. Practical Experiment Recipes
+## 10. Practical Experiment Recipes
 
 Quick smoke test:
 
@@ -233,7 +269,7 @@ Recover transient errors:
 python src/example/suicide_detection/evaluate_rsd15k_main.py --retry-failed
 ```
 
-## 10. Adapting This Pattern to Other Tasks
+## 11. Adapting This Pattern to Other Tasks
 
 For a new classification task (for example emotion categorization):
 

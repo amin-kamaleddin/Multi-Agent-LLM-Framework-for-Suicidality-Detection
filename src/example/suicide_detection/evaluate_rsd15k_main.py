@@ -135,11 +135,33 @@ def _read_all_cases_csv(csv_path: Path) -> List[Dict[str, Any]]:
     return normalized
 
 
-def _build_agent(agent_mode: str = "single-class", base_class: str = "Indicator"):
+def _build_agent(
+    agent_mode: str = "single-class",
+    base_class: str = "Indicator",
+    host_model: Optional[str] = None,
+    role_models_json: Optional[str] = None,
+    max_host_iterations: int = 10,
+):
     api_key = os.environ.get("OPEN_ROUTER_KEY") or os.environ.get("OPENAI_API_KEY")
     if api_key:
         key_source = "OPEN_ROUTER_KEY" if os.environ.get("OPEN_ROUTER_KEY") else "OPENAI_API_KEY"
-        agent = OpenAISuicideDetectionAgent(api_key=api_key, agent_mode=agent_mode, base_class=base_class)
+        role_model_map = None
+        if role_models_json:
+            try:
+                parsed = json.loads(role_models_json)
+                if isinstance(parsed, dict):
+                    role_model_map = {str(k): str(v) for k, v in parsed.items()}
+            except Exception:
+                print("WARNING: --role-models-json is not valid JSON object. Ignoring it.")
+
+        agent = OpenAISuicideDetectionAgent(
+            api_key=api_key,
+            agent_mode=agent_mode,
+            base_class=base_class,
+            host_model_name=host_model,
+            role_model_map=role_model_map,
+            max_host_iterations=max_host_iterations,
+        )
         print(
             f"{key_source} found. Using OpenAISuicideDetectionAgent "
             f"({getattr(agent, 'model_name', 'unknown-model')}, mode={agent_mode}, base={base_class})."
@@ -167,6 +189,9 @@ def _write_reports(
     seed: int,
     agent_mode: str,
     base_class: str,
+    host_model: Optional[str],
+    role_models_json: Optional[str],
+    max_host_iterations: int,
     retry_meta: Optional[Dict[str, Any]] = None,
     retry_summary: Optional[Dict[str, Any]] = None,
 ):
@@ -233,6 +258,9 @@ def _write_reports(
         f.write(f"**Duration:** {result.duration:.4f} s\n")
         f.write(f"**Agent Mode:** {agent_mode}\n")
         f.write(f"**Base Class:** {base_class}\n")
+        if host_model:
+            f.write(f"**Host Model:** {host_model}\n")
+        f.write(f"**Max Host Iterations:** {max_host_iterations}\n")
         f.write(f"**Workers:** {max_workers} | **Retries:** {max_retries} | **Seed:** {seed}\n\n")
 
         if retry_summary:
@@ -362,6 +390,9 @@ def _write_reports(
             "model_name": getattr(agent, 'model_name', 'N/A'),
             "agent_mode": agent_mode,
             "base_class": base_class,
+            "host_model": host_model,
+            "role_models_json": role_models_json,
+            "max_host_iterations": max_host_iterations,
             "temperature": getattr(agent, 'temperature', 'N/A'),
             "max_completion_tokens": getattr(agent, 'max_completion_tokens', 'N/A'),
             "system_prompt": getattr(agent, 'system_prompt', 'N/A'),
@@ -397,6 +428,9 @@ def _write_reports(
     print(f"Agent:    {result.agent_name}  (model: {getattr(agent, 'model_name', 'N/A')})")
     print(f"Mode:     {agent_mode}")
     print(f"Base:     {base_class}")
+    if host_model:
+        print(f"Host:     {host_model}")
+    print(f"HostMax:  {max_host_iterations}")
     print(f"Samples:  {len(all_cases)}  |  Failed: {len(failed_cases)}")
     print(f"Accuracy: {metrics_dict.get('accuracy', 0):.4f}  |  F1 (macro): {metrics_dict.get('f1_score', 0):.4f}")
     print(f"Duration: {result.duration:.2f}s  |  Est. Cost: ${cost_usd:.6f}")
@@ -428,6 +462,9 @@ def _run_retry_failed(meta_path: Path):
     seed = int(run_cfg.get("seed", 42))
     agent_mode = str(model_cfg.get("agent_mode", "single-class"))
     base_class = str(model_cfg.get("base_class", "Indicator"))
+    host_model = model_cfg.get("host_model")
+    role_models_json = model_cfg.get("role_models_json")
+    max_host_iterations = int(model_cfg.get("max_host_iterations", 10))
 
     data_source = Path(ds_cfg.get("source", current_file.parent / "data" / "rsd_15k.csv"))
 
@@ -464,7 +501,13 @@ def _run_retry_failed(meta_path: Path):
         id_field="retry_row_id",
     )
 
-    agent = _build_agent(agent_mode=agent_mode, base_class=base_class)
+    agent = _build_agent(
+        agent_mode=agent_mode,
+        base_class=base_class,
+        host_model=host_model,
+        role_models_json=role_models_json,
+        max_host_iterations=max_host_iterations,
+    )
     evaluator = ClassificationEvaluator()
 
     start_time = time.time()
@@ -528,6 +571,9 @@ def _run_retry_failed(meta_path: Path):
         seed=seed,
         agent_mode=agent_mode,
         base_class=base_class,
+        host_model=host_model,
+        role_models_json=role_models_json,
+        max_host_iterations=max_host_iterations,
         retry_meta=meta,
         retry_summary=retry_summary,
     )
@@ -540,6 +586,9 @@ def run_main_eval(
     seed: int = 42,
     agent_mode: str = "single-class",
     base_class: str = "Indicator",
+    host_model: Optional[str] = None,
+    role_models_json: Optional[str] = None,
+    max_host_iterations: int = 10,
 ):
     print(f"Running RSD_15K evaluation — sample limit: {n_samples}")
 
@@ -563,7 +612,13 @@ def run_main_eval(
     dataset._samples = dataset._samples[:n_samples]
     print(f"Samples limited to: {len(dataset._samples)}")
 
-    agent = _build_agent(agent_mode=agent_mode, base_class=base_class)
+    agent = _build_agent(
+        agent_mode=agent_mode,
+        base_class=base_class,
+        host_model=host_model,
+        role_models_json=role_models_json,
+        max_host_iterations=max_host_iterations,
+    )
     evaluator = ClassificationEvaluator()
 
     print(f"\nStarting evaluation — workers={max_workers}, retries={max_retries}, seed={seed} ...")
@@ -632,6 +687,9 @@ def run_main_eval(
         seed=seed,
         agent_mode=agent_mode,
         base_class=base_class,
+        host_model=host_model,
+        role_models_json=role_models_json,
+        max_host_iterations=max_host_iterations,
     )
 
 
@@ -645,7 +703,7 @@ if __name__ == "__main__":
         "--agent-mode",
         type=str,
         default="single-class",
-        choices=["single-class", "multi-class-chance", "base-vs-rest-binary"],
+        choices=["single-class", "multi-class-chance", "base-vs-rest-binary", "multi-agent-host"],
         help="Agent output mode: single label or structured class probabilities.",
     )
     parser.add_argument(
@@ -654,6 +712,24 @@ if __name__ == "__main__":
         default="Indicator",
         choices=["Indicator", "Ideation", "Behavior", "Attempt"],
         help="Base class used by base-vs-rest-binary mode.",
+    )
+    parser.add_argument(
+        "--host-model",
+        type=str,
+        default=None,
+        help="Optional host model for multi-agent-host mode.",
+    )
+    parser.add_argument(
+        "--role-models-json",
+        type=str,
+        default=None,
+        help="Optional JSON object mapping role name to model, e.g. {\"internet_advisor\":\"openai/gpt-4o-mini\"}.",
+    )
+    parser.add_argument(
+        "--max-host-iterations",
+        type=int,
+        default=10,
+        help="Maximum host questioning rounds in multi-agent-host mode (hard-capped at 10 in agent).",
     )
     parser.add_argument("--retry-failed", action="store_true", help="Retry only Error cases from an existing run and update that run in place")
     parser.add_argument("--meta-path", type=str, default=None, help="Path to existing Meta.json for retry mode (defaults to latest run)")
@@ -673,4 +749,7 @@ if __name__ == "__main__":
             seed=args.seed,
             agent_mode=args.agent_mode,
             base_class=args.base_class,
+            host_model=args.host_model,
+            role_models_json=args.role_models_json,
+            max_host_iterations=args.max_host_iterations,
         )

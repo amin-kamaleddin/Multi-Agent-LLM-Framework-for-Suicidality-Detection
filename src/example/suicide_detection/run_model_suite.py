@@ -52,6 +52,9 @@ def run_suite(
     seed: int = 0,
     agent_mode: str = "single-class",
     base_class: str = "Indicator",
+    host_model: str | None = None,
+    role_models_json: str | None = None,
+    max_host_iterations: int = 10,
 ) -> int:
     script_dir = Path(__file__).resolve().parent
     eval_script = script_dir / "evaluate_rsd15k_main.py"
@@ -75,7 +78,8 @@ def run_suite(
     print(f"timestamp={datetime.now().isoformat()}")
     print(
         f"n_samples={n_samples}, max_workers={max_workers}, seed={seed}, "
-        f"agent_mode={agent_mode}, base_class={base_class}"
+        f"agent_mode={agent_mode}, base_class={base_class}, host_model={host_model}, "
+        f"max_host_iterations={max_host_iterations}"
     )
     print("=" * 80)
 
@@ -100,7 +104,13 @@ def run_suite(
             str(agent_mode),
             "--base-class",
             str(base_class),
+            "--max-host-iterations",
+            str(max_host_iterations),
         ]
+        if host_model:
+            cmd.extend(["--host-model", str(host_model)])
+        if role_models_json:
+            cmd.extend(["--role-models-json", str(role_models_json)])
 
         proc = subprocess.run(cmd, cwd=str(script_dir), env=env)
 
@@ -132,6 +142,9 @@ def run_suite(
                 "prediction_errors": prediction_error_count,
                 "agent_mode": agent_mode,
                 "base_class": base_class,
+                "host_model": host_model,
+                "role_models_json": role_models_json,
+                "max_host_iterations": max_host_iterations,
             }
         )
 
@@ -159,6 +172,9 @@ def run_suite(
         "max_workers": max_workers,
         "agent_mode": agent_mode,
         "base_class": base_class,
+        "host_model": host_model,
+        "role_models_json": role_models_json,
+        "max_host_iterations": max_host_iterations,
         "models": summary_rows,
     }
 
@@ -181,5 +197,8 @@ if __name__ == "__main__":
             seed=0,
             agent_mode="single-class",
             base_class="Indicator",
+            host_model=None,
+            role_models_json=None,
+            max_host_iterations=10,
         )
     )

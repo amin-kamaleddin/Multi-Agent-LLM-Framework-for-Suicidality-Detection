@@ -11,6 +11,7 @@ from .classification import (
     resolve_classification_prediction,
 )
 from .implementations import MockAgent, RuleBasedAgent, OpenAIAgent
+from .multi_role import MultiRoleHostOrchestrator, RoleConfig
 
 __all__ = [
     "BaseAgent",
@@ -20,6 +21,8 @@ __all__ = [
     "normalize_probability_distribution",
     "parse_json_object",
     "resolve_classification_prediction",
+    "MultiRoleHostOrchestrator",
+    "RoleConfig",
     "MockAgent",
     "RuleBasedAgent",
     "OpenAIAgent",
