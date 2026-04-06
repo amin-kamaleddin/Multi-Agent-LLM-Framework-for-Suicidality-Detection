@@ -74,16 +74,20 @@ Output format requirements:
 Example:
 {"ideation": 0.80, "behavior": 0.10, "indicator": 0.05, "attempt": 0.05}"""
 
+
+
     VALID_LABELS = ["Ideation", "Behavior", "Indicator", "Attempt"]
     MODE_SINGLE_CLASS = "single-class"
     MODE_MULTI_CLASS_CHANCE = "multi-class-chance"
     MODE_BASE_VS_REST_BINARY = "base-vs-rest-binary"
     MODE_MULTI_AGENT_HOST = "multi-agent-host"
+    MODE_PER_CLASS_SCORE = "per-class-score"
     VALID_MODES = {
         MODE_SINGLE_CLASS,
         MODE_MULTI_CLASS_CHANCE,
         MODE_BASE_VS_REST_BINARY,
         MODE_MULTI_AGENT_HOST,
+        MODE_PER_CLASS_SCORE,
     }
     LABEL_ALIASES = {
         "ideation": "Ideation",
@@ -138,11 +142,10 @@ Example:
         self.role_model_map = role_model_map or env_role_model_map or {}
         self.host_model_name = host_model_name or os.environ.get("SUICIDE_HOST_MODEL") or model_name
 
-        system_prompt = (
-            self.SYSTEM_PROMPT_MULTI_CLASS_CHANCE
-            if agent_mode == self.MODE_MULTI_CLASS_CHANCE
-            else self.SYSTEM_PROMPT_SINGLE_CLASS
-        )
+        if agent_mode == self.MODE_MULTI_CLASS_CHANCE:
+            system_prompt = self.SYSTEM_PROMPT_MULTI_CLASS_CHANCE
+        else:
+            system_prompt = self.SYSTEM_PROMPT_SINGLE_CLASS
 
         super().__init__(
             name=name,
@@ -197,6 +200,25 @@ Example:
         if self.agent_mode == self.MODE_MULTI_CLASS_CHANCE:
             return self._parse_multi_class_chance(raw_output)
         return self._parse_single_label(raw_output)
+
+    def _per_class_prompt(self, target_class: str) -> str:
+        target_key = target_class.lower()
+        return (
+            "You are a suicide-risk classification assistant.\n\n"
+            f"You are being asked to evaluate whether the post matches the class: {target_class}\n"
+            "Use the same definitions as the single-label setting:\n"
+            "- Indicator: no self-risk signal from the author.\n"
+            "- Ideation: suicidal thoughts/wishes without concrete self-harm action.\n"
+            "- Behavior: preparatory/self-harm behavior beyond verbal thoughts.\n"
+            "- Attempt: explicit mention of suicide attempt (current or past).\n\n"
+            "Output format requirements:\n"
+            "1) Return ONLY a JSON object.\n"
+            f'2) Include exactly one key: "{target_key}".\n'
+            f"3) The value must be a number from 1 to 10 based on how well the post matches {target_class} (e.g. 10 means a confirmed and complete match, 6 means reasonable, 1 means no match).\n"
+            "4) No extra text, no markdown, no explanation.\n\n"
+            "Example:\n"
+            f'{{"{target_key}": 8}}'
+        )
 
     def _build_multi_role_configs(self) -> list[RoleConfig]:
         role_configs: list[RoleConfig] = []
@@ -337,7 +359,7 @@ Example:
                     processing_time=processing_time,
                 )
 
-        if self.agent_mode != self.MODE_BASE_VS_REST_BINARY:
+        if self.agent_mode not in (self.MODE_BASE_VS_REST_BINARY, self.MODE_PER_CLASS_SCORE):
             return super().predict(input_text, **kwargs)
 
         if not self._is_initialized:
@@ -355,6 +377,82 @@ Example:
         prompt_tokens_total = 0
         completion_tokens_total = 0
         total_tokens_total = 0
+        
+        if self.agent_mode == self.MODE_PER_CLASS_SCORE:
+            class_scores: Dict[str, float] = {}
+            per_class_details = []
+            
+            try:
+                for target_class in self.VALID_LABELS:
+                    raw_response = self.client.chat.completions.create(
+                        model=self.model_name,
+                        messages=[
+                            {"role": "system", "content": self._per_class_prompt(target_class)},
+                            {"role": "user", "content": self._build_user_message(input_text)},
+                        ],
+                        temperature=self.temperature,
+                        max_completion_tokens=self.max_completion_tokens,
+                        stream=False,
+                    )
+                    raw_output = raw_response.choices[0].message.content or ""
+                    
+                    parsed = parse_json_object(raw_output)
+                    target_key = target_class.lower()
+                    score = 1.0
+                    if isinstance(parsed, dict):
+                        raw_score = parsed.get(target_key, parsed.get(target_class))
+                        if raw_score is not None:
+                            try:
+                                score = float(raw_score)
+                            except (ValueError, TypeError):
+                                pass
+                    
+                    class_scores[target_class] = max(1.0, min(10.0, score))
+                    
+                    usage = getattr(raw_response, "usage", None)
+                    if usage is not None:
+                        prompt_tokens_total += getattr(usage, "prompt_tokens", 0) or 0
+                        completion_tokens_total += getattr(usage, "completion_tokens", 0) or 0
+                        total_tokens_total += getattr(usage, "total_tokens", 0) or 0
+
+                    per_class_details.append(
+                        {
+                            "target_class": target_class,
+                            "raw_output": raw_output,
+                            "score": score,
+                        }
+                    )
+                
+                total_time = time.time() - start_time
+                return AgentResponse(
+                    input_id="",
+                    input_text=input_text,
+                    output=class_scores,
+                    confidence=max(class_scores.values()) if class_scores else None,
+                    processing_time=total_time,
+                    metadata={
+                        "raw_output": per_class_details,
+                        "model": self.model_name,
+                        "base_url": self.base_url,
+                        "prompt_tokens": prompt_tokens_total,
+                        "completion_tokens": completion_tokens_total,
+                        "total_tokens": total_tokens_total,
+                        "ttft": 0.0,
+                        "generation_time": total_time,
+                        "tps": (completion_tokens_total / total_time) if total_time > 0 else 0.0,
+                        "total_time": total_time,
+                    },
+                )
+            except Exception as e:
+                processing_time = time.time() - start_time
+                return AgentResponse(
+                    input_id="",
+                    input_text=input_text,
+                    output="Error",
+                    error=str(e),
+                    processing_time=processing_time,
+                )
+
         pairwise_target_probs: Dict[str, float] = {}
         pairwise_details = []
 

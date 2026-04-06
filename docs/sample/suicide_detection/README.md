@@ -114,6 +114,11 @@ Supported arguments:
 - `--base-class`
 - `--retry-failed`
 - `--meta-path`
+- `--out-dir` (Groups output run directories into a specific parent folder)
+- `--continue` (Resumes a run if it failed midway, skipping already-completed items)
+- `--host-model` (Specifies the host model for `multi-agent-host` mode)
+- `--role-models-json` (Provides JSON mapping of role names to model endpoints for `multi-agent-host` mode)
+- `--max-host-iterations` (Caps the number of rounds for multi-agent mode, default 10)
 
 ## 5. Agent Modes
 
@@ -161,9 +166,24 @@ Behind the scenes:
 3. core aggregation converts pairwise probabilities into one multi-class probability distribution
 4. evaluator resolves top class for standard metrics
 
-## 6. Retry Failed Rows In Place
+### 4.4 multi-agent-host
 
-Retry mode avoids rerunning all rows when only a few API/provider calls failed.
+A more complex architecture where a "host" agent negotiates with specialized sub-agents to reach a consensus label.
+
+```powershell
+python src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 50 --agent-mode multi-agent-host --host-model "openai/gpt-4o" --role-models-json '{"expert":"anthropic/claude-3.5-sonnet", "critic":"google/gemini-1.5-pro"}' --max-host-iterations 5
+```
+
+Key Multi-Agent Arguments:
+* `--host-model`: Specifies which model drives the main consensus loop.
+* `--role-models-json`: Passes a JSON string defining the roles and the sub-models populating those roles. 
+* `--max-host-iterations`: Sets a limit on how many questioning rounds the host can perform.
+
+## 6. Retry Failed Rows In Place & Continuing Iterations
+
+### Retry Mode
+
+Retry mode avoids rerunning all rows when only a few API/provider calls failed. It explicitly searches for `Error` results from a previous iteration and re-evaluates them using patched local memory instead of rewriting to a new directory base.
 
 Retry latest run:
 
@@ -184,27 +204,47 @@ Behavior summary:
 3. rerun only those rows
 4. patch the original run folder files in place
 
+### Continue / Resume mode
+
+To resume a partial run from operations that stopped prematurely before conclusion or completion, `--continue` skips rows functionally logged as valid without executing them again, appending to the last output trace logs instead of starting a fresh cycle.
+
+```powershell
+python src/example/suicide_detection/evaluate_rsd15k_main.py --continue
+```
+
 ## 7. Multi-Model Suite
 
 Runner:
 
 - [src/example/suicide_detection/run_model_suite.py](../../../src/example/suicide_detection/run_model_suite.py)
 
-Default script behavior is controlled in that file's `run_suite(...)` call.
+Default script behavior is controlled in that file's `__main__` block invoking the `run_suite(...)` call.
 
-Programmatic example:
+Programmatic examples include parameters corresponding to evaluating suites across massive parallel chunks and complex multi-agent workflows across the target models:
 
 ```python
 from example.suicide_detection.run_model_suite import run_suite
 
 run_suite(
-    n_samples=100,
-    max_workers=10,
+    n_samples=10000,
+    max_workers=1000,
     seed=42,
-    agent_mode="base-vs-rest-binary",
+    agent_mode="multi-agent-host",
     base_class="Indicator",
+    host_model="openai/gpt-4o-mini",
+    role_models_json='{"expert":"anthropic/claude-3-haiku"}',
+    max_host_iterations=10,
+    continue_runs=True
 )
 ```
+
+### Suite Folder Isolation
+
+When run, the suite natively isolates its outputs. It groups all individual model runs executed during its sequence into an encapsulated folder formatted as: `.EvalRing/run_suite_YYYYMMDD_HHMMSS`. 
+
+The suite auto-generates two summary files locally inside this target folder linking insights across all model testing iterations:
+- **Combined Markdown (`run_suite_{timestamp}.md`)**: A concatenated performance review documenting logic, accuracy, execution errors, F1-scores, and stripped down components extracted dynamically from every sub-model `result.md`.
+- **Suite Report JSON (`suite_report_{timestamp}.json`)**: Structured dictionary mapping the global suite configuration metrics (n_samples, workers, base_class) paired with array performance attributes for programmable tracking.
 
 Suite stop conditions:
 

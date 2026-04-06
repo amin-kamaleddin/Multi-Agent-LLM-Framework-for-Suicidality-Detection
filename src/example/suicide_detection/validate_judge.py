@@ -69,9 +69,10 @@ def run_validation():
         str(data_path),
         text_field="text",
         label_field="sentiment",
-        id_field="users",
+        id_field="ID",
     )
     dataset._samples = dataset._samples[:NUM_SAMPLES]
+    dataset.assert_unique_ids(expected_count=len(dataset._samples), context=f"validate_judge.head({NUM_SAMPLES})")
     print(f"Dataset: {len(dataset)} samples loaded\n")
 
     # ── Agent ──

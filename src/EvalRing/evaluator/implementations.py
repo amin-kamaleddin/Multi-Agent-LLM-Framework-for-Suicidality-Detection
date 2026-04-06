@@ -4,6 +4,8 @@ Concrete implementations of evaluators.
 
 import time
 import json
+import os
+import datetime
 import concurrent.futures
 from pathlib import Path
 from typing import Any, List, Optional, Union, Tuple
@@ -20,12 +22,24 @@ class ClassificationEvaluator(BaseEvaluator):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
-    def _process_sample(self, sample: DataSample, agent: BaseAgent, max_retries: int) -> Tuple[DataSample, Optional[AgentResponse], Optional[str]]:
+    def _process_sample(
+        self,
+        sample: DataSample,
+        agent: BaseAgent,
+        max_retries: int,
+        error_cb=None,
+    ) -> Tuple[DataSample, Optional[AgentResponse], Optional[str]]:
         """Process a single sample with retry logic."""
         last_error = None
-        for attempt in range(max_retries):
+        attempt = 0
+        rate_limit_attempt = 0
+        last_error_type = None
+        while True:
             try:
                 response = agent.predict(sample.input_text)
+                if getattr(response, 'error', None) or response.output == "Error":
+                    raise RuntimeError(getattr(response, 'error', None) or "Unknown prediction error")
+                    
                 resolved = resolve_classification_prediction(response.output)
                 if resolved.label is not None:
                     response.output = resolved.label
@@ -38,10 +52,43 @@ class ClassificationEvaluator(BaseEvaluator):
                 return sample, response, None
             except Exception as e:
                 last_error = str(e)
+                last_error_type = e.__class__.__name__
+                error_lower = last_error.lower()
+                is_rate_limit = "429" in error_lower or "rate limit" in error_lower
+
+                if error_cb:
+                    try:
+                        error_cb({
+                            "timestamp": datetime.datetime.now().isoformat(),
+                            "sample_id": str(sample.id),
+                            "error_type": last_error_type,
+                            "error_message": last_error,
+                            "is_rate_limit": is_rate_limit,
+                            "attempt": attempt + 1,
+                            "rate_limit_attempt": rate_limit_attempt + 1 if is_rate_limit else 0,
+                            "max_retries": max_retries,
+                        })
+                    except Exception:
+                        pass
+                
+                if is_rate_limit:
+                    if rate_limit_attempt < 30:
+                        time.sleep(10)
+                        rate_limit_attempt += 1
+                        continue
+                    else:
+                        break
+                
                 if attempt < max_retries - 1:
-                    # Exponential backoff: 1s, 2s, 4s...
                     time.sleep(2 ** attempt)
-        return sample, None, f"Failed after {max_retries} attempts. Last error: {last_error}"
+                    attempt += 1
+                else:
+                    break
+        return sample, None, (
+            f"Failed after {max_retries} attempts (or 30 rate limits). "
+            f"Last error type: {last_error_type or 'UnknownError'}. "
+            f"Last error: {last_error}"
+        )
         
     def evaluate(self, 
                 agent: BaseAgent, 
@@ -50,6 +97,11 @@ class ClassificationEvaluator(BaseEvaluator):
                 version: str = "1.0",
                 max_workers: int = 5,
                 max_retries: int = 3,
+                show_progress: bool = False,
+                seed: int = 42,
+                exit_on_first_error: bool = False,
+                partial_cb = None,
+                error_cb = None,
                 **kwargs) -> EvaluationResult:
         """
         Evaluate agent on classification task with parallel execution and retries.
@@ -63,42 +115,86 @@ class ClassificationEvaluator(BaseEvaluator):
         
         start_time = time.time()
         
-        # Collect predictions
-        predictions = []
-        ground_truth = []
-        per_sample_metrics = []
+        # Collect predictions (deterministic order: same as dataset iteration order)
+        samples = list(dataset)
+        requested_workers = max(1, int(max_workers))
+        cpu_count = os.cpu_count() or 1
+        planned_parallelism = min(requested_workers, len(samples)) if samples else 0
+
+        print(
+            "[Concurrency Plan] "
+            f"samples={len(samples)}, requested_max_workers={requested_workers}, "
+            f"planned_parallelism={planned_parallelism}, local_cpu_count={cpu_count}"
+        )
+        per_sample_by_id = {}
         execution_failures = []
+        retry_backoff_failures = 0
+        rate_limit_failures = 0
+        rate_limit_sleep_events = 0
         
         # Parallel execution
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=requested_workers) as executor:
+            effective_executor_workers = getattr(executor, "_max_workers", requested_workers)
+            print(
+                "[Concurrency Executor] "
+                f"executor_max_workers={effective_executor_workers}, submitted_tasks={len(samples)}"
+            )
             futures = {
-                executor.submit(self._process_sample, sample, agent, max_retries): sample 
-                for sample in dataset
+                executor.submit(self._process_sample, sample, agent, max_retries, error_cb): sample 
+                for sample in samples
             }
             
-            for future in concurrent.futures.as_completed(futures):
+            iterator = concurrent.futures.as_completed(futures)
+            if show_progress:
+                try:
+                    from tqdm import tqdm
+                    import sys
+                    iterator = tqdm(iterator, total=len(futures), file=sys.stdout, desc="Evaluating")
+                except ImportError:
+                    pass
+            
+            completed_count = 0
+            for future in iterator:
                 sample, response, error = future.result()
+                completed_count += 1
                 
                 if error:
+                    print(
+                        "[Sample Failure] "
+                        f"sample_id={sample.id}, error={error}"
+                    )
+                    err_lower = str(error).lower()
+                    if "rate limit" in err_lower or "30 rate limits" in err_lower or "429" in err_lower:
+                        rate_limit_failures += 1
+                    else:
+                        retry_backoff_failures += 1
+                    if "30 rate limits" in err_lower:
+                        rate_limit_sleep_events += 30
+                    if completed_count == 1 and exit_on_first_error:
+                        import sys
+                        print(f"\n[Fatal] First request failed with error: {error}. Exiting to avoid further failures.", file=sys.stderr)
+                        for f in futures:
+                            f.cancel()
+                        sys.exit(1)
+                        
                     execution_failures.append({
                         "sample_id": sample.id,
                         "input_text": sample.input_text,
                         "error": error
                     })
-                    predictions.append("Error")
-                    ground_truth.append(sample.target_output)
-                    per_sample_metrics.append({
+                    err_metric = {
                         "sample_id": sample.id,
                         "input_text": sample.input_text,
                         "accuracy": 0.0,
                         "prediction": "Error",
                         "ground_truth": sample.target_output,
                         "error": error
-                    })
+                    }
+                    per_sample_by_id[str(sample.id)] = err_metric
+                    if partial_cb:
+                        partial_cb(err_metric)
                 else:
                     assert response is not None
-                    predictions.append(response.output)
-                    ground_truth.append(sample.target_output)
                     
                     is_correct = response.output == sample.target_output
                     sample_metric = {
@@ -112,7 +208,22 @@ class ClassificationEvaluator(BaseEvaluator):
                         sample_metric["prediction_confidence"] = response.confidence
                     if response.metadata:
                         sample_metric.update(response.metadata)
-                    per_sample_metrics.append(sample_metric)
+                    per_sample_by_id[str(sample.id)] = sample_metric
+                    if partial_cb:
+                        partial_cb(sample_metric)
+
+        if rate_limit_failures or retry_backoff_failures:
+            print(
+                "[Concurrency Diagnostics] "
+                f"non_rate_limit_failures={retry_backoff_failures}, "
+                f"rate_limit_failures={rate_limit_failures}, "
+                f"estimated_rate_limit_sleep_events={rate_limit_sleep_events}"
+            )
+
+        # Emit ordered per-sample metrics in the same order as the dataset.
+        per_sample_metrics = [per_sample_by_id[str(s.id)] for s in samples]
+        predictions = [m["prediction"] for m in per_sample_metrics]
+        ground_truth = [m["ground_truth"] for m in per_sample_metrics]
         
         # Calculate metrics
         metrics = self._calculate_classification_metrics(ground_truth, predictions)

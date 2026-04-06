@@ -6,6 +6,7 @@ import json
 import datetime
 import platform
 import time
+import requests
 from typing import Any, Dict, List, Optional
 from collections import Counter
 from pathlib import Path
@@ -41,12 +42,27 @@ def _build_confusion_matrix(y_true, y_pred, labels):
 
 
 def _per_class_metrics(y_true, y_pred, labels):
+    tps = {cls: 0 for cls in labels}
+    fps = {cls: 0 for cls in labels}
+    fns = {cls: 0 for cls in labels}
+    support_counts = {cls: 0 for cls in labels}
+    
+    for t, p in zip(y_true, y_pred):
+        if t in labels:
+            support_counts[t] += 1
+            if t == p:
+                tps[t] += 1
+            else:
+                fns[t] += 1
+        if p in labels and t != p:
+            fps[p] += 1
+
     rows = []
     for cls in labels:
-        tp = sum(1 for t, p in zip(y_true, y_pred) if t == cls and p == cls)
-        fp = sum(1 for t, p in zip(y_true, y_pred) if t != cls and p == cls)
-        fn = sum(1 for t, p in zip(y_true, y_pred) if t == cls and p != cls)
-        support = sum(1 for t in y_true if t == cls)
+        tp = tps[cls]
+        fp = fps[cls]
+        fn = fns[cls]
+        support = support_counts[cls]
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
         f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0.0
@@ -131,8 +147,236 @@ def _read_all_cases_csv(csv_path: Path) -> List[Dict[str, Any]]:
             "total_tokens": _to_int(r.get("total_tokens")),
             "error": (r.get("error") or "").strip() or None,
             "text": r.get("text", ""),
+            "from_cache": False,
         })
     return normalized
+
+
+def _read_all_cases_jsonl(jsonl_path: Path) -> List[Dict[str, Any]]:
+    """Load cases from all_cases_partial.jsonl file."""
+    cases = []
+    try:
+        with open(jsonl_path, "r", encoding="utf-8") as f:
+            for line_num, line in enumerate(f, 1):
+                if line.strip():
+                    try:
+                        case = json.loads(line)
+                        case["from_cache"] = True
+                        cases.append(case)
+                    except json.JSONDecodeError as e:
+                        print(f"  Warning: Failed to parse line {line_num} in {jsonl_path}: {e}")
+                        pass
+    except Exception as e:
+        print(f"  Error reading {jsonl_path}: {e}")
+        return []
+    return cases
+
+
+def _read_all_cases_txt(txt_path: Path) -> List[Dict[str, Any]]:
+    """Load cases from all_cases.txt (human-readable format)."""
+    cases = []
+    try:
+        with open(txt_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        # Split by "----" separator
+        blocks = content.split("-" * 40)
+        
+        for block in blocks[1:]:  # Skip header
+            block = block.strip()
+            if not block:
+                continue
+            
+            case_data = {"from_cache": True}
+            lines = block.split("\n")
+            text_start = -1
+            
+            for i, line in enumerate(lines):
+                line = line.strip()
+                if not line:
+                    continue
+                
+                if line.startswith("Sample ID :"):
+                    sample_id = line.replace("Sample ID :", "").strip().split("[")[0].strip()
+                    case_data["sample_id"] = sample_id
+                elif line.startswith("GT"):
+                    case_data["ground_truth"] = line.replace("GT", "").strip().lstrip(":").strip()
+                elif line.startswith("Pred"):
+                    case_data["prediction"] = line.replace("Pred", "").strip().lstrip(":").strip()
+                elif line.startswith("Cache"):
+                    case_data["from_cache"] = "True" in line
+                elif line.startswith("Timing"):
+                    # Parse timing info
+                    timing_str = line.replace("Timing", "").strip().lstrip(":")
+                    try:
+                        if "TTFT=" in timing_str:
+                            ttft_match = timing_str.split("TTFT=")[1].split("s")[0]
+                            case_data["ttft"] = _to_float(ttft_match)
+                        if "Gen=" in timing_str:
+                            gen_match = timing_str.split("Gen=")[1].split("s")[0]
+                            case_data["generation_time"] = _to_float(gen_match)
+                        if "TPS=" in timing_str:
+                            tps_match = timing_str.split("TPS=")[1].split("|")[0]
+                            case_data["tps"] = _to_float(tps_match)
+                        if "Total=" in timing_str:
+                            total_match = timing_str.split("Total=")[1].split("s")[0]
+                            case_data["total_time"] = _to_float(total_match)
+                    except Exception:
+                        pass
+                elif line.startswith("Tokens"):
+                    # Parse token info
+                    tokens_str = line.replace("Tokens", "").strip().lstrip(":")
+                    try:
+                        if "Prompt=" in tokens_str:
+                            prompt_match = tokens_str.split("Prompt=")[1].split("|")[0]
+                            case_data["prompt_tokens"] = _to_int(prompt_match)
+                        if "Completion=" in tokens_str:
+                            completion_match = tokens_str.split("Completion=")[1].split("|")[0]
+                            case_data["completion_tokens"] = _to_int(completion_match)
+                        if "Total=" in tokens_str:
+                            total_match = tokens_str.split("Total=")[1]
+                            case_data["total_tokens"] = _to_int(total_match)
+                    except Exception:
+                        pass
+                elif line.startswith("Confidence"):
+                    conf_str = line.replace("Confidence", "").strip().lstrip(":")
+                    case_data["prediction_confidence"] = _to_float(conf_str)
+                elif line.startswith("ClassDist"):
+                    classdata_str = line.replace("ClassDist", "").strip().lstrip(":")
+                    try:
+                        case_data["class_scores"] = json.loads(classdata_str)
+                    except Exception:
+                        pass
+                elif line.startswith("Error"):
+                    error_str = line.replace("Error", "").strip().lstrip(":")
+                    case_data["error"] = error_str if error_str else None
+                elif line.startswith("Text:"):
+                    text_start = i + 1
+                    break
+            
+            # Extract text content
+            if text_start >= 0:
+                text_lines = []
+                for line in lines[text_start:]:
+                    text_lines.append(line)
+                case_data["text"] = "\n".join(text_lines).strip()
+            else:
+                case_data["text"] = ""
+            
+            # Set defaults for missing fields
+            for key in ["ground_truth", "prediction", "text"]:
+                if key not in case_data:
+                    case_data[key] = ""
+            
+            if "sample_id" in case_data:
+                cases.append(case_data)
+    except Exception as e:
+        print(f"  Error reading {txt_path}: {e}")
+        return []
+    
+    return cases
+
+
+def _load_cached_cases(directory: Path) -> List[Dict[str, Any]]:
+    """Load cached cases from directory, trying multiple formats in priority order.
+    Priority: all_cases_partial.jsonl > all_cases.txt > all_cases.csv
+    """
+    if not directory.exists():
+        return []
+    
+    # Try JSONL first (best for incremental/partial runs)
+    jsonl_path = directory / "all_cases_partial.jsonl"
+    if jsonl_path.exists():
+        cases = _read_all_cases_jsonl(jsonl_path)
+        if cases:
+            print(f"  Loaded {len(cases)} cases from {jsonl_path.name}")
+            return cases
+    
+    # Try TXT format (human-readable backup)
+    txt_path = directory / "all_cases.txt"
+    if txt_path.exists():
+        cases = _read_all_cases_txt(txt_path)
+        if cases:
+            print(f"  Loaded {len(cases)} cases from {txt_path.name}")
+            return cases
+    
+    # Fall back to CSV
+    csv_path = directory / "all_cases.csv"
+    if csv_path.exists():
+        cases = _read_all_cases_csv(csv_path)
+        if cases:
+            print(f"  Loaded {len(cases)} cases from {csv_path.name}")
+            return cases
+    
+    return []
+
+
+def _discover_cache_candidate_dirs(cache_dir: Path) -> List[Path]:
+    """Discover cache directories, including runs that may not have Meta.json yet."""
+    candidates = set()
+
+    for meta_path in cache_dir.rglob("Meta.json"):
+        candidates.add(meta_path.parent)
+
+    for cache_file_name in ("all_cases_partial.jsonl", "all_cases.txt", "all_cases.csv"):
+        for cache_file_path in cache_dir.rglob(cache_file_name):
+            candidates.add(cache_file_path.parent)
+
+    return sorted(candidates, key=lambda p: p.stat().st_mtime, reverse=True)
+
+
+def _infer_model_name_from_cases(cases: List[Dict[str, Any]]) -> Optional[str]:
+    """Infer model name from cached rows when Meta.json is unavailable."""
+    for case in cases:
+        model_name = case.get("model")
+        if isinstance(model_name, str) and model_name.strip():
+            return model_name.strip()
+    return None
+
+
+def _init_error_csv(error_csv_path: Path) -> None:
+    """Create error.csv with a fixed schema if it does not exist yet."""
+    if error_csv_path.exists():
+        return
+
+    fields = [
+        "timestamp",
+        "phase",
+        "sample_id",
+        "error_type",
+        "error_message",
+        "is_rate_limit",
+        "attempt",
+        "rate_limit_attempt",
+        "max_retries",
+    ]
+    with open(error_csv_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fields)
+        writer.writeheader()
+
+
+def _make_error_event_writer(error_csv_path: Path, write_lock):
+    """Return a callback that appends one row per thrown exception."""
+    fields = [
+        "timestamp",
+        "phase",
+        "sample_id",
+        "error_type",
+        "error_message",
+        "is_rate_limit",
+        "attempt",
+        "rate_limit_attempt",
+        "max_retries",
+    ]
+
+    def _write_error_event(event: Dict[str, Any]):
+        row = {k: event.get(k, "") for k in fields}
+        with write_lock:
+            with open(error_csv_path, "a", encoding="utf-8", newline="") as ef:
+                writer = csv.DictWriter(ef, fieldnames=fields)
+                writer.writerow(row)
+
+    return _write_error_event
 
 
 def _build_agent(
@@ -176,6 +420,31 @@ def _build_agent(
     return agent
 
 
+_PRICE_CACHE = None
+
+def _get_model_pricing(model_name: str) -> tuple[float, float]:
+    global _PRICE_CACHE
+    if _PRICE_CACHE is None:
+        try:
+            url = "https://openrouter.ai/api/v1/models"
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                _PRICE_CACHE = {}
+                models = response.json().get("data", [])
+                for m in models:
+                    pid = m.get("id")
+                    pp = float(m.get("pricing", {}).get("prompt", 0))
+                    cp = float(m.get("pricing", {}).get("completion", 0))
+                    _PRICE_CACHE[pid] = (pp, cp)
+            else:
+                _PRICE_CACHE = {}
+        except Exception as e:
+            print(f"Warning: Could not fetch pricing for {model_name} from OpenRouter: {e}")
+            _PRICE_CACHE = {}
+
+    return _PRICE_CACHE.get(model_name, (0.0, 0.0))
+
+
 def _write_reports(
     *,
     eval_dir: Path,
@@ -197,7 +466,17 @@ def _write_reports(
 ):
     y_true_all = [c["ground_truth"] for c in all_cases]
     y_pred_all = [c["prediction"] for c in all_cases]
-    failed_cases = [c for c in all_cases if int(c.get("correct", 0)) < 1]
+    incorrect_cases = [c for c in all_cases if int(c.get("correct", 0)) < 1]
+
+    # error report: {"{error_msg + content}": times}
+    error_counts: Dict[str, int] = {}
+    for c in all_cases:
+        err = str(c.get("error") or "").strip()
+        if not err:
+            continue
+        content = str(c.get("text") or "")
+        key = f"{err}\n{content}"
+        error_counts[key] = error_counts.get(key, 0) + 1
 
     LABELS = ["Ideation", "Behavior", "Indicator", "Attempt"]
     observed_labels = sorted(set(y_true_all) | set(y_pred_all))
@@ -244,7 +523,12 @@ def _write_reports(
         "avg_prompt_tokens": _mean(prompt_toks),
         "avg_completion_tokens": _mean(completion_toks),
     }
-    cost_usd = (metrics_dict["total_prompt_tokens"] * 2.0 / 1_000_000) + (metrics_dict["total_completion_tokens"] * 8.0 / 1_000_000)
+
+    # Fetch dynamic pricing based on the used model name
+    model_name_for_pricing = getattr(agent, 'model_name', 'N/A')
+    prompt_price_per_token, completion_price_per_token = _get_model_pricing(model_name_for_pricing)
+    
+    cost_usd = (metrics_dict["total_prompt_tokens"] * prompt_price_per_token) + (metrics_dict["total_completion_tokens"] * completion_price_per_token)
     metrics_dict["total_cost_usd"] = cost_usd
 
     result_md_path = eval_dir / "result.md"
@@ -261,7 +545,14 @@ def _write_reports(
         if host_model:
             f.write(f"**Host Model:** {host_model}\n")
         f.write(f"**Max Host Iterations:** {max_host_iterations}\n")
-        f.write(f"**Workers:** {max_workers} | **Retries:** {max_retries} | **Seed:** {seed}\n\n")
+        f.write(f"**Workers:** {max_workers} | **Retries:** {max_retries} | **Seed:** {seed}\n")
+        
+        cache_hits = sum(1 for c in all_cases if c.get("from_cache"))
+        total_cases = len(all_cases)
+        if total_cases > 0:
+            cache_hit_rate = (cache_hits / total_cases) * 100
+            f.write(f"**Cache Hit Rate:** {cache_hit_rate:.1f}% ({cache_hits}/{total_cases})\n")
+        f.write("\n")
 
         if retry_summary:
             f.write("## Retry Update\n\n")
@@ -292,6 +583,13 @@ def _write_reports(
                 f.write(f"- **{key}**: {val:.6f}\n" if isinstance(val, float) else f"- **{key}**: {val}\n")
         f.write("\n")
 
+        f.write("## Error Report\n\n")
+        f.write(f"- **error_cases**: {sum(error_counts.values())}\n")
+        f.write(f"- **unique_error_keys**: {len(error_counts)}\n\n")
+        f.write("```json\n")
+        f.write(json.dumps(error_counts, ensure_ascii=False, indent=2))
+        f.write("\n```\n\n")
+
         f.write("## Per-Class Metrics\n\n")
         f.write("| Class | Precision | Recall | F1 | Support |\n|---|---|---|---|---|\n")
         for row in per_class:
@@ -303,20 +601,6 @@ def _write_reports(
         _write_confusion_md(f, confusion, all_labels)
         f.write("\n")
 
-        f.write("## Per-Sample Results\n\n")
-        f.write("| Sample ID | Ground Truth | Prediction | Confidence | Correct | TTFT (s) | TPS | Tokens |\n")
-        f.write("|---|---|---|---|---|---|---|---|\n")
-        for c in all_cases:
-            ttft_s = f"{c['ttft']:.3f}" if c['ttft'] is not None else "—"
-            tps_s = f"{c['tps']:.1f}" if c['tps'] is not None else "—"
-            tok_s = str(c['total_tokens']) if c['total_tokens'] is not None else "—"
-            conf_s = f"{c['prediction_confidence']:.3f}" if c.get("prediction_confidence") is not None else "—"
-            ok = "✓" if int(c.get("correct", 0)) else "✗"
-            f.write(
-                f"| {c['sample_id']} | {c['ground_truth']} | {c['prediction']} | "
-                f"{conf_s} | {ok} | {ttft_s} | {tps_s} | {tok_s} |\n"
-            )
-
     all_cases_path = eval_dir / "all_cases.txt"
     with open(all_cases_path, "w", encoding="utf-8") as f:
         f.write(f"All Cases Log — Agent: {result.agent_name} | Task: {result.task_name}\n")
@@ -326,6 +610,8 @@ def _write_reports(
             f.write(f"Sample ID : {case['sample_id']} [{status}]\n")
             f.write(f"GT        : {case['ground_truth']}\n")
             f.write(f"Pred      : {case['prediction']}\n")
+            if case.get('from_cache'):
+                f.write("Cache     : True\n")
             if case['ttft'] is not None:
                 f.write(f"Timing    : TTFT={case['ttft']:.4f}s | Gen={case['generation_time']:.4f}s | TPS={case['tps']:.2f} | Total={case['total_time']:.4f}s\n")
             if case['prompt_tokens'] is not None:
@@ -352,12 +638,12 @@ def _write_reports(
         for case in all_cases:
             writer.writerow({k: case.get(k, "") for k in csv_fields})
 
-    failed_log_path = eval_dir / "failed_cases.txt"
-    if failed_cases:
-        with open(failed_log_path, "w", encoding="utf-8") as f:
-            f.write(f"Failed Cases Log — Agent: {result.agent_name} | Task: {result.task_name}\n")
+    incorrect_log_path = eval_dir / "incorrect_cases.txt"
+    if incorrect_cases:
+        with open(incorrect_log_path, "w", encoding="utf-8") as f:
+            f.write(f"Incorrect Cases Log — Agent: {result.agent_name} | Task: {result.task_name}\n")
             f.write("=" * 80 + "\n\n")
-            for case in failed_cases:
+            for case in incorrect_cases:
                 f.write(f"Sample ID : {case['sample_id']}\n")
                 f.write(f"GT        : {case['ground_truth']}\n")
                 f.write(f"Pred      : {case['prediction']}\n")
@@ -365,8 +651,8 @@ def _write_reports(
                     f.write(f"Error     : {case['error']}\n")
                 f.write(f"Text:\n{case['text']}\n")
                 f.write("-" * 40 + "\n\n")
-    elif failed_log_path.exists():
-        failed_log_path.unlink()
+    elif incorrect_log_path.exists():
+        incorrect_log_path.unlink()
 
     meta_json_path = eval_dir / "Meta.json"
     old_meta = retry_meta or {}
@@ -401,10 +687,11 @@ def _write_reports(
             "source": str(data_path),
             "text_field": "text",
             "label_field": "sentiment",
-            "id_field": "users",
+            "id_field": "ID",
             "label_distribution": dict(label_dist),
         },
         "aggregate_metrics": metrics_dict,
+        "error": error_counts,
         "per_class_metrics": per_class,
         "confusion_matrix": confusion,
         "total_cost_usd_estimate": cost_usd,
@@ -416,10 +703,11 @@ def _write_reports(
     print("  ✓ result.md")
     print("  ✓ all_cases.txt")
     print("  ✓ all_cases.csv")
-    if failed_cases:
-        print(f"  ✓ failed_cases.txt ({len(failed_cases)} cases)")
+    print("  ✓ error.csv")
+    if incorrect_cases:
+        print(f"  ✓ incorrect_cases.txt ({len(incorrect_cases)} cases)")
     else:
-        print("  ✓ No failed cases.")
+        print("  ✓ No incorrect cases.")
     print("  ✓ Meta.json")
 
     print("\n" + "=" * 60)
@@ -431,7 +719,7 @@ def _write_reports(
     if host_model:
         print(f"Host:     {host_model}")
     print(f"HostMax:  {max_host_iterations}")
-    print(f"Samples:  {len(all_cases)}  |  Failed: {len(failed_cases)}")
+    print(f"Samples:  {len(all_cases)}  |  Incorrect: {len(incorrect_cases)}")
     print(f"Accuracy: {metrics_dict.get('accuracy', 0):.4f}  |  F1 (macro): {metrics_dict.get('f1_score', 0):.4f}")
     print(f"Duration: {result.duration:.2f}s  |  Est. Cost: ${cost_usd:.6f}")
     print(f"Output:   {eval_dir}")
@@ -447,31 +735,17 @@ def _run_retry_failed(meta_path: Path):
         meta = json.load(f)
 
     run_dir = meta_path.parent
-    all_cases_csv = run_dir / "all_cases.csv"
-    if not all_cases_csv.exists():
-        print(f"all_cases.csv not found: {all_cases_csv}")
+    
+    # Try to load cases using unified loader (tries JSONL > TXT > CSV)
+    all_cases = _load_cached_cases(run_dir)
+    
+    if not all_cases:
+        print(f"No case data found in {run_dir}")
         return
 
     run_cfg = meta.get("run_config", {})
     model_cfg = meta.get("model_config", {})
     ds_cfg = meta.get("dataset_config", {})
-
-    n_samples = int(run_cfg.get("n_samples", 50))
-    max_workers = int(run_cfg.get("max_workers", 5))
-    max_retries = int(run_cfg.get("max_retries", 3))
-    seed = int(run_cfg.get("seed", 42))
-    agent_mode = str(model_cfg.get("agent_mode", "single-class"))
-    base_class = str(model_cfg.get("base_class", "Indicator"))
-    host_model = model_cfg.get("host_model")
-    role_models_json = model_cfg.get("role_models_json")
-    max_host_iterations = int(model_cfg.get("max_host_iterations", 10))
-
-    data_source = Path(ds_cfg.get("source", current_file.parent / "data" / "rsd_15k.csv"))
-
-    print(f"Retry mode enabled. Using config from: {meta_path}")
-    print(f"Dataset source: {data_source}")
-
-    all_cases = _read_all_cases_csv(all_cases_csv)
     retry_indices = [
         i for i, row in enumerate(all_cases)
         if str(row.get("prediction", "")).strip().lower() == "error" or bool(row.get("error"))
@@ -510,6 +784,12 @@ def _run_retry_failed(meta_path: Path):
     )
     evaluator = ClassificationEvaluator()
 
+    import threading
+    write_lock = threading.Lock()
+    error_csv_path = run_dir / "error.csv"
+    _init_error_csv(error_csv_path)
+    retry_error_cb = _make_error_event_writer(error_csv_path, write_lock)
+
     start_time = time.time()
     result = evaluator.evaluate(
         agent=agent,
@@ -520,6 +800,9 @@ def _run_retry_failed(meta_path: Path):
         max_retries=max_retries,
         seed=seed,
         retry_failed=True,
+        show_progress=True,
+        exit_on_first_error=True,
+        error_cb=lambda event: retry_error_cb({**event, "phase": "retry"}),
     )
     retry_duration = time.time() - start_time
 
@@ -589,28 +872,13 @@ def run_main_eval(
     host_model: Optional[str] = None,
     role_models_json: Optional[str] = None,
     max_host_iterations: int = 10,
+    data_path: Optional[str] = None,
+    resume: bool = False,
+    out_dir: Optional[str] = None,
+    cache: Optional[str] = None,
 ):
-    print(f"Running RSD_15K evaluation — sample limit: {n_samples}")
-
-    base_dir = current_file.parent
-    data_path = base_dir / "data" / "rsd_15k.csv"
-
-    if not data_path.exists():
-        print(f"Dataset file not found at: {data_path}")
-        return
-
-    print(f"Loading dataset from: {data_path}")
-    dataset = CSVDataset(name="rsd_15k_sample")
-    dataset.load_data(
-        source=data_path,
-        text_field="text",
-        label_field="sentiment",
-        id_field="users",
-    )
-
-    print(f"Total samples loaded: {len(dataset._samples)}")
-    dataset._samples = dataset._samples[:n_samples]
-    print(f"Samples limited to: {len(dataset._samples)}")
+    print("=" * 80)
+    print("Running RSD_15K evaluation — sample limit: " + str(n_samples))
 
     agent = _build_agent(
         agent_mode=agent_mode,
@@ -619,41 +887,252 @@ def run_main_eval(
         role_models_json=role_models_json,
         max_host_iterations=max_host_iterations,
     )
+
+    resolved_data_path = Path(data_path) if data_path else (current_file.parent / "data" / "rsd_15k.csv")
+
+    if not resolved_data_path.exists():
+        print(f"Dataset file not found at: {resolved_data_path}")
+        print("Provide --data-path to point at your local rsd_15k.csv.")
+        return
+
+    print(f"Loading dataset from: {resolved_data_path}")
+    dataset = CSVDataset(name="rsd_15k_sample")
+    dataset.load_data(
+        source=resolved_data_path,
+        text_field="text",
+        label_field="sentiment",
+        id_field="ID",
+    )
+
+    print(f"Total samples loaded: {len(dataset._samples)}")
+    total_loaded = len(dataset._samples)
+    if n_samples < 0:
+        raise ValueError("--n-samples must be >= 0")
+
+    # Deterministic sampling: take rows [0..n-1] in file order.
+    dataset._samples = dataset._samples[:n_samples]
+    dataset.assert_unique_ids(
+        expected_count=len(dataset._samples),
+        context=f"run_main_eval.after_sampling(head={n_samples}, loaded={total_loaded})",
+    )
+
+    completed_cases = []
+    eval_dir = None
+
+    if cache:
+        cache_dir = Path(cache)
+        if cache_dir.exists():
+            print(f"Checking cache in {cache_dir}...")
+            current_ids = {str(s.id) for s in dataset._samples}
+            model_name = getattr(agent, "model_name", "")
+            model_suffix = model_name.split("/")[-1].lower() if model_name else ""
+            candidates = _discover_cache_candidate_dirs(cache_dir)
+            overlapful_sources = 0
+
+            for d in candidates:
+                meta_path = d / "Meta.json"
+                meta_matched = False
+                try:
+                    if meta_path.exists():
+                        with open(meta_path, "r", encoding="utf-8") as f:
+                            meta = json.load(f)
+                        m_cfg = meta.get("model_config", {})
+                        if (
+                            m_cfg.get("model_name") == model_name
+                            and m_cfg.get("agent_mode") == agent_mode
+                            and m_cfg.get("base_class") == base_class
+                        ):
+                            meta_matched = True
+
+                    loaded_cases = _load_cached_cases(d)
+                    if not loaded_cases:
+                        continue
+
+                    # No meta or non-matching meta: use conservative fallback matching.
+                    if not meta_matched:
+                        inferred_model = _infer_model_name_from_cases(loaded_cases)
+                        if inferred_model:
+                            if inferred_model != model_name:
+                                continue
+                        elif model_suffix and model_suffix not in d.name.lower():
+                            continue
+
+                    overlap_cases = [c for c in loaded_cases if str(c.get("sample_id")) in current_ids]
+                    overlap = len(overlap_cases)
+                    if overlap == 0:
+                        continue
+
+                    overlapful_sources += 1
+                    completed_cases.extend(overlap_cases)
+                    source_tag = "meta" if meta_matched else "fallback"
+                    print(f"  Accepted {overlap} overlapping cases from {d.name} ({source_tag} match)")
+                except Exception as e:
+                    print(f"  Error loading cache from {d}: {e}")
+
+            if overlapful_sources == 0:
+                print("  No overlapping cache entries matched current dataset/model configuration.")
+                        
+            if completed_cases:
+                completed_cases_dict = {str(c["sample_id"]): c for c in completed_cases}
+                completed_cases = list(completed_cases_dict.values())
+                completed_sids = set(completed_cases_dict.keys())
+                
+                overlap = len(current_ids & completed_sids)
+                
+                # Filter completed cases to ONLY include those requested in this run
+                completed_cases = [c for c in completed_cases if str(c["sample_id"]) in current_ids]
+                
+                if overlap > 0:
+                    dataset._samples = [s for s in dataset._samples if str(s.id) not in completed_sids]
+                    dataset.assert_unique_ids(
+                        expected_count=len(dataset._samples),
+                        context="run_main_eval.after_cache_filter",
+                    )
+                    print(f"Loaded {overlap} cached cases overlapping with current run. {len(dataset._samples)} remaining.")
+
+    if resume:
+        runs_root = current_file.parent / ".EvalRing"
+        if runs_root.exists():
+            run_dirs = sorted([d for d in runs_root.iterdir() if d.is_dir() and d.name.startswith("run_")], key=lambda p: p.stat().st_mtime, reverse=True)
+            for d in run_dirs:
+                meta_path = d / "Meta.json"
+                if meta_path.exists():
+                    try:
+                        with open(meta_path, "r", encoding="utf-8") as f:
+                            meta = json.load(f)
+                            if meta.get("model_config", {}).get("model_name") == getattr(agent, "model_name", ""):
+                                eval_dir = d
+                                break
+                    except Exception:
+                        pass
+        
+        if eval_dir:
+            # Load cached cases using unified loader (tries JSONL > TXT > CSV)
+            loaded_cases = _load_cached_cases(eval_dir)
+            if loaded_cases:
+                completed_cases.extend(loaded_cases)
+                completed_sids = {c["sample_id"] for c in completed_cases}
+
+                # Guard against older runs created with an incompatible id_field (e.g., `users`).
+                current_ids = {s.id for s in dataset._samples}
+                overlap = len(current_ids & completed_sids)
+                if completed_sids and overlap == 0:
+                    print(
+                        "WARNING: Found partial results, but none of their sample_id values match the current dataset IDs. "
+                        "This usually means the previous run used a different id_field (e.g., `users`). "
+                        "Starting a fresh run instead of resuming to avoid duplicate execution/incorrect merges."
+                    )
+                    completed_cases = []
+                    eval_dir = None
+                else:
+                    dataset._samples = [s for s in dataset._samples if s.id not in completed_sids]
+                    dataset.assert_unique_ids(
+                        expected_count=len(dataset._samples),
+                        context="run_main_eval.after_resume_filter",
+                    )
+                    print(f"Resuming from {eval_dir}. Loaded {len(completed_cases)} completed cases. {len(dataset._samples)} remaining.")
+            else:
+                print(f"No partial data found in {eval_dir}. Starting fresh.")
+                eval_dir = None
+        else:
+            print("No previous run found for this model to resume. Starting fresh.")
+
+    if not eval_dir:
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        model_suffix = getattr(agent, 'model_name', 'unknown').split('/')[-1]
+        if out_dir:
+            eval_dir = Path(out_dir) / f"run_{timestamp}_{model_suffix}"
+            eval_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            eval_dir = current_file.parent / ".EvalRing" / f"run_{timestamp}_{model_suffix}"
+            eval_dir.mkdir(parents=True, exist_ok=True)
+    
+    partial_path = eval_dir / "all_cases_partial.jsonl"
+
+    import threading
+    write_lock = threading.Lock()
+    f_out = open(partial_path, "a", encoding="utf-8")
+    error_csv_path = eval_dir / "error.csv"
+    _init_error_csv(error_csv_path)
+    error_event_cb = _make_error_event_writer(error_csv_path, write_lock)
+
+    def write_partial(sample_metric):
+        with write_lock:
+            f_out.write(json.dumps(sample_metric, ensure_ascii=False) + "\n")
+            f_out.flush()
+
+    print(f"Samples limited to: {len(dataset._samples)}")
+
     evaluator = ClassificationEvaluator()
 
-    print(f"\nStarting evaluation — workers={max_workers}, retries={max_retries}, seed={seed} ...")
-    result = evaluator.evaluate(
-        agent=agent,
-        dataset=dataset,
-        task_name="suicide_risk_classification",
-        version="v1.0",
-        max_workers=max_workers,
-        max_retries=max_retries,
-        seed=seed,
-        n_samples=n_samples,
-        agent_mode=agent_mode,
-        base_class=base_class,
-    )
+    if len(dataset._samples) > 0:
+        print(f"\nStarting evaluation — workers={max_workers}, retries={max_retries}, seed={seed} ...")
+        result = evaluator.evaluate(
+            agent=agent,
+            dataset=dataset,
+            task_name="suicide_risk_classification",
+            version="v1.0",
+            max_workers=max_workers,
+            max_retries=max_retries,
+            seed=seed,
+            n_samples=len(dataset._samples),
+            agent_mode=agent_mode,
+            base_class=base_class,
+            show_progress=True,
+            exit_on_first_error=True,
+            partial_cb=write_partial,
+            error_cb=lambda event: error_event_cb({**event, "phase": "main"}),
+        )
+    else:
+        print("\nAll samples cached. Evaluation completely bypassed.")
+        from EvalRing.evaluator.base import EvaluationResult, EvaluationMetrics
+        result = EvaluationResult(
+            agent_name=getattr(agent, "name", "unknown"),
+            dataset_name=dataset.name,
+            metrics=EvaluationMetrics(metrics={}, per_sample_metrics=[], metadata={}),
+            duration=0.0,
+            timestamp=datetime.datetime.now(),
+            task_name="suicide_risk_classification",
+            version="v1.0"
+        )
 
     print("\nEvaluation complete. Collecting results...")
     all_cases = []
 
-    per_sample_metrics = getattr(result.metrics, "per_sample_metrics", [])
+    merged_metrics = completed_cases + getattr(result.metrics, "per_sample_metrics", [])
 
-    for sample_res in per_sample_metrics:
+    # Ensure deterministic ordering for analysis/debugging (completion order can be arbitrary).
+    def _sid_sort_key(m: Dict[str, Any]):
+        sid = str(m.get("sample_id", ""))
+        try:
+            return (0, int(sid))
+        except Exception:
+            return (1, sid)
+
+    merged_metrics.sort(key=_sid_sort_key)
+
+    result.metrics.per_sample_metrics = merged_metrics
+
+    for sample_res in merged_metrics:
         sid = sample_res["sample_id"]
         pred = sample_res["prediction"]
         gt = sample_res["ground_truth"]
-        acc = sample_res["accuracy"]
+        
+        # Handle both "accuracy" (from evaluator) and "correct" (from cache)
+        acc = sample_res.get("accuracy")
+        if acc is None:
+            correct_val = sample_res.get("correct", 0)
+            acc = float(correct_val)
 
         status_str = "PASS" if float(acc) == 1.0 else "FAIL"
-        print(f"  {sid}: GT={gt} | Pred={pred} [{status_str}]")
+        
         if pred == "Error":
+            print(f"  {sid}: GT={gt} | Pred={pred} [{status_str}]")
             print(f"    Error: {sample_res.get('error', 'unknown')}")
 
         case_data = {
             "sample_id": sid,
-            "text": sample_res.get("input_text", "Text not found"),
+            "text": sample_res.get("input_text", sample_res.get("text", "Text not found")),
             "prediction": pred,
             "ground_truth": gt,
             "correct": 1 if float(acc) == 1.0 else 0,
@@ -667,12 +1146,10 @@ def run_main_eval(
             "prediction_confidence": sample_res.get("prediction_confidence", None),
             "class_scores": sample_res.get("class_scores", None),
             "error": sample_res.get("error", None),
+            "from_cache": sample_res.get("from_cache", False),
         }
         all_cases.append(case_data)
 
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    eval_dir = current_file.parent / ".EvalRing" / f"run_{timestamp}"
-    eval_dir.mkdir(parents=True, exist_ok=True)
     print(f"\nSaving reports to: {eval_dir}")
 
     _write_reports(
@@ -680,7 +1157,7 @@ def run_main_eval(
         result=result,
         agent=agent,
         all_cases=all_cases,
-        data_path=data_path,
+        data_path=resolved_data_path,
         n_samples=n_samples,
         max_workers=max_workers,
         max_retries=max_retries,
@@ -692,9 +1169,17 @@ def run_main_eval(
         max_host_iterations=max_host_iterations,
     )
 
+    f_out.close()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate suicide risk detection on RSD_15K")
+    parser.add_argument(
+        "--data-path",
+        type=str,
+        default=None,
+        help="Optional path to rsd_15k.csv if not located at the default ./data/rsd_15k.csv.",
+    )
     parser.add_argument("--n-samples", type=int, default=50, help="Number of samples to evaluate (default: 50)")
     parser.add_argument("--max-workers", type=int, default=5, help="Parallel workers (default: 5)")
     parser.add_argument("--max-retries", type=int, default=3, help="Retries per sample on failure (default: 3)")
@@ -703,7 +1188,7 @@ if __name__ == "__main__":
         "--agent-mode",
         type=str,
         default="single-class",
-        choices=["single-class", "multi-class-chance", "base-vs-rest-binary", "multi-agent-host"],
+        choices=["single-class", "multi-class-chance", "base-vs-rest-binary", "multi-agent-host", "per-class-score"],
         help="Agent output mode: single label or structured class probabilities.",
     )
     parser.add_argument(
@@ -733,6 +1218,9 @@ if __name__ == "__main__":
     )
     parser.add_argument("--retry-failed", action="store_true", help="Retry only Error cases from an existing run and update that run in place")
     parser.add_argument("--meta-path", type=str, default=None, help="Path to existing Meta.json for retry mode (defaults to latest run)")
+    parser.add_argument("--out-dir", type=str, default=None, help="Output directory to store run directory")
+    parser.add_argument("--continue", dest="resume", action="store_true", help="Resume partial runs from latest model folder")
+    parser.add_argument("--cache", type=str, default=None, help="Directory to load cache from previous runs of the same config")
     args = parser.parse_args()
 
     if args.retry_failed:
@@ -743,6 +1231,7 @@ if __name__ == "__main__":
         _run_retry_failed(chosen_meta)
     else:
         run_main_eval(
+            data_path=args.data_path,
             n_samples=args.n_samples,
             max_workers=args.max_workers,
             max_retries=args.max_retries,
@@ -752,4 +1241,7 @@ if __name__ == "__main__":
             host_model=args.host_model,
             role_models_json=args.role_models_json,
             max_host_iterations=args.max_host_iterations,
+            resume=args.resume,
+            out_dir=args.out_dir,
+            cache=args.cache,
         )

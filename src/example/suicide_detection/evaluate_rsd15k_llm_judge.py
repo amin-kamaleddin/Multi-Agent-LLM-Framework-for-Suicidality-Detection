@@ -79,9 +79,10 @@ def run_llm_judge_eval():
         str(data_path),
         text_field="text",
         label_field="sentiment",
-        id_field="users",
+        id_field="ID",
     )
     dataset._samples = dataset._samples[:NUM_SAMPLES]
+    dataset.assert_unique_ids(expected_count=len(dataset._samples), context=f"llm_judge_eval.head({NUM_SAMPLES})")
     print(f"Dataset loaded: {len(dataset)} samples")
     
     # -- Agent --

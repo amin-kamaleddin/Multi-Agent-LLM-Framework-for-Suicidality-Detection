@@ -171,6 +171,10 @@ class OpenAIAgent(BaseAgent):
         self.base_url = base_url or os.environ.get("OPENAI_BASE_URL") or (
             "https://openrouter.ai/api/v1" if os.environ.get("OPEN_ROUTER_KEY") else None
         )
+        # If the underlying HTTP request hangs (provider/network), streaming can block forever.
+        # Use a bounded timeout so the evaluator can retry/record the failure and continue.
+        # Env var is intentionally generic so it works for both OpenAI and OpenRouter.
+        self.request_timeout_s = float(os.environ.get("OPENAI_REQUEST_TIMEOUT_S", "120"))
         self.system_prompt = system_prompt
         self.temperature = temperature
         self.max_completion_tokens = max_completion_tokens
@@ -182,16 +186,24 @@ class OpenAIAgent(BaseAgent):
         """Initialize the OpenAI client."""
         try:
             from openai import OpenAI
-        except ImportError:
+            import httpx
+        except ImportError as e:
             raise ImportError(
-                "The 'openai' package is required.  Install: pip install openai"
+                f"Required packages missing: {e}. Install: pip install openai httpx"
             )
         if not self.api_key:
             raise ValueError(
                 "API key not found. Set OPEN_ROUTER_KEY or OPENAI_API_KEY, "
                 "or pass api_key to the constructor."
             )
-        client_kwargs = {"api_key": self.api_key}
+        client_kwargs = {
+            "api_key": self.api_key, 
+            "timeout": self.request_timeout_s,
+            "http_client": httpx.Client(
+                limits=httpx.Limits(max_connections=2000, max_keepalive_connections=1000),
+                timeout=httpx.Timeout(self.request_timeout_s)
+            )
+        }
         if self.base_url:
             client_kwargs["base_url"] = self.base_url
         self.client = OpenAI(**client_kwargs)
@@ -231,6 +243,7 @@ class OpenAIAgent(BaseAgent):
                 max_completion_tokens=self.max_completion_tokens,
                 stream=True,
                 stream_options={"include_usage": True},
+                timeout=self.request_timeout_s,
             )
 
             first_token_time = None

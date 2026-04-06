@@ -70,7 +70,7 @@ Command:
 
 ## 3. Prediction Modes
 
-The suicide detection runner supports three modes via `--agent-mode`.
+The suicide detection runner supports multiple modes via `--agent-mode`.
 
 ### 3.1 `single-class`
 
@@ -95,6 +95,17 @@ The suicide detection runner supports three modes via `--agent-mode`.
 - Pairwise probabilities are aggregated into one 4-class distribution by core utility logic.
 - Evaluator resolves top class automatically for standard classification metrics.
 
+### 3.4 `per-class-score`
+
+- Model returns independent scores from 1 to 10 for each of the four classes based on a rubric.
+- Example:
+
+```json
+{"ideation": 8, "behavior": 2, "indicator": 1, "attempt": 1}
+```
+
+- Evaluator resolves the top class automatically by picking the highest-scored class.
+
 ---
 
 ## 4. Standard Evaluation Usage
@@ -111,10 +122,38 @@ From the EvalRing root:
 - `--max-workers`: number of parallel worker threads
 - `--max-retries`: retries per sample inside evaluator execution
 - `--seed`: recorded in metadata for reproducibility
-- `--agent-mode`: `single-class`, `multi-class-chance`, or `base-vs-rest-binary`
+- `--agent-mode`: `single-class`, `multi-class-chance`, `base-vs-rest-binary`, `multi-agent-host`, or `per-class-score`
 - `--base-class`: used by `base-vs-rest-binary`; one of `Indicator`, `Ideation`, `Behavior`, `Attempt`
 - `--retry-failed`: rerun only error cases from an existing run
 - `--meta-path`: specific `Meta.json` to use with `--retry-failed`
+
+---
+
+## 4.1 Sample IDs (CRITICAL)
+
+EvalRing assumes every dataset row maps to exactly one evaluation request.
+
+- **Use `ID` (per-row question/message ID) as the dataset `id_field`.**
+- **Do NOT use `users` as `id_field`.** `users` is an author identifier and is not unique.
+
+Why this matters:
+
+- Resume logic and report merging key off `sample_id`.
+- Non-unique IDs can cause incorrect resume/merge behavior (e.g., skipping remaining rows or overwriting/merging unrelated rows).
+
+RSD_15K in this repo is maintained with an explicit leading `ID` column:
+
+- [src/example/suicide_detection/data/rsd_15k.csv](../src/example/suicide_detection/data/rsd_15k.csv)
+
+---
+
+## 4.2 Sampling Policy (Deterministic)
+
+When `--n-samples N` is set, the runners take the first `N` rows in file order (equivalent to `head(N)`):
+
+- Sample IDs should be `0..N-1` for RSD_15K
+- After sampling, the runner verifies there are no duplicate sample IDs (set size must equal `N`)
+- Even with parallel workers, per-sample results are emitted in deterministic order (sorted by `sample_id`) so runs do not *look* randomly sampled.
 
 ### Examples
 
@@ -259,46 +298,41 @@ In the original run directory:
 
 ## 7. Sequential Multi-Model Suite Usage
 
-Runner file:
+Runner utility:
 
 - [src/example/suicide_detection/run_model_suite.py](../src/example/suicide_detection/run_model_suite.py)
 
-### Programmatic call
+### CLI Usage
 
-```python
-from example.suicide_detection.run_model_suite import run_suite
-
-run_suite(
-    n_samples=100,
-    max_workers=10,
-    seed=42,
-    agent_mode="base-vs-rest-binary",
-    base_class="Indicator",
-)
+```powershell
+.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/run_model_suite.py --n-samples 100 --max-workers 10
 ```
 
-### Stop conditions
+### Automatic Visualizations
 
-The suite stops before running the next model if the current model has any of the following:
-
-- process exit failure
-- missing run directory
-- `execution_failures` recorded in `Meta.json`
-- per-sample prediction errors in `all_cases.csv`
-
-### Suite report
-
-If all models succeed, the suite writes a JSON summary under:
-
-- [src/example/suicide_detection/.EvalRing](../src/example/suicide_detection/.EvalRing)
-
-with file name pattern:
-
-- `suite_report_YYYYMMDD_HHMMSS.json`
+If the suite completes, the underlying `EvalRing/utils/` runner automatically delegates the generated `suite_report_*.json` into the visualization utility which produces comparison graphs and a composite Markdown presentation inside a bounded `visuals/` directory.
 
 ---
 
-## 8. Reusable Core Behavior for Future Tasks
+## 8. LLM Judge Evaluation
+
+Runner file:
+
+- [src/example/suicide_detection/evaluate_rsd15k_llm_judge.py](../src/example/suicide_detection/evaluate_rsd15k_llm_judge.py)
+
+### Usage
+
+Use the LLM-as-a-Judge API to score another language model's reasoning and classification alignment against the ground truth. This mode requires configuring rubrics (like "reasoning_quality", "classification_correctness", etc.) to dictate how a master LLM judge should grade responses.
+
+Run the judge evaluator:
+
+```powershell
+.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_llm_judge.py
+```
+
+---
+
+## 9. Reusable Core Behavior for Future Tasks
 
 Core module:
 
@@ -318,7 +352,7 @@ Implication for future domains:
 
 ---
 
-## 9. Suggested Commands
+## 10. Suggested Commands
 
 Fast sanity run:
 

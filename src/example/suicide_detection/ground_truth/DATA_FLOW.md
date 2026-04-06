@@ -75,9 +75,15 @@ graph TD
 While the original CounselBench focuses on response generation quality, it lacks explicit risk classification labels (e.g., Suicide Ideation vs. Behavior). To address this, we have integrated the **RSD_15K** dataset.
 
 - **Source**: [RSD_15K (Reddit Suicide Detection)](https://huggingface.co/datasets/X-LANCE/RSD_15K)
-- **Location**: ground_truth/data/rsd_15k.csv`r
-- **Structure**: 
-    - 	ext: User post content.
-    - label: Risk classification (Ideation, Behavior, Indicator, Attempt).
-    - sentiment: Sentiment analysis tag.
+- **Location**: `src/example/suicide_detection/data/rsd_15k.csv`
+- **Structure**:
+    - `ID`: Per-row question/message ID (0-based index). **Unique.**
+    - `users`: Author identifier. **Not unique** (a user can post multiple times).
+    - `text`: User post content.
+    - `sentiment`: Risk classification label (Ideation, Behavior, Indicator, Attempt).
+    - `time`: Unix timestamp.
 - **Purpose**: Provides a labeled ground truth for training/evaluating risk detection models, complementing the generation-focused CounselChat dataset.
+
+### Important implementation note
+
+EvalRing runners must use `ID` as the `id_field` (not `users`). This prevents duplicated/ambiguous `sample_id` values and makes resume/merge/retry logic correct.

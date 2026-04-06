@@ -66,6 +66,38 @@ class BaseDataset(ABC):
             True if data is valid, False otherwise
         """
         pass
+
+    def assert_unique_ids(self, *, expected_count: int | None = None, context: str = "dataset") -> None:
+        """Raise if sample IDs are not unique.
+
+        Unique per-sample IDs are required for:
+        - resuming partial runs
+        - retrying failures
+        - merging per-sample metrics
+        """
+        ids = [str(s.id) for s in self._samples]
+        unique_ids = set(ids)
+
+        if expected_count is None:
+            expected_count = len(ids)
+
+        if len(ids) != expected_count:
+            raise ValueError(
+                f"[{context}] Expected {expected_count} samples, but found {len(ids)}."
+            )
+
+        if len(unique_ids) != len(ids):
+            # Provide a small, actionable duplicate preview.
+            from collections import Counter
+
+            counts = Counter(ids)
+            dupes = [k for k, v in counts.items() if v > 1]
+            preview = dupes[:10]
+            raise ValueError(
+                f"[{context}] Duplicate sample IDs detected: unique={len(unique_ids)} total={len(ids)} "
+                f"(first {len(preview)} duplicates: {preview}). "
+                "Fix by using a per-row question/message ID (e.g., an explicit 'ID' column or row index), not a user ID."
+            )
     
     def add_sample(self, sample: DataSample) -> None:
         """Add a single sample to the dataset."""

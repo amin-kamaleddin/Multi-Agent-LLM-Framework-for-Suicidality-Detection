@@ -126,6 +126,12 @@ class BaseEvaluator(ABC):
         
         if len(dataset) == 0:
             raise ValueError("Dataset cannot be empty")
+
+        # Validate data integrity and enforce unique per-sample IDs.
+        if hasattr(dataset, "validate_data") and not dataset.validate_data():
+            raise ValueError("Dataset validation failed")
+        if hasattr(dataset, "assert_unique_ids"):
+            dataset.assert_unique_ids(context="evaluator.validate_inputs")
         
         return True
     

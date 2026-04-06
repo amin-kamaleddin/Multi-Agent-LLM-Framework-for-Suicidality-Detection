@@ -1,0 +1,189 @@
+{
+  "generated_at_utc": "2026-04-06T07:52:22.617744+00:00",
+  "source": "https://openrouter.ai/api/v1/models",
+  "sort_key": "pricing.total_usd_per_1m_tokens (ascending)",
+  "models": [
+    {
+      "requested": "Llama-3",
+      "year": 2023,
+      "available": true,
+      "exact_match": true,
+      "openrouter_id": "meta-llama/llama-3.3-70b-instruct",
+      "openrouter_name": "Meta: Llama 3.3 70B Instruct",
+      "pricing": {
+        "prompt_usd_per_token": 1e-07,
+        "completion_usd_per_token": 3.2e-07,
+        "total_usd_per_1m_tokens": 0.42
+      },
+      "note": null
+    },
+    {
+      "requested": "DeepSeek V3.2",
+      "year": 2024,
+      "available": true,
+      "exact_match": true,
+      "openrouter_id": "deepseek/deepseek-v3.2",
+      "openrouter_name": "DeepSeek: DeepSeek V3.2",
+      "pricing": {
+        "prompt_usd_per_token": 2.6e-07,
+        "completion_usd_per_token": 3.8e-07,
+        "total_usd_per_1m_tokens": 0.64
+      },
+      "note": null
+    },
+    {
+      "requested": "Grok-4",
+      "year": 2025,
+      "available": true,
+      "exact_match": true,
+      "openrouter_id": "x-ai/grok-4.1-fast",
+      "openrouter_name": "xAI: Grok 4.1 Fast",
+      "pricing": {
+        "prompt_usd_per_token": 2e-07,
+        "completion_usd_per_token": 5e-07,
+        "total_usd_per_1m_tokens": 0.7
+      },
+      "note": null
+    },
+    {
+      "requested": "Minimax",
+      "year": null,
+      "available": true,
+      "exact_match": true,
+      "openrouter_id": "minimax/minimax-m2.5",
+      "openrouter_name": "MiniMax: MiniMax M2.5",
+      "pricing": {
+        "prompt_usd_per_token": 1.18e-07,
+        "completion_usd_per_token": 9.9e-07,
+        "total_usd_per_1m_tokens": 1.11
+      },
+      "note": null
+    },
+    {
+      "requested": "Qwen3.5",
+      "year": 2024,
+      "available": true,
+      "exact_match": true,
+      "openrouter_id": "qwen/qwen3.5-plus-02-15",
+      "openrouter_name": "Qwen: Qwen3.5 Plus 2026-02-15",
+      "pricing": {
+        "prompt_usd_per_token": 2.6e-07,
+        "completion_usd_per_token": 1.56e-06,
+        "total_usd_per_1m_tokens": 1.82
+      },
+      "note": null
+    },
+    {
+      "requested": "GPT-3.5 turbo",
+      "year": 2023,
+      "available": true,
+      "exact_match": true,
+      "openrouter_id": "openai/gpt-3.5-turbo",
+      "openrouter_name": "OpenAI: GPT-3.5 Turbo",
+      "pricing": {
+        "prompt_usd_per_token": 5e-07,
+        "completion_usd_per_token": 1.5e-06,
+        "total_usd_per_1m_tokens": 2.0
+      },
+      "note": null
+    },
+    {
+      "requested": "KIMI",
+      "year": null,
+      "available": true,
+      "exact_match": true,
+      "openrouter_id": "moonshotai/kimi-k2.5",
+      "openrouter_name": "MoonshotAI: Kimi K2.5",
+      "pricing": {
+        "prompt_usd_per_token": 3.827e-07,
+        "completion_usd_per_token": 1.72e-06,
+        "total_usd_per_1m_tokens": 2.1
+      },
+      "note": null
+    },
+    {
+      "requested": "GPT-5 mini",
+      "year": 2024,
+      "available": true,
+      "exact_match": true,
+      "openrouter_id": "openai/gpt-5-mini",
+      "openrouter_name": "OpenAI: GPT-5 Mini",
+      "pricing": {
+        "prompt_usd_per_token": 2.5e-07,
+        "completion_usd_per_token": 2e-06,
+        "total_usd_per_1m_tokens": 2.25
+      },
+      "note": null
+    },
+    {
+      "requested": "GLM5",
+      "year": 2025,
+      "available": true,
+      "exact_match": true,
+      "openrouter_id": "z-ai/glm-5",
+      "openrouter_name": "Z.ai: GLM 5",
+      "pricing": {
+        "prompt_usd_per_token": 7.2e-07,
+        "completion_usd_per_token": 2.3e-06,
+        "total_usd_per_1m_tokens": 3.02
+      },
+      "note": null
+    },
+    {
+      "requested": "Gemini-3 Flash",
+      "year": 2024,
+      "available": true,
+      "exact_match": true,
+      "openrouter_id": "google/gemini-3-flash-preview",
+      "openrouter_name": "Google: Gemini 3 Flash Preview",
+      "pricing": {
+        "prompt_usd_per_token": 5e-07,
+        "completion_usd_per_token": 3e-06,
+        "total_usd_per_1m_tokens": 3.5
+      },
+      "note": null
+    },
+    {
+      "requested": "GPT-4o",
+      "year": 2024,
+      "available": true,
+      "exact_match": true,
+      "openrouter_id": "openai/gpt-4o",
+      "openrouter_name": "OpenAI: GPT-4o",
+      "pricing": {
+        "prompt_usd_per_token": 2.5e-06,
+        "completion_usd_per_token": 1e-05,
+        "total_usd_per_1m_tokens": 12.5
+      },
+      "note": null
+    },
+    {
+      "requested": "Gemini-3.1 pro",
+      "year": 2025,
+      "available": true,
+      "exact_match": true,
+      "openrouter_id": "google/gemini-3.1-pro-preview",
+      "openrouter_name": "Google: Gemini 3.1 Pro Preview",
+      "pricing": {
+        "prompt_usd_per_token": 2e-06,
+        "completion_usd_per_token": 1.2e-05,
+        "total_usd_per_1m_tokens": 14.0
+      },
+      "note": null
+    },
+    {
+      "requested": "Sonnet-4.6",
+      "year": 2025,
+      "available": true,
+      "exact_match": true,
+      "openrouter_id": "anthropic/claude-sonnet-4.6",
+      "openrouter_name": "Anthropic: Claude Sonnet 4.6",
+      "pricing": {
+        "prompt_usd_per_token": 3e-06,
+        "completion_usd_per_token": 1.5e-05,
+        "total_usd_per_1m_tokens": 18.0
+      },
+      "note": null
+    }
+  ]
+}
