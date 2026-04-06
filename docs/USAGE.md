@@ -63,7 +63,7 @@ Use for:
 Command:
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/data_translator.py
+.\.venv_EvalRing\Scripts\python.exe src/example/suicide_detection/data_translator.py
 ```
 
 ---
@@ -91,9 +91,9 @@ The suicide detection runner supports multiple modes via `--agent-mode`.
 ### 3.3 `base-vs-rest-binary`
 
 - You declare one class as `--base-class`.
-- The agent runs three binary calls: `base vs target` for each non-base class.
-- Pairwise probabilities are aggregated into one 4-class distribution by core utility logic.
-- Evaluator resolves top class automatically for standard classification metrics.
+- The agent runs a knock-out tournament. It evaluates `base vs target_1`, taking the winner, and evaluates `winner vs target_2`, and so on.
+- Output is a sequence of single-word knockout decisions until a final winner is determined.
+- Evaluator returns the final tournament surviving class natively.
 
 ### 3.4 `per-class-score`
 
@@ -113,7 +113,7 @@ The suicide detection runner supports multiple modes via `--agent-mode`.
 From the EvalRing root:
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 100 --max-workers 10
+.\.venv_EvalRing\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 100 --max-workers 10
 ```
 
 ### Supported flags
@@ -160,25 +160,25 @@ When `--n-samples N` is set, the runners take the first `N` rows in file order (
 Single-class:
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 50 --agent-mode single-class
+.\.venv_EvalRing\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 50 --agent-mode single-class
 ```
 
 Multi-class chance:
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 50 --agent-mode multi-class-chance
+.\.venv_EvalRing\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 50 --agent-mode multi-class-chance
 ```
 
 Base-vs-rest with Indicator as base:
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 50 --agent-mode base-vs-rest-binary --base-class Indicator
+.\.venv_EvalRing\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 50 --agent-mode base-vs-rest-binary --base-class Indicator
 ```
 
 Base-vs-rest with Attempt as base:
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 50 --agent-mode base-vs-rest-binary --base-class Attempt
+.\.venv_EvalRing\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 50 --agent-mode base-vs-rest-binary --base-class Attempt
 ```
 
 ---
@@ -187,7 +187,7 @@ Base-vs-rest with Attempt as base:
 
 Each fresh run creates a directory under:
 
-- [src/example/suicide_detection/.EvalRing](../src/example/suicide_detection/.EvalRing)
+- [src/example/suicide_detection/_EvalRing](../src/example/suicide_detection/_EvalRing)
 
 Example layout:
 
@@ -275,13 +275,13 @@ This is the preferred workflow when a small number of samples failed due to prov
 ### Retry latest run
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --retry-failed
+.\.venv_EvalRing\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --retry-failed
 ```
 
 ### Retry a specific run
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --retry-failed --meta-path src/example/suicide_detection/.EvalRing/run_20260313_185114/Meta.json
+.\.venv_EvalRing\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --retry-failed --meta-path src/example/suicide_detection/_EvalRing/run_20260313_185114/Meta.json
 ```
 
 ### Files updated during retry
@@ -300,17 +300,17 @@ In the original run directory:
 
 Runner utility:
 
-- [src/example/suicide_detection/run_model_suite.py](../src/example/suicide_detection/run_model_suite.py)
+- [src/EvalRing/utils/suite_runner.py](../src/EvalRing/utils/suite_runner.py)
 
 ### CLI Usage
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/run_model_suite.py --n-samples 100 --max-workers 10
+.\.venv_EvalRing\Scripts\python.exe src/EvalRing/utils/suite_runner.py --eval-script src/example/suicide_detection/evaluate_rsd15k_main.py --models-file src/example/suicide_detection/model_list.json --n-samples 100 --max-workers 10
 ```
 
 ### Automatic Visualizations
 
-If the suite completes, the underlying `EvalRing/utils/` runner automatically delegates the generated `suite_report_*.json` into the visualization utility which produces comparison graphs and a composite Markdown presentation inside a bounded `visuals/` directory.
+If the suite completes, the runner automatically delegates the generated `suite_report_*.json` into the visualization utility which produces comparison graphs and a composite Markdown presentation inside a bounded `visuals/` directory.
 
 ---
 
@@ -327,7 +327,7 @@ Use the LLM-as-a-Judge API to score another language model's reasoning and class
 Run the judge evaluator:
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_llm_judge.py
+.\.venv_EvalRing\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_llm_judge.py
 ```
 
 ---
@@ -357,23 +357,23 @@ Implication for future domains:
 Fast sanity run:
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 2 --max-workers 2 --agent-mode single-class
+.\.venv_EvalRing\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 2 --max-workers 2 --agent-mode single-class
 ```
 
 Structured chance run:
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 20 --max-workers 4 --agent-mode multi-class-chance
+.\.venv_EvalRing\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 20 --max-workers 4 --agent-mode multi-class-chance
 ```
 
 Base-vs-rest run:
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 20 --max-workers 4 --agent-mode base-vs-rest-binary --base-class Indicator
+.\.venv_EvalRing\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 20 --max-workers 4 --agent-mode base-vs-rest-binary --base-class Indicator
 ```
 
 Retry broken rows only:
 
 ```powershell
-.\.venv_evalring\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --retry-failed
+.\.venv_EvalRing\Scripts\python.exe src/example/suicide_detection/evaluate_rsd15k_main.py --retry-failed
 ```

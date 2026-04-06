@@ -204,7 +204,7 @@ def run_validation():
 
     # ── Save report ──
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = base_dir / ".EvalRing" / f"judge_validation_{timestamp}"
+    run_dir = base_dir / "_EvalRing" / f"judge_validation_{timestamp}"
     run_dir.mkdir(parents=True, exist_ok=True)
 
     report = {

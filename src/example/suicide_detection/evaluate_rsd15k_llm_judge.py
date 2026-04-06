@@ -162,7 +162,7 @@ def run_llm_judge_eval():
     # ──────────────────────────────────────────────
     # 4. Save reports (one-liner)
     # ──────────────────────────────────────────────
-    run_dir = evaluator.save_reports(result, base_dir / ".EvalRing")
+    run_dir = evaluator.save_reports(result, base_dir / "_EvalRing")
     print(f"\nReports saved to: {run_dir}")
     print("Done.")
 

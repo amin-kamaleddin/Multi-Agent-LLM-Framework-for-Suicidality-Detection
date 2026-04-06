@@ -234,56 +234,14 @@ Example:
             )
         return role_configs
 
-    def _binary_prompt_against_base(self, target_class: str) -> str:
-        base_key = self.base_class.lower()
-        target_key = target_class.lower()
+    def _binary_prompt_tournament(self, class_a: str, class_b: str) -> str:
         return (
             "You are a suicide-risk classifier.\n"
-            f"Decide whether the post is more likely {self.base_class} or {target_class}.\n"
-            "Return ONLY JSON with exactly these two keys and numeric values in [0,1], summing to 1.\n"
-            f"Keys: \"{base_key}\", \"{target_key}\".\n"
-            f"Example: {{\"{base_key}\": 0.35, \"{target_key}\": 0.65}}"
+            f"Compare the two classes: '{class_a}' vs '{class_b}' for the given post. Which class is fundamentally more accurate?\n"
+            "Output exactly ONE word, which is the exact name of the winning class.\n"
+            f"Do not output anything else. Your output MUST be either '{class_a}' or '{class_b}'."
         )
 
-    def _parse_binary_json(self, raw_output: str, target_class: str) -> Dict[str, float]:
-        parsed = parse_json_object(raw_output)
-        base_key = self.base_class.lower()
-        target_key = target_class.lower()
-
-        if isinstance(parsed, dict):
-            raw_base = parsed.get(base_key, parsed.get(self.base_class, None))
-            raw_target = parsed.get(target_key, parsed.get(target_class, None))
-            try:
-                p_base = float(raw_base) if raw_base is not None else None
-            except (TypeError, ValueError):
-                p_base = None
-            try:
-                p_target = float(raw_target) if raw_target is not None else None
-            except (TypeError, ValueError):
-                p_target = None
-
-            if p_base is None and p_target is None:
-                pass
-            elif p_base is None and p_target is not None:
-                p_base = 1.0 - p_target
-            elif p_base is not None and p_target is None:
-                p_target = 1.0 - p_base
-
-            if p_base is not None and p_target is not None:
-                p_base = max(0.0, p_base)
-                p_target = max(0.0, p_target)
-                total = p_base + p_target
-                if total > 0:
-                    return {
-                        self.base_class: p_base / total,
-                        target_class: p_target / total,
-                    }
-
-        # Fallback to deterministic parsing if JSON is malformed.
-        label = self._parse_single_label(raw_output)
-        if label == target_class:
-            return {self.base_class: 0.0, target_class: 1.0}
-        return {self.base_class: 1.0, target_class: 0.0}
 
     def predict(self, input_text: str, **kwargs) -> AgentResponse:
         if self.agent_mode == self.MODE_MULTI_AGENT_HOST:
@@ -453,16 +411,17 @@ Example:
                     processing_time=processing_time,
                 )
 
-        pairwise_target_probs: Dict[str, float] = {}
         pairwise_details = []
 
         try:
+            current_winner = self.base_class
             targets = [label for label in self.VALID_LABELS if label != self.base_class]
+            
             for target_class in targets:
                 raw_response = self.client.chat.completions.create(
                     model=self.model_name,
                     messages=[
-                        {"role": "system", "content": self._binary_prompt_against_base(target_class)},
+                        {"role": "system", "content": self._binary_prompt_tournament(current_winner, target_class)},
                         {"role": "user", "content": self._build_user_message(input_text)},
                     ],
                     temperature=self.temperature,
@@ -471,8 +430,7 @@ Example:
                 )
 
                 raw_output = raw_response.choices[0].message.content or ""
-                binary_scores = self._parse_binary_json(raw_output, target_class)
-                pairwise_target_probs[target_class] = binary_scores[target_class]
+                chosen = target_class if target_class.lower() in raw_output.lower() else current_winner
 
                 usage = getattr(raw_response, "usage", None)
                 if usage is not None:
@@ -482,24 +440,22 @@ Example:
 
                 pairwise_details.append(
                     {
-                        "target_class": target_class,
+                        "matchup": f"{current_winner} vs {target_class}",
                         "raw_output": raw_output,
-                        "binary_scores": binary_scores,
+                        "winner": chosen,
                     }
                 )
+                
+                current_winner = chosen
 
-            class_scores = aggregate_base_vs_rest_probabilities(
-                base_label=self.base_class,
-                target_vs_base_probs=pairwise_target_probs,
-                all_labels=self.VALID_LABELS,
-            )
+            class_scores = {label: 1.0 if label == current_winner else 0.0 for label in self.VALID_LABELS}
 
             total_time = time.time() - start_time
             return AgentResponse(
                 input_id="",
                 input_text=input_text,
                 output=class_scores,
-                confidence=max(class_scores.values()) if class_scores else None,
+                confidence=1.0,
                 processing_time=total_time,
                 metadata={
                     "raw_output": pairwise_details,
@@ -513,7 +469,6 @@ Example:
                     "tps": (completion_tokens_total / total_time) if total_time > 0 else 0.0,
                     "total_time": total_time,
                     "base_class": self.base_class,
-                    "pairwise_target_probs": pairwise_target_probs,
                 },
             )
         except Exception as e:

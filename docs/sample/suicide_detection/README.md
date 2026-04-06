@@ -77,7 +77,7 @@ Set-Location "EvalRing"
 Activate virtual environment (example path):
 
 ```powershell
-.\.venv_evalring\Scripts\Activate.ps1
+.\.venv_EvalRing\Scripts\Activate.ps1
 ```
 
 Required environment key (at least one):
@@ -194,7 +194,7 @@ python src/example/suicide_detection/evaluate_rsd15k_main.py --retry-failed
 Retry specific run:
 
 ```powershell
-python src/example/suicide_detection/evaluate_rsd15k_main.py --retry-failed --meta-path src/example/suicide_detection/.EvalRing/run_YYYYMMDD_HHMMSS/Meta.json
+python src/example/suicide_detection/evaluate_rsd15k_main.py --retry-failed --meta-path src/example/suicide_detection/_EvalRing/run_YYYYMMDD_HHMMSS/Meta.json
 ```
 
 Behavior summary:
@@ -240,7 +240,7 @@ run_suite(
 
 ### Suite Folder Isolation
 
-When run, the suite natively isolates its outputs. It groups all individual model runs executed during its sequence into an encapsulated folder formatted as: `.EvalRing/run_suite_YYYYMMDD_HHMMSS`. 
+When run, the suite natively isolates its outputs. It groups all individual model runs executed during its sequence into an encapsulated folder formatted as: `_EvalRing/run_suite_YYYYMMDD_HHMMSS`. 
 
 The suite auto-generates two summary files locally inside this target folder linking insights across all model testing iterations:
 - **Combined Markdown (`run_suite_{timestamp}.md`)**: A concatenated performance review documenting logic, accuracy, execution errors, F1-scores, and stripped down components extracted dynamically from every sub-model `result.md`.
@@ -257,7 +257,7 @@ Suite stop conditions:
 
 Run directories are created at:
 
-- [src/example/suicide_detection/.EvalRing](../../../src/example/suicide_detection/.EvalRing)
+- [src/example/suicide_detection/_EvalRing](../../../src/example/suicide_detection/_EvalRing)
 
 Each run contains:
 

@@ -105,7 +105,7 @@ def _to_int(v):
 
 
 def _latest_meta_path(base_dir: Path) -> Optional[Path]:
-    runs_root = base_dir / ".EvalRing"
+    runs_root = base_dir / "_EvalRing"
     if not runs_root.exists():
         return None
     run_dirs = [p for p in runs_root.iterdir() if p.is_dir() and p.name.startswith("run_")]
@@ -147,7 +147,7 @@ def _read_all_cases_csv(csv_path: Path) -> List[Dict[str, Any]]:
             "total_tokens": _to_int(r.get("total_tokens")),
             "error": (r.get("error") or "").strip() or None,
             "text": r.get("text", ""),
-            "from_cache": False,
+            "from_cache": True,
         })
     return normalized
 
@@ -204,7 +204,7 @@ def _read_all_cases_txt(txt_path: Path) -> List[Dict[str, Any]]:
                 elif line.startswith("Pred"):
                     case_data["prediction"] = line.replace("Pred", "").strip().lstrip(":").strip()
                 elif line.startswith("Cache"):
-                    case_data["from_cache"] = "True" in line
+                    pass
                 elif line.startswith("Timing"):
                     # Parse timing info
                     timing_str = line.replace("Timing", "").strip().lstrip(":")
@@ -932,6 +932,7 @@ def run_main_eval(
             for d in candidates:
                 meta_path = d / "Meta.json"
                 meta_matched = False
+                skip_candidate = False
                 try:
                     if meta_path.exists():
                         with open(meta_path, "r", encoding="utf-8") as f:
@@ -943,6 +944,11 @@ def run_main_eval(
                             and m_cfg.get("base_class") == base_class
                         ):
                             meta_matched = True
+                        else:
+                            skip_candidate = True
+                    
+                    if skip_candidate:
+                        continue
 
                     loaded_cases = _load_cached_cases(d)
                     if not loaded_cases:
@@ -955,6 +961,11 @@ def run_main_eval(
                             if inferred_model != model_name:
                                 continue
                         elif model_suffix and model_suffix not in d.name.lower():
+                            continue
+                            
+                        if agent_mode and agent_mode not in d.name:
+                            continue
+                        if base_class and base_class.lower() not in d.name.lower():
                             continue
 
                     overlap_cases = [c for c in loaded_cases if str(c.get("sample_id")) in current_ids]
@@ -973,7 +984,11 @@ def run_main_eval(
                 print("  No overlapping cache entries matched current dataset/model configuration.")
                         
             if completed_cases:
-                completed_cases_dict = {str(c["sample_id"]): c for c in completed_cases}
+                completed_cases_dict = {}
+                for c in completed_cases:
+                    sid = str(c["sample_id"])
+                    if sid not in completed_cases_dict:
+                        completed_cases_dict[sid] = c
                 completed_cases = list(completed_cases_dict.values())
                 completed_sids = set(completed_cases_dict.keys())
                 
@@ -991,7 +1006,7 @@ def run_main_eval(
                     print(f"Loaded {overlap} cached cases overlapping with current run. {len(dataset._samples)} remaining.")
 
     if resume:
-        runs_root = current_file.parent / ".EvalRing"
+        runs_root = current_file.parent / "_EvalRing"
         if runs_root.exists():
             run_dirs = sorted([d for d in runs_root.iterdir() if d.is_dir() and d.name.startswith("run_")], key=lambda p: p.stat().st_mtime, reverse=True)
             for d in run_dirs:
@@ -1000,7 +1015,12 @@ def run_main_eval(
                     try:
                         with open(meta_path, "r", encoding="utf-8") as f:
                             meta = json.load(f)
-                            if meta.get("model_config", {}).get("model_name") == getattr(agent, "model_name", ""):
+                            m_cfg = meta.get("model_config", {})
+                            if (
+                                m_cfg.get("model_name") == getattr(agent, "model_name", "") and
+                                m_cfg.get("agent_mode") == agent_mode and
+                                m_cfg.get("base_class") == base_class
+                            ):
                                 eval_dir = d
                                 break
                     except Exception:
@@ -1040,11 +1060,12 @@ def run_main_eval(
     if not eval_dir:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         model_suffix = getattr(agent, 'model_name', 'unknown').split('/')[-1]
+        dir_suffix = f"{model_suffix}_{agent_mode}"
         if out_dir:
-            eval_dir = Path(out_dir) / f"run_{timestamp}_{model_suffix}"
+            eval_dir = Path(out_dir) / f"run_{timestamp}_{dir_suffix}"
             eval_dir.mkdir(parents=True, exist_ok=True)
         else:
-            eval_dir = current_file.parent / ".EvalRing" / f"run_{timestamp}_{model_suffix}"
+            eval_dir = current_file.parent / "_EvalRing" / f"run_{timestamp}_{dir_suffix}"
             eval_dir.mkdir(parents=True, exist_ok=True)
     
     partial_path = eval_dir / "all_cases_partial.jsonl"
@@ -1099,8 +1120,11 @@ def run_main_eval(
     print("\nEvaluation complete. Collecting results...")
     all_cases = []
 
-    merged_metrics = completed_cases + getattr(result.metrics, "per_sample_metrics", [])
-
+    merged_metrics_raw = completed_cases + getattr(result.metrics, "per_sample_metrics", [])
+    merged_metrics_dict = {}
+    for sm in merged_metrics_raw:
+        merged_metrics_dict[str(sm["sample_id"])] = sm
+    merged_metrics = list(merged_metrics_dict.values())
     # Ensure deterministic ordering for analysis/debugging (completion order can be arbitrary).
     def _sid_sort_key(m: Dict[str, Any]):
         sid = str(m.get("sample_id", ""))

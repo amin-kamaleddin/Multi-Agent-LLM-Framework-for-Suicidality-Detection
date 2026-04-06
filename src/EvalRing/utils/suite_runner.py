@@ -8,6 +8,8 @@ import csv
 import subprocess
 import sys
 import concurrent.futures
+import threading
+import time
 from datetime import datetime
 from pathlib import Path
 import argparse
@@ -185,9 +187,9 @@ def run_suite(
     suite_stamp = suite_started_at.strftime('%Y%m%d_%H%M%S')
     
     if out_dir:
-        suite_dir = Path(out_dir).resolve() / f"run_suite_{suite_stamp}"
+        suite_dir = Path(out_dir).resolve() / f"run_suite_{suite_stamp}_{agent_mode}"
     else:
-        suite_dir = script_dir / ".EvalRing" / f"run_suite_{suite_stamp}"
+        suite_dir = script_dir / "_EvalRing" / f"run_suite_{suite_stamp}_{agent_mode}"
         
     suite_dir.mkdir(parents=True, exist_ok=True)
 
@@ -205,7 +207,6 @@ def run_suite(
     print("=" * 80)
 
     def _run_single_model(model_name: str, idx: int) -> dict:
-        print(f"[{idx}/{len(model_names)}] Starting model: {model_name}")
         env = os.environ.copy()
         env["OPEN_ROUTER_MODEL"] = model_name
         env["PYTHONIOENCODING"] = "utf-8"
@@ -273,8 +274,6 @@ def run_suite(
         accuracy = metrics.get("accuracy")
         f1 = metrics.get("f1_score")
 
-        print(f"[{idx}/{len(model_names)}] Completed model: {model_name} -> acc: {accuracy}, err: {execution_error_count}")
-
         return {
             "model": model_name,
             "run_dir": str(after_dir),
@@ -293,9 +292,91 @@ def run_suite(
 
     futures = []
     has_errors = False
+    stop_monitor = False
+    def _monitor_progress():
+        import shutil
+        
+        progress_file = suite_dir / "suite_progress.txt"
+        
+        while not stop_monitor:
+            total_lines = 0
+            total_expected = len(model_names) * n_samples
+            per_model = []
+            
+            for m in model_names:
+                m_suffix = m.split("/")[-1].lower()
+                clean_name = m.replace("/", "_")
+                log_path = suite_dir / ".log" / f"run_{clean_name}.log"
+                
+                cache_hits = 0
+                is_done = False
+                if log_path.exists():
+                    try:
+                        with open(log_path, "r", encoding="utf-8") as lf:
+                            for log_line in lf:
+                                if "overlapping with current run" in log_line and "remaining." in log_line:
+                                    try:
+                                        parts = log_line.split("Loaded ")
+                                        if len(parts) > 1:
+                                            cache_hits = int(parts[1].split(" ")[0])
+                                    except Exception:
+                                        pass
+                                if "Evaluation complete" in log_line or "completely bypassed" in log_line:
+                                    is_done = True
+                    except Exception:
+                        pass
+
+                lines = 0
+                latest_dir = None
+                for p in suite_dir.iterdir():
+                    if p.is_dir() and p.name.startswith("run_") and m_suffix in p.name.lower():
+                        latest_dir = p
+                
+                if latest_dir:
+                    partial_path = latest_dir / "all_cases_partial.jsonl"
+                    if partial_path.exists():
+                        try:
+                            with open(partial_path, "r", encoding="utf-8") as pf:
+                                lines = sum(1 for line in pf if line.strip())
+                        except Exception:
+                            pass
+                
+                if is_done:
+                    current_prog = n_samples
+                else:
+                    current_prog = cache_hits + lines
+                
+                current_prog = min(current_prog, n_samples)
+                
+                import textwrap
+                short_m = textwrap.shorten(m_suffix, width=20, placeholder="..")
+                per_model.append(f"{short_m.ljust(20)} : {current_prog} / {n_samples}  [Cache: {cache_hits}, Fresh: {lines}]")
+                total_lines += current_prog
+            
+            # Write detailed view to progress file
+            try:
+                with open(progress_file, "w", encoding="utf-8") as pf:
+                    pf.write(f"Suite Status: {total_lines} / {total_expected} completed\n")
+                    pf.write("=" * 40 + "\n")
+                    pf.write("\n".join(per_model) + "\n")
+            except Exception:
+                pass
+            
+            # Terminal view: simple non-wrapping single line
+            max_w = min(120, shutil.get_terminal_size().columns - 2)
+            pct = (total_lines / max(1, total_expected)) * 100
+            out_str = f"Suite Progress: {total_lines}/{total_expected} ({pct:.1f}%) -> Details in {progress_file.name}"
+            
+            sys.stdout.write("\r" + out_str.ljust(max_w))
+            sys.stdout.flush()
+            time.sleep(2)
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(model_names)) as executor:
         for idx, model_name in enumerate(model_names, start=1):
             futures.append(executor.submit(_run_single_model, model_name, idx))
+            
+        monitor_thread = threading.Thread(target=_monitor_progress, daemon=True)
+        monitor_thread.start()
         
         for future in concurrent.futures.as_completed(futures):
             try:
@@ -305,8 +386,12 @@ def run_suite(
                 else:
                     summary_rows.append(res)
             except Exception as e:
-                logging.error(f"Executor failed with future: {e}")
+                logging.error(f"\nExecutor failed with future: {e}")
                 has_errors = True
+                
+        stop_monitor = True
+        monitor_thread.join(timeout=3)
+        sys.stdout.write("\n")
 
     if has_errors:
         print("WARNING: One or more models encountered errors during execution.")

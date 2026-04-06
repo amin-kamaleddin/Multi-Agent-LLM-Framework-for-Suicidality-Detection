@@ -313,7 +313,7 @@ This application provides a concrete research workflow around the RSD_15K datase
 
 Created under:
 
-- [src/example/suicide_detection/.EvalRing](../src/example/suicide_detection/.EvalRing)
+- [src/example/suicide_detection/_EvalRing](../src/example/suicide_detection/_EvalRing)
 
 Each run produces a timestamped folder containing:
 
