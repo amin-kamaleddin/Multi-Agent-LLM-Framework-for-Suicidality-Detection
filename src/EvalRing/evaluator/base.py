@@ -11,6 +11,7 @@ from pathlib import Path
 
 from ..agent.base import BaseAgent
 from ..dataset.base import BaseDataset
+from ..utils.global_cache import GlobalCache
 
 
 @dataclass
@@ -84,6 +85,10 @@ class BaseEvaluator(ABC):
         self.output_dir = Path(output_dir) if output_dir else Path("./results")
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self._metadata = kwargs
+        
+        # Initialize global cache
+        cache_mode = kwargs.get("cache_mode", "both")
+        self.global_cache = GlobalCache(mode=cache_mode)
         
     @abstractmethod
     def evaluate(self, 

@@ -47,9 +47,13 @@ class AIDataGenerator:
         async with self.semaphore:
             prompt = (
                 f"You are an expert data generator and text rewriter.\n"
-                f"I will provide you with a text that is currently classified as '{original_label}'.\n"
-                f"Your task is to rewrite the text so that it naturally, realistically, and accurately "
-                f"fits the exact definition of the '{target_label}' class.\n\n"
+                f"I will provide you with a user's text that is currently classified as '{original_label}'.\n"
+                f"Your task is to rewrite this text from the exact same user's perspective, but modifying it so that it "
+                f"naturally, realistically, and accurately fits the definition of the '{target_label}' class.\n\n"
+                f"CRITICAL INSTRUCTIONS:\n"
+                f"1. You MUST maintain the original first-person perspective of the poster.\n"
+                f"2. You MUST NOT write a reply, supportive message, or answer to the text.\n"
+                f"3. Do not make up your own class, strictly map the text to represent '{target_label}'.\n\n"
                 f"Original Text (Label: {original_label}):\n{text}\n\n"
                 f"Please provide ONLY the rewritten text for the '{target_label}' class. "
                 f"Do not include quotes, conversational filler, or markdown blocks. "
@@ -117,22 +121,50 @@ class AIDataGenerator:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             
-        texts = df[text_col].tolist()
-        current_labels = df[label_col].tolist()
-        target_labels = list(target_col) if isinstance(target_col, (list, tuple, pd.Series)) else df[target_col].tolist()
+        if loop.is_running():
+            import nest_asyncio
+            nest_asyncio.apply(loop)
+            
+        texts = []
+        current_labels = []
+        target_labels = []
+        original_indices = []
+
+        is_list_of_classes = isinstance(target_col, (list, tuple, pd.Series))
+        target_col_list = list(target_col) if is_list_of_classes else None
+
+        for idx, row in df.iterrows():
+            text = row[text_col]
+            orig = row[label_col]
+            
+            if is_list_of_classes:
+                # generate for all target classes except the original
+                targets = [t for t in target_col_list if t != orig]
+            else:
+                # generate specifically for the target_col specified in the row
+                targets = [row[target_col]]
+                
+            for tgt in targets:
+                texts.append(text)
+                current_labels.append(orig)
+                target_labels.append(tgt)
+                original_indices.append(idx)
         
         results = loop.run_until_complete(
             self.generate_batch(texts, current_labels, target_labels)
         )
         
-        df_out = df.copy()
+        df_out = df.iloc[original_indices].copy()
+        
         if replace_original:
             df_out[text_col] = results
             df_out[label_col] = target_labels
-            if isinstance(target_col, str) and target_col in df_out.columns:
-                df_out.drop(columns=[target_col], inplace=True)
+            if not is_list_of_classes and isinstance(target_col, str):
+                if target_col in df_out.columns:
+                    df_out.drop(columns=[target_col], inplace=True)
         else:
             df_out['rewritten_text'] = results
+            df_out['target_label'] = target_labels
             
         return df_out
 

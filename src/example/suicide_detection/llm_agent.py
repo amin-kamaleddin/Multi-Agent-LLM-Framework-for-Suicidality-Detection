@@ -165,14 +165,13 @@ Example:
         for label in self.VALID_LABELS:
             if label.lower() in clean:
                 return label
-        return "Indicator"  # fallback
+        raise ValueError(f"Could not parse a valid label from output: {raw_output}")
 
     def _parse_multi_class_chance(self, raw_output: str) -> Dict[str, float]:
         parsed = parse_json_object(raw_output)
         if not parsed:
-            # Fallback to deterministic one-hot on parsed top label if JSON is malformed.
-            fallback_label = self._parse_single_label(raw_output)
-            return {label: (1.0 if label == fallback_label else 0.0) for label in self.VALID_LABELS}
+            # Throw an error if JSON is malformed instead of falling back
+            raise ValueError(f"Could not parse valid JSON probabilities from output: {raw_output}")
 
         scores: Dict[str, float] = {}
         for key, value in parsed.items():
@@ -191,7 +190,7 @@ Example:
 
         total = sum(scores.values())
         if total <= 0:
-            return {label: (1.0 if label == "Indicator" else 0.0) for label in self.VALID_LABELS}
+            raise ValueError(f"Extracted probabilities sum to zero for output: {raw_output}")
 
         return {label: scores[label] / total for label in self.VALID_LABELS}
 

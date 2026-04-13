@@ -251,8 +251,15 @@ class OpenAIAgent(BaseAgent):
             prompt_tokens = 0
             completion_tokens = 0
             total_tokens = 0
+            api_error_message = None
 
             for chunk in stream:
+                # Capture possible inline errors (often passed by provider proxies like OpenRouter)
+                if hasattr(chunk, "error") and chunk.error:
+                    api_error_message = str(chunk.error)
+                elif hasattr(chunk, "model_extra") and isinstance(chunk.model_extra, dict) and "error" in chunk.model_extra:
+                    api_error_message = str(chunk.model_extra["error"])
+                
                 if chunk.choices and len(chunk.choices) > 0:
                     delta = chunk.choices[0].delta.content
                     if delta:
@@ -273,6 +280,12 @@ class OpenAIAgent(BaseAgent):
             generation_time = end_time - first_token_time
             total_time = end_time - start_time
             tps = completion_tokens / generation_time if generation_time > 0 else 0.0
+
+            if not raw_output.strip():
+                error_prefix = "Empty output received from API (treated as rate limit/timeout)."
+                if api_error_message:
+                    raise ValueError(f"{error_prefix} Provider error message: {api_error_message}")
+                raise ValueError(error_prefix)
 
             output = self._parse_output(raw_output)
 
@@ -302,7 +315,7 @@ class OpenAIAgent(BaseAgent):
                 input_id="",
                 input_text=input_text,
                 output="Error",
-                error=str(e),
+                error=repr(e),
                 processing_time=processing_time,
             )
 

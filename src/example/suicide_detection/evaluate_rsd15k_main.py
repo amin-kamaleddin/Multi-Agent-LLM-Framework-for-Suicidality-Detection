@@ -7,6 +7,8 @@ import datetime
 import platform
 import time
 import requests
+import threading
+import pandas as pd
 from typing import Any, Dict, List, Optional
 from collections import Counter
 from pathlib import Path
@@ -23,9 +25,12 @@ src_path = project_root / "src"
 sys.path.append(str(src_path))
 
 try:
+    import json
+    import csv
     from EvalRing.dataset import CSVDataset, DataFrameDataset
     from EvalRing.agent import MockAgent
     from EvalRing.evaluator import ClassificationEvaluator
+    from EvalRing.utils.global_cache import load_cached_cases as _load_cached_cases
     from llm_agent import OpenAISuicideDetectionAgent
 except ImportError as e:
     print(f"Error importing EvalRing: {e}")
@@ -116,222 +121,8 @@ def _latest_meta_path(base_dir: Path) -> Optional[Path]:
     return meta if meta.exists() else None
 
 
-def _read_all_cases_csv(csv_path: Path) -> List[Dict[str, Any]]:
-    with open(csv_path, "r", encoding="utf-8", newline="") as f:
-        reader = csv.DictReader(f)
-        rows = [dict(r) for r in reader]
-
-    normalized = []
-    for r in rows:
-        raw_class_scores = r.get("class_scores")
-        parsed_class_scores = None
-        if raw_class_scores:
-            try:
-                parsed_class_scores = json.loads(raw_class_scores)
-            except Exception:
-                parsed_class_scores = None
-
-        normalized.append({
-            "sample_id": r.get("sample_id", ""),
-            "ground_truth": r.get("ground_truth", ""),
-            "prediction": r.get("prediction", ""),
-            "correct": _to_int(r.get("correct")) or 0,
-            "prediction_confidence": _to_float(r.get("prediction_confidence")),
-            "class_scores": parsed_class_scores,
-            "ttft": _to_float(r.get("ttft")),
-            "tps": _to_float(r.get("tps")),
-            "total_time": _to_float(r.get("total_time")),
-            "generation_time": _to_float(r.get("generation_time")),
-            "prompt_tokens": _to_int(r.get("prompt_tokens")),
-            "completion_tokens": _to_int(r.get("completion_tokens")),
-            "total_tokens": _to_int(r.get("total_tokens")),
-            "error": (r.get("error") or "").strip() or None,
-            "text": r.get("text", ""),
-            "from_cache": True,
-        })
-    return normalized
 
 
-def _read_all_cases_jsonl(jsonl_path: Path) -> List[Dict[str, Any]]:
-    """Load cases from all_cases_partial.jsonl file."""
-    cases = []
-    try:
-        with open(jsonl_path, "r", encoding="utf-8") as f:
-            for line_num, line in enumerate(f, 1):
-                if line.strip():
-                    try:
-                        case = json.loads(line)
-                        case["from_cache"] = True
-                        cases.append(case)
-                    except json.JSONDecodeError as e:
-                        print(f"  Warning: Failed to parse line {line_num} in {jsonl_path}: {e}")
-                        pass
-    except Exception as e:
-        print(f"  Error reading {jsonl_path}: {e}")
-        return []
-    return cases
-
-
-def _read_all_cases_txt(txt_path: Path) -> List[Dict[str, Any]]:
-    """Load cases from all_cases.txt (human-readable format)."""
-    cases = []
-    try:
-        with open(txt_path, "r", encoding="utf-8") as f:
-            content = f.read()
-        
-        # Split by "----" separator
-        blocks = content.split("-" * 40)
-        
-        for block in blocks[1:]:  # Skip header
-            block = block.strip()
-            if not block:
-                continue
-            
-            case_data = {"from_cache": True}
-            lines = block.split("\n")
-            text_start = -1
-            
-            for i, line in enumerate(lines):
-                line = line.strip()
-                if not line:
-                    continue
-                
-                if line.startswith("Sample ID :"):
-                    sample_id = line.replace("Sample ID :", "").strip().split("[")[0].strip()
-                    case_data["sample_id"] = sample_id
-                elif line.startswith("GT"):
-                    case_data["ground_truth"] = line.replace("GT", "").strip().lstrip(":").strip()
-                elif line.startswith("Pred"):
-                    case_data["prediction"] = line.replace("Pred", "").strip().lstrip(":").strip()
-                elif line.startswith("Cache"):
-                    pass
-                elif line.startswith("Timing"):
-                    # Parse timing info
-                    timing_str = line.replace("Timing", "").strip().lstrip(":")
-                    try:
-                        if "TTFT=" in timing_str:
-                            ttft_match = timing_str.split("TTFT=")[1].split("s")[0]
-                            case_data["ttft"] = _to_float(ttft_match)
-                        if "Gen=" in timing_str:
-                            gen_match = timing_str.split("Gen=")[1].split("s")[0]
-                            case_data["generation_time"] = _to_float(gen_match)
-                        if "TPS=" in timing_str:
-                            tps_match = timing_str.split("TPS=")[1].split("|")[0]
-                            case_data["tps"] = _to_float(tps_match)
-                        if "Total=" in timing_str:
-                            total_match = timing_str.split("Total=")[1].split("s")[0]
-                            case_data["total_time"] = _to_float(total_match)
-                    except Exception:
-                        pass
-                elif line.startswith("Tokens"):
-                    # Parse token info
-                    tokens_str = line.replace("Tokens", "").strip().lstrip(":")
-                    try:
-                        if "Prompt=" in tokens_str:
-                            prompt_match = tokens_str.split("Prompt=")[1].split("|")[0]
-                            case_data["prompt_tokens"] = _to_int(prompt_match)
-                        if "Completion=" in tokens_str:
-                            completion_match = tokens_str.split("Completion=")[1].split("|")[0]
-                            case_data["completion_tokens"] = _to_int(completion_match)
-                        if "Total=" in tokens_str:
-                            total_match = tokens_str.split("Total=")[1]
-                            case_data["total_tokens"] = _to_int(total_match)
-                    except Exception:
-                        pass
-                elif line.startswith("Confidence"):
-                    conf_str = line.replace("Confidence", "").strip().lstrip(":")
-                    case_data["prediction_confidence"] = _to_float(conf_str)
-                elif line.startswith("ClassDist"):
-                    classdata_str = line.replace("ClassDist", "").strip().lstrip(":")
-                    try:
-                        case_data["class_scores"] = json.loads(classdata_str)
-                    except Exception:
-                        pass
-                elif line.startswith("Error"):
-                    error_str = line.replace("Error", "").strip().lstrip(":")
-                    case_data["error"] = error_str if error_str else None
-                elif line.startswith("Text:"):
-                    text_start = i + 1
-                    break
-            
-            # Extract text content
-            if text_start >= 0:
-                text_lines = []
-                for line in lines[text_start:]:
-                    text_lines.append(line)
-                case_data["text"] = "\n".join(text_lines).strip()
-            else:
-                case_data["text"] = ""
-            
-            # Set defaults for missing fields
-            for key in ["ground_truth", "prediction", "text"]:
-                if key not in case_data:
-                    case_data[key] = ""
-            
-            if "sample_id" in case_data:
-                cases.append(case_data)
-    except Exception as e:
-        print(f"  Error reading {txt_path}: {e}")
-        return []
-    
-    return cases
-
-
-def _load_cached_cases(directory: Path) -> List[Dict[str, Any]]:
-    """Load cached cases from directory, trying multiple formats in priority order.
-    Priority: all_cases_partial.jsonl > all_cases.txt > all_cases.csv
-    """
-    if not directory.exists():
-        return []
-    
-    # Try JSONL first (best for incremental/partial runs)
-    jsonl_path = directory / "all_cases_partial.jsonl"
-    if jsonl_path.exists():
-        cases = _read_all_cases_jsonl(jsonl_path)
-        if cases:
-            print(f"  Loaded {len(cases)} cases from {jsonl_path.name}")
-            return cases
-    
-    # Try TXT format (human-readable backup)
-    txt_path = directory / "all_cases.txt"
-    if txt_path.exists():
-        cases = _read_all_cases_txt(txt_path)
-        if cases:
-            print(f"  Loaded {len(cases)} cases from {txt_path.name}")
-            return cases
-    
-    # Fall back to CSV
-    csv_path = directory / "all_cases.csv"
-    if csv_path.exists():
-        cases = _read_all_cases_csv(csv_path)
-        if cases:
-            print(f"  Loaded {len(cases)} cases from {csv_path.name}")
-            return cases
-    
-    return []
-
-
-def _discover_cache_candidate_dirs(cache_dir: Path) -> List[Path]:
-    """Discover cache directories, including runs that may not have Meta.json yet."""
-    candidates = set()
-
-    for meta_path in cache_dir.rglob("Meta.json"):
-        candidates.add(meta_path.parent)
-
-    for cache_file_name in ("all_cases_partial.jsonl", "all_cases.txt", "all_cases.csv"):
-        for cache_file_path in cache_dir.rglob(cache_file_name):
-            candidates.add(cache_file_path.parent)
-
-    return sorted(candidates, key=lambda p: p.stat().st_mtime, reverse=True)
-
-
-def _infer_model_name_from_cases(cases: List[Dict[str, Any]]) -> Optional[str]:
-    """Infer model name from cached rows when Meta.json is unavailable."""
-    for case in cases:
-        model_name = case.get("model")
-        if isinstance(model_name, str) and model_name.strip():
-            return model_name.strip()
-    return None
 
 
 def _init_error_csv(error_csv_path: Path) -> None:
@@ -612,10 +403,10 @@ def _write_reports(
             f.write(f"Pred      : {case['prediction']}\n")
             if case.get('from_cache'):
                 f.write("Cache     : True\n")
-            if case['ttft'] is not None:
-                f.write(f"Timing    : TTFT={case['ttft']:.4f}s | Gen={case['generation_time']:.4f}s | TPS={case['tps']:.2f} | Total={case['total_time']:.4f}s\n")
-            if case['prompt_tokens'] is not None:
-                f.write(f"Tokens    : Prompt={case['prompt_tokens']} | Completion={case['completion_tokens']} | Total={case['total_tokens']}\n")
+            if case.get('total_time') is not None:
+                f.write(f"Timing    : TTFT={case.get('ttft') or 0.0:.4f}s | Gen={case.get('generation_time') or 0.0:.4f}s | TPS={case.get('tps') or 0.0:.2f} | Total={case.get('total_time') or 0.0:.4f}s\n")
+            if case.get('prompt_tokens') is not None:
+                f.write(f"Tokens    : Prompt={case.get('prompt_tokens')} | Completion={case.get('completion_tokens')} | Total={case.get('total_tokens')}\n")
             if case.get("prediction_confidence") is not None:
                 f.write(f"Confidence: {case['prediction_confidence']:.6f}\n")
             if case.get("class_scores"):
@@ -746,6 +537,21 @@ def _run_retry_failed(meta_path: Path):
     run_cfg = meta.get("run_config", {})
     model_cfg = meta.get("model_config", {})
     ds_cfg = meta.get("dataset_config", {})
+    
+    agent_mode = model_cfg.get("agent_mode", "single-class")
+    base_class = model_cfg.get("base_class", "Indicator")
+    host_model = model_cfg.get("host_model", None)
+    role_models_json = model_cfg.get("role_models_json", None)
+    max_host_iterations = model_cfg.get("max_host_iterations", 10)
+    
+    max_workers = run_cfg.get("max_workers", 5)
+    max_retries = run_cfg.get("max_retries", 3)
+    seed = run_cfg.get("seed", 42)
+    n_samples = run_cfg.get("n_samples", 50)
+    
+    data_source = ds_cfg.get("source", "unknown")
+    cache_mode = "both" # Just default for retry unless stored
+    
     retry_indices = [
         i for i, row in enumerate(all_cases)
         if str(row.get("prediction", "")).strip().lower() == "error" or bool(row.get("error"))
@@ -757,7 +563,6 @@ def _run_retry_failed(meta_path: Path):
 
     print(f"Found {len(retry_indices)} Error case(s). Retrying only those cases...")
 
-    import pandas as pd
     retry_df = pd.DataFrame([
         {
             "retry_row_id": str(idx),
@@ -782,9 +587,8 @@ def _run_retry_failed(meta_path: Path):
         role_models_json=role_models_json,
         max_host_iterations=max_host_iterations,
     )
-    evaluator = ClassificationEvaluator()
+    evaluator = ClassificationEvaluator(output_dir=run_dir, cache_mode=cache_mode)
 
-    import threading
     write_lock = threading.Lock()
     error_csv_path = run_dir / "error.csv"
     _init_error_csv(error_csv_path)
@@ -876,9 +680,13 @@ def run_main_eval(
     resume: bool = False,
     out_dir: Optional[str] = None,
     cache: Optional[str] = None,
+    cache_mode: str = "both",
+    no_confirm: bool = False,
+    info_only: bool = False,
 ):
-    print("=" * 80)
-    print("Running RSD_15K evaluation — sample limit: " + str(n_samples))
+    if not info_only:
+        print("=" * 80)
+        print("Running RSD_15K evaluation — sample limit: " + str(n_samples))
 
     agent = _build_agent(
         agent_mode=agent_mode,
@@ -916,146 +724,23 @@ def run_main_eval(
         context=f"run_main_eval.after_sampling(head={n_samples}, loaded={total_loaded})",
     )
 
+    import json
+
+    if info_only:
+        evaluator = ClassificationEvaluator(output_dir=None, cache_mode=cache_mode)
+        if cache:
+            evaluator.global_cache.base_runs_dir = Path(cache)
+        else:
+            evaluator.global_cache.base_runs_dir = current_file.parent / "_EvalRing"
+            
+        cache_info = evaluator.get_cache_info(
+            agent=agent, dataset=dataset, agent_mode=agent_mode, base_class=base_class, show_progress=True
+        )
+        print(json.dumps(cache_info))
+        sys.exit(0)
+
     completed_cases = []
     eval_dir = None
-
-    if cache:
-        cache_dir = Path(cache)
-        if cache_dir.exists():
-            print(f"Checking cache in {cache_dir}...")
-            current_ids = {str(s.id) for s in dataset._samples}
-            model_name = getattr(agent, "model_name", "")
-            model_suffix = model_name.split("/")[-1].lower() if model_name else ""
-            candidates = _discover_cache_candidate_dirs(cache_dir)
-            overlapful_sources = 0
-
-            for d in candidates:
-                meta_path = d / "Meta.json"
-                meta_matched = False
-                skip_candidate = False
-                try:
-                    if meta_path.exists():
-                        with open(meta_path, "r", encoding="utf-8") as f:
-                            meta = json.load(f)
-                        m_cfg = meta.get("model_config", {})
-                        if (
-                            m_cfg.get("model_name") == model_name
-                            and m_cfg.get("agent_mode") == agent_mode
-                            and m_cfg.get("base_class") == base_class
-                        ):
-                            meta_matched = True
-                        else:
-                            skip_candidate = True
-                    
-                    if skip_candidate:
-                        continue
-
-                    loaded_cases = _load_cached_cases(d)
-                    if not loaded_cases:
-                        continue
-
-                    # No meta or non-matching meta: use conservative fallback matching.
-                    if not meta_matched:
-                        inferred_model = _infer_model_name_from_cases(loaded_cases)
-                        if inferred_model:
-                            if inferred_model != model_name:
-                                continue
-                        elif model_suffix and model_suffix not in d.name.lower():
-                            continue
-                            
-                        if agent_mode and agent_mode not in d.name:
-                            continue
-                        if base_class and base_class.lower() not in d.name.lower():
-                            continue
-
-                    overlap_cases = [c for c in loaded_cases if str(c.get("sample_id")) in current_ids]
-                    overlap = len(overlap_cases)
-                    if overlap == 0:
-                        continue
-
-                    overlapful_sources += 1
-                    completed_cases.extend(overlap_cases)
-                    source_tag = "meta" if meta_matched else "fallback"
-                    print(f"  Accepted {overlap} overlapping cases from {d.name} ({source_tag} match)")
-                except Exception as e:
-                    print(f"  Error loading cache from {d}: {e}")
-
-            if overlapful_sources == 0:
-                print("  No overlapping cache entries matched current dataset/model configuration.")
-                        
-            if completed_cases:
-                completed_cases_dict = {}
-                for c in completed_cases:
-                    sid = str(c["sample_id"])
-                    if sid not in completed_cases_dict:
-                        completed_cases_dict[sid] = c
-                completed_cases = list(completed_cases_dict.values())
-                completed_sids = set(completed_cases_dict.keys())
-                
-                overlap = len(current_ids & completed_sids)
-                
-                # Filter completed cases to ONLY include those requested in this run
-                completed_cases = [c for c in completed_cases if str(c["sample_id"]) in current_ids]
-                
-                if overlap > 0:
-                    dataset._samples = [s for s in dataset._samples if str(s.id) not in completed_sids]
-                    dataset.assert_unique_ids(
-                        expected_count=len(dataset._samples),
-                        context="run_main_eval.after_cache_filter",
-                    )
-                    print(f"Loaded {overlap} cached cases overlapping with current run. {len(dataset._samples)} remaining.")
-
-    if resume:
-        runs_root = current_file.parent / "_EvalRing"
-        if runs_root.exists():
-            run_dirs = sorted([d for d in runs_root.iterdir() if d.is_dir() and d.name.startswith("run_")], key=lambda p: p.stat().st_mtime, reverse=True)
-            for d in run_dirs:
-                meta_path = d / "Meta.json"
-                if meta_path.exists():
-                    try:
-                        with open(meta_path, "r", encoding="utf-8") as f:
-                            meta = json.load(f)
-                            m_cfg = meta.get("model_config", {})
-                            if (
-                                m_cfg.get("model_name") == getattr(agent, "model_name", "") and
-                                m_cfg.get("agent_mode") == agent_mode and
-                                m_cfg.get("base_class") == base_class
-                            ):
-                                eval_dir = d
-                                break
-                    except Exception:
-                        pass
-        
-        if eval_dir:
-            # Load cached cases using unified loader (tries JSONL > TXT > CSV)
-            loaded_cases = _load_cached_cases(eval_dir)
-            if loaded_cases:
-                completed_cases.extend(loaded_cases)
-                completed_sids = {c["sample_id"] for c in completed_cases}
-
-                # Guard against older runs created with an incompatible id_field (e.g., `users`).
-                current_ids = {s.id for s in dataset._samples}
-                overlap = len(current_ids & completed_sids)
-                if completed_sids and overlap == 0:
-                    print(
-                        "WARNING: Found partial results, but none of their sample_id values match the current dataset IDs. "
-                        "This usually means the previous run used a different id_field (e.g., `users`). "
-                        "Starting a fresh run instead of resuming to avoid duplicate execution/incorrect merges."
-                    )
-                    completed_cases = []
-                    eval_dir = None
-                else:
-                    dataset._samples = [s for s in dataset._samples if s.id not in completed_sids]
-                    dataset.assert_unique_ids(
-                        expected_count=len(dataset._samples),
-                        context="run_main_eval.after_resume_filter",
-                    )
-                    print(f"Resuming from {eval_dir}. Loaded {len(completed_cases)} completed cases. {len(dataset._samples)} remaining.")
-            else:
-                print(f"No partial data found in {eval_dir}. Starting fresh.")
-                eval_dir = None
-        else:
-            print("No previous run found for this model to resume. Starting fresh.")
 
     if not eval_dir:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1070,7 +755,6 @@ def run_main_eval(
     
     partial_path = eval_dir / "all_cases_partial.jsonl"
 
-    import threading
     write_lock = threading.Lock()
     f_out = open(partial_path, "a", encoding="utf-8")
     error_csv_path = eval_dir / "error.csv"
@@ -1084,9 +768,31 @@ def run_main_eval(
 
     print(f"Samples limited to: {len(dataset._samples)}")
 
-    evaluator = ClassificationEvaluator()
-
+    evaluator = ClassificationEvaluator(output_dir=eval_dir, cache_mode=cache_mode)
+    if cache:
+        evaluator.global_cache.base_runs_dir = Path(cache)
+    else:
+        evaluator.global_cache.base_runs_dir = current_file.parent / "_EvalRing"
+        
     if len(dataset._samples) > 0:
+        if not no_confirm:
+            cache_info = evaluator.get_cache_info(
+                agent=agent, dataset=dataset, agent_mode=agent_mode, base_class=base_class
+            )
+            print("\n--- Confirm Run ---")
+            print(f"Model: {getattr(agent, 'model_name', 'unknown')}")
+            print(f"Mode: {agent_mode}")
+            print(f"Base Class: {base_class}")
+            print(f"Data Path: {resolved_data_path}")
+            print(f"Total Samples: {cache_info['total']}")
+            print(f"Cached: {cache_info['cached']}")
+            print(f"Uncached (Evaluating): {cache_info['uncached']}")
+            print(f"Workers: {max_workers}")
+            val = input("Press Enter to continue, or 'q' to quit: ")
+            if val.strip().lower() == 'q':
+                print("Run aborted.")
+                sys.exit(0)
+
         print(f"\nStarting evaluation — workers={max_workers}, retries={max_retries}, seed={seed} ...")
         result = evaluator.evaluate(
             agent=agent,
@@ -1245,6 +951,9 @@ if __name__ == "__main__":
     parser.add_argument("--out-dir", type=str, default=None, help="Output directory to store run directory")
     parser.add_argument("--continue", dest="resume", action="store_true", help="Resume partial runs from latest model folder")
     parser.add_argument("--cache", type=str, default=None, help="Directory to load cache from previous runs of the same config")
+    parser.add_argument("--cache-mode", type=str, default="both", choices=["runs_only", "cache_file", "both", "none"], help="Global cache operation mode")
+    parser.add_argument("-nc", "--no-confirm", action="store_true", help="Bypass interactive run confirmation prompt")
+    parser.add_argument("--info-only", action="store_true", help="Just print the cache info payload and exit")
     args = parser.parse_args()
 
     if args.retry_failed:
@@ -1268,4 +977,7 @@ if __name__ == "__main__":
             resume=args.resume,
             out_dir=args.out_dir,
             cache=args.cache,
+            cache_mode=args.cache_mode,
+            no_confirm=args.no_confirm,
+            info_only=args.info_only,
         )

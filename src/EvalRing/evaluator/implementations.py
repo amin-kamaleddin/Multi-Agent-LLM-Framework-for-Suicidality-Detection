@@ -54,7 +54,7 @@ class ClassificationEvaluator(BaseEvaluator):
                 last_error = str(e)
                 last_error_type = e.__class__.__name__
                 error_lower = last_error.lower()
-                is_rate_limit = "429" in error_lower or "rate limit" in error_lower
+                is_rate_limit = "429" in error_lower or "rate limit" in error_lower or "empty output" in error_lower
 
                 if error_cb:
                     try:
@@ -90,6 +90,56 @@ class ClassificationEvaluator(BaseEvaluator):
             f"Last error: {last_error}"
         )
         
+    def get_cache_info(self,
+                       agent: BaseAgent,
+                       dataset: BaseDataset,
+                       **kwargs) -> dict:
+        self.validate_inputs(agent, dataset)
+        samples = list(dataset)
+        agent_mode = kwargs.get("agent_mode", "")
+        base_class = kwargs.get("base_class", "")
+        model_name = getattr(agent, "model_name", "")
+        
+        ignore_errors = kwargs.get("ignore_errors", False)
+        
+        self.global_cache.preload_legacy_cache(
+            model_name=model_name,
+            agent_mode=agent_mode,
+            base_class=base_class,
+            ignore_errors=ignore_errors
+        )
+        
+        uncached = 0
+        cached = 0
+        
+        try:
+            from tqdm import tqdm
+            samples_iter = tqdm(samples, desc=f"Checking cache for {model_name or 'model'}", leave=False, disable=not kwargs.get("show_progress", False))
+        except ImportError:
+            samples_iter = samples
+            
+        for sample in samples_iter:
+            cache_key = self.global_cache.generate_key(
+                model_name=model_name,
+                payload=sample.input_text,
+                params={"agent_mode": agent_mode, "base_class": base_class}
+            )
+            cached_result = self.global_cache.lookup(
+                cache_key=cache_key,
+                sample_id=str(sample.id),
+                model_name=model_name,
+                agent_mode=agent_mode,
+                base_class=base_class,
+                ignore_errors=ignore_errors,
+                input_text=sample.input_text
+            )
+            if cached_result:
+                cached += 1
+            else:
+                uncached += 1
+                
+        return {"uncached": uncached, "cached": cached, "total": len(samples)}
+
     def evaluate(self, 
                 agent: BaseAgent, 
                 dataset: BaseDataset, 
@@ -117,16 +167,78 @@ class ClassificationEvaluator(BaseEvaluator):
         
         # Collect predictions (deterministic order: same as dataset iteration order)
         samples = list(dataset)
+        
+        agent_mode = kwargs.get("agent_mode", "")
+        base_class = kwargs.get("base_class", "")
+        model_name = getattr(agent, "model_name", "")
+        ignore_errors = kwargs.get("ignore_errors", False)
+        
+        # Preload legacy run caching for runs_only and both modes
+        self.global_cache.preload_legacy_cache(
+            model_name=model_name,
+            agent_mode=agent_mode,
+            base_class=base_class,
+            ignore_errors=ignore_errors
+        )
+        
+        uncached_samples = []
+        cache_hits = 0
+        per_sample_by_id = {}
+
+        for sample in samples:
+            cache_key = self.global_cache.generate_key(
+                model_name=model_name,
+                payload=sample.input_text,
+                params={"agent_mode": agent_mode, "base_class": base_class}
+            )
+            cached_result = self.global_cache.lookup(
+                cache_key=cache_key,
+                sample_id=str(sample.id),
+                model_name=model_name,
+                agent_mode=agent_mode,
+                base_class=base_class,
+                ignore_errors=ignore_errors,
+                input_text=sample.input_text
+            )
+            if cached_result:
+                is_correct = cached_result.get("prediction") == sample.target_output
+                sample_metric = {
+                    "sample_id": sample.id,
+                    "input_text": sample.input_text,
+                    "accuracy": 1.0 if is_correct else 0.0,
+                    "prediction": cached_result.get("prediction", ""),
+                    "ground_truth": sample.target_output,
+                    "from_cache": True,
+                    "cache_key": cache_key
+                }
+                if "prediction_confidence" in cached_result:
+                    sample_metric["prediction_confidence"] = cached_result["prediction_confidence"]
+                if "class_scores" in cached_result:
+                    sample_metric["class_scores"] = cached_result["class_scores"]
+                if "ttft" in cached_result:
+                    sample_metric["ttft"] = cached_result["ttft"]
+                if "total_time" in cached_result:
+                    sample_metric["total_time"] = cached_result["total_time"]
+                if "generation_time" in cached_result:
+                    sample_metric["generation_time"] = cached_result["generation_time"]
+
+                per_sample_by_id[str(sample.id)] = sample_metric
+                cache_hits += 1
+                if partial_cb:
+                    partial_cb(sample_metric)
+            else:
+                uncached_samples.append(sample)
+        
+        tasks = uncached_samples
         requested_workers = max(1, int(max_workers))
         cpu_count = os.cpu_count() or 1
-        planned_parallelism = min(requested_workers, len(samples)) if samples else 0
+        planned_parallelism = min(requested_workers, len(tasks)) if tasks else 0
 
         print(
             "[Concurrency Plan] "
-            f"samples={len(samples)}, requested_max_workers={requested_workers}, "
+            f"tasks={len(tasks)}, requested_max_workers={requested_workers}, "
             f"planned_parallelism={planned_parallelism}, local_cpu_count={cpu_count}"
         )
-        per_sample_by_id = {}
         execution_failures = []
         retry_backoff_failures = 0
         rate_limit_failures = 0
@@ -137,14 +249,33 @@ class ClassificationEvaluator(BaseEvaluator):
             effective_executor_workers = getattr(executor, "_max_workers", requested_workers)
             print(
                 "[Concurrency Executor] "
-                f"executor_max_workers={effective_executor_workers}, submitted_tasks={len(samples)}"
+                f"executor_max_workers={effective_executor_workers}, submitted_tasks={len(tasks)}"
             )
             futures = {
-                executor.submit(self._process_sample, sample, agent, max_retries, error_cb): sample 
-                for sample in samples
+                executor.submit(self._process_sample, task, agent, max_retries, error_cb): task 
+                for task in tasks
             }
             
-            iterator = concurrent.futures.as_completed(futures)
+            def timeout_as_completed(fs, idle_timeout=300.0):
+                not_done = set(fs.keys())
+                while not_done:
+                    done, not_done = concurrent.futures.wait(not_done, timeout=idle_timeout, return_when=concurrent.futures.FIRST_COMPLETED)
+                    if not done:
+                        import sys
+                        print(f"\n[Fatal Timeout] {len(not_done)} tasks hung for over {idle_timeout}s! Killing them.", file=sys.stderr)
+                        class MockTimeoutFuture:
+                            def __init__(self, task):
+                                self._task = task
+                            def result(self):
+                                return self._task, None, f"Fatal timeout: Task hung and did not complete within {idle_timeout}s"
+                        for f in not_done:
+                            f.cancel()
+                            yield MockTimeoutFuture(fs[f])
+                        break
+                    for f in done:
+                        yield f
+
+            iterator = timeout_as_completed(futures, idle_timeout=300.0)
             if show_progress:
                 try:
                     from tqdm import tqdm
@@ -164,18 +295,12 @@ class ClassificationEvaluator(BaseEvaluator):
                         f"sample_id={sample.id}, error={error}"
                     )
                     err_lower = str(error).lower()
-                    if "rate limit" in err_lower or "30 rate limits" in err_lower or "429" in err_lower:
+                    if "rate limit" in err_lower or "30 rate limits" in err_lower or "429" in err_lower or "empty output" in err_lower:
                         rate_limit_failures += 1
                     else:
                         retry_backoff_failures += 1
-                    if "30 rate limits" in err_lower:
+                    if "30 rate limits" in err_lower or "empty output" in err_lower:
                         rate_limit_sleep_events += 30
-                    if completed_count == 1 and exit_on_first_error:
-                        import sys
-                        print(f"\n[Fatal] First request failed with error: {error}. Exiting to avoid further failures.", file=sys.stderr)
-                        for f in futures:
-                            f.cancel()
-                        sys.exit(1)
                         
                     execution_failures.append({
                         "sample_id": sample.id,
@@ -209,6 +334,15 @@ class ClassificationEvaluator(BaseEvaluator):
                     if response.metadata:
                         sample_metric.update(response.metadata)
                     per_sample_by_id[str(sample.id)] = sample_metric
+                    
+                    # Write back to GlobalCache
+                    cache_key = self.global_cache.generate_key(
+                        model_name=model_name,
+                        payload=sample.input_text,
+                        params={"agent_mode": agent_mode, "base_class": base_class}
+                    )
+                    self.global_cache.set(cache_key, sample_metric)
+                    
                     if partial_cb:
                         partial_cb(sample_metric)
 

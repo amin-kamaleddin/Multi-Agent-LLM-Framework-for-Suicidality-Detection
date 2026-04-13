@@ -153,8 +153,14 @@ def _generate_reliability_chart(by_err: list, out_path: Path):
 
     fig, ax = plt.subplots(figsize=(12, 5.5))
     bars = ax.bar(names_err, err_vals, color=colors)
+    
+    max_err = max(err_vals) if err_vals else 0
+    y_max = max(max_err * 1.15, 1.0)
+    ax.set_ylim(0, y_max)
+    
     for b, v in zip(bars, err_vals):
-        ax.text(b.get_x() + b.get_width() / 2, v + 0.5, str(v), ha="center", va="bottom", fontsize=9)
+        offset = y_max * 0.02
+        ax.text(b.get_x() + b.get_width() / 2, v + offset, str(v), ha="center", va="bottom", fontsize=9)
 
     ax.set_ylabel("Execution Errors")
     ax.set_title("Reliability Risk by Model (Execution Errors)")

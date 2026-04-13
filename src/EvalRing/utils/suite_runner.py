@@ -155,7 +155,11 @@ def run_suite(
     max_host_iterations: int = 10,
     continue_runs: bool = False,
     cache: str | None = None,
+    cache_mode: str = "both",
+    ignore_errors: bool = False,
     out_dir: str | None = None,
+    data_path: str | None = None,
+    no_confirm: bool = False,
 ) -> int:
     """
     Primary interface for invoking external evaluation scripts dynamically
@@ -206,6 +210,178 @@ def run_suite(
     print(f"suite_dir={suite_dir}")
     print("=" * 80)
 
+    if not no_confirm:
+        print("\nPre-computing cache hits for the suite...")
+        total_cached = 0
+        total_uncached = 0
+        
+        import concurrent.futures
+        import json
+        
+        def _get_cache_info(idx_model):
+            idx, model_name = idx_model
+            env = os.environ.copy()
+            env["OPEN_ROUTER_MODEL"] = model_name
+            env["PYTHONIOENCODING"] = "utf-8"
+
+            cmd = [
+                sys.executable,
+                str(eval_script),
+                "--n-samples", str(n_samples),
+                "--max-workers", str(max_workers),
+                "--seed", str(seed),
+                "--agent-mode", str(agent_mode),
+                "--base-class", str(base_class),
+                "--max-host-iterations", str(max_host_iterations),
+                "--out-dir", str(suite_dir),
+                "--info-only"
+            ]
+            if data_path:
+                cmd.extend(["--data-path", str(data_path)])
+            if cache:
+                cmd.extend(["--cache", str(cache)])
+            if cache_mode:
+                cmd.extend(["--cache-mode", cache_mode])
+            if host_model:
+                cmd.extend(["--host-model", str(host_model)])
+            if role_models_json:
+                cmd.extend(["--role-models-json", str(role_models_json)])
+
+            try:
+                # We use bufsize=0 and binary mode (no text=True) so we can stream \r unbuffered tightly.
+                proc = subprocess.Popen(cmd, cwd=str(script_dir), env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
+                
+                final_line = ""
+                
+                import threading
+                stderr_output = []
+                def drain_stderr(pipe):
+                    buffer = bytearray()
+                    while True:
+                        byte = pipe.read(1)
+                        if not byte:
+                            break
+                        buffer.extend(byte)
+                        if byte == b'\n' or byte == b'\r':
+                            l_clean = buffer.decode("utf-8", errors="replace").strip()
+                            buffer.clear()
+                            if l_clean:
+                                with cache_lock:
+                                    cache_progress[model_name] = l_clean
+                                update_progress_file()
+                                stderr_output.append(l_clean + "\n")
+                    if buffer:
+                        l_clean = buffer.decode("utf-8", errors="replace").strip()
+                        if l_clean:
+                            with cache_lock:
+                                cache_progress[model_name] = l_clean
+                            update_progress_file()
+                            stderr_output.append(l_clean + "\n")
+
+                stderr_thread = threading.Thread(target=drain_stderr, args=(proc.stderr,))
+                stderr_thread.start()
+
+                # Read stdout in binary and decode line by line natively
+                for line_b in proc.stdout:
+                    line = line_b.decode("utf-8", errors="replace").strip()
+                    if line:
+                        final_line = line
+                        if not line.startswith("{"):
+                            with cache_lock:
+                                cache_progress[model_name] = line
+                            update_progress_file()
+                        
+                proc.wait()
+                stderr_thread.join()
+                if proc.returncode != 0:
+                    last_error = ""
+                    for line in reversed(stderr_output):
+                        if line.strip() and "tqdm" not in line and "overlapping" not in line.lower():
+                            if "error" in line.lower() or "exception" in line.lower():
+                                last_error = line.strip()
+                                break
+                            if not last_error:
+                                last_error = line.strip()
+                    if not last_error:
+                        last_error = "Unknown subprocess error."
+                    raise subprocess.CalledProcessError(proc.returncode, cmd, stderr=last_error)
+                
+                import re
+                match = re.search(r'(\{.*\})', final_line)
+                if match:
+                    cache_info = json.loads(match.group(1))
+                else:
+                    cache_info = json.loads(final_line)
+
+                return model_name, cache_info.get("cached", 0), cache_info.get("uncached", 0), idx, None
+            except Exception as e:
+                err_msg = str(e)
+                if isinstance(e, subprocess.CalledProcessError) and e.stderr:
+                    err_msg += f"\nStderr: {e.stderr}"
+                return model_name, 0, 0, idx, err_msg
+                
+        from tqdm import tqdm
+        import threading
+        
+        cache_progress = {m: "Starting..." for m in model_names}
+        cache_lock = threading.Lock()
+        progress_file = suite_dir / "progress.txt"
+        
+        def update_progress_file():
+            with cache_lock:
+                lines = ["Cache Scan Status:", "=" * 80]
+                for m_name, status in cache_progress.items():
+                    # Format model name to 30 chars
+                    m_short = (m_name[:27] + "..") if len(m_name) > 30 else m_name
+                    lines.append(f"{m_short:<30} : {status}")
+                with open(progress_file, "w", encoding="utf-8") as pf:
+                    pf.write("\n".join(lines) + "\n")
+                    
+        update_progress_file()
+        
+        # Process in parallel up to max_workers or len(model_names)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(max_workers, len(model_names))) as executor:
+            future_to_model = {executor.submit(_get_cache_info, (i, m)): m for i, m in enumerate(model_names, 1)}
+            
+            completed = 0
+            with tqdm(total=len(model_names), desc="Checking cache info") as pbar:
+                for future in concurrent.futures.as_completed(future_to_model):
+                    m_name = future_to_model[future]
+                    completed += 1
+                    try:
+                        m, c, u, idx, err = future.result()
+                        with cache_lock:
+                            if err:
+                                cache_progress[m_name] = f"Error: {err}"
+                            else:
+                                cache_progress[m_name] = f"[Cached: {c:<4} | Fresh: {u:<4}] Done."
+                                total_cached += c
+                                total_uncached += u
+                    except Exception as e:
+                        with cache_lock:
+                            cache_progress[m_name] = f"Error: {e}"
+                            
+                    update_progress_file()
+                    pbar.set_postfix_str(f"{completed}/{len(model_names)} completed")
+                    pbar.update(1)
+                
+        print("\n" + "=" * 50)
+        print(f"Suite Cache Summary:")
+        print(f"  Total API calls cached:   {total_cached}")
+        print(f"  Total API calls uncached: {total_uncached}")
+        print("=" * 50)
+        
+        while True:
+            val = input("Type 'y' to continue with the suite run, or 'q' to quit: ").strip().lower()
+            if val == 'y':
+                print("Proceeding...")
+                break
+            elif val == 'q':
+                print("Suite aborted.")
+                sys.exit(0)
+            else:
+                print("Invalid input. Please type 'y' to confirm or 'q' to abort.")
+
     def _run_single_model(model_name: str, idx: int) -> dict:
         env = os.environ.copy()
         env["OPEN_ROUTER_MODEL"] = model_name
@@ -222,10 +398,20 @@ def run_suite(
             "--max-host-iterations", str(max_host_iterations),
             "--out-dir", str(suite_dir),
         ]
+        if data_path:
+            cmd.extend(["--data-path", str(data_path)])
+        # IMPORTANT: Suite runner must not block on input! Force -nc.
+        cmd.append("-nc")
         if continue_runs:
             cmd.append("--continue")
         if cache:
             cmd.extend(["--cache", str(cache)])
+        if cache_mode:
+            cmd.extend(["--cache-mode", cache_mode])
+        if ignore_errors:
+            cmd.append("--ignore-errors")
+        if ignore_errors:
+            cmd.append("--ignore-errors")
         if host_model:
             cmd.extend(["--host-model", str(host_model)])
         if role_models_json:
@@ -484,6 +670,8 @@ if __name__ == "__main__":
     parser.add_argument("--max-host-iterations", type=int, default=10)
     parser.add_argument("--continue-runs", action="store_true")
     parser.add_argument("--cache", type=str, default=None)
+    parser.add_argument("--cache-mode", type=str, default="both", choices=["runs_only", "cache_file", "both"])
+    parser.add_argument("--ignore-errors", action="store_true", help="Ignore cached errors, forcing them to re-run.")
     parser.add_argument("--out-dir", type=str, default=None)
 
     args = parser.parse_args()
@@ -501,6 +689,8 @@ if __name__ == "__main__":
         max_host_iterations=args.max_host_iterations,
         continue_runs=args.continue_runs,
         cache=args.cache,
+        cache_mode=args.cache_mode,
+        ignore_errors=args.ignore_errors,
         out_dir=args.out_dir,
     )
     sys.exit(code)
