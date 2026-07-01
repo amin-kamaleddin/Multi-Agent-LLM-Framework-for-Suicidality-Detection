@@ -1,189 +1,129 @@
-"""Static prompts and prompt mappings for the naive multi-agent workflow."""
+"""Prompts for hierarchical suicide-risk classification workflow."""
 
 from __future__ import annotations
-
-import json
-from dataclasses import dataclass
 
 from ..core.labels import LABEL_DEFINITIONS, VALID_LABELS
 
 
-# The four specialist prompts are intentionally static. They split the legacy
-# single-agent prompt's four label definitions into one binary true/false task
-# per agent while keeping the same label boundaries.
-INDICATOR_SPECIALIST_PROMPT = """You are the Indicator Agent for a suicide-risk classification task.
+def _label_definitions_text() -> str:
+    return "\n".join(f"- {label}: {LABEL_DEFINITIONS[label]}" for label in VALID_LABELS)
 
-Target label: Indicator
 
-- The post does NOT indicate the author's own suicidal risk.
-- Includes: discussion of another person's suicidality, general discussion/news, or explicit denial of own suicidal intent.
-- Also includes concern for someone else at risk.
+PERSPECTIVE_SYSTEM_PROMPT = f"""
+You are the Perspective / Risk-Relevance Agent.
 
-Task:
-Decide only whether the input text matches the Indicator label. Do not choose the final four-class label.
+Goal:
+Determine whether the text is about the author's own suicide/self-harm risk, or not.
 
-Input format:
-You will receive one user message:
+Available task labels:
+{_label_definitions_text()}
 
-Text to classify:
-<text>
+Decision options:
+- SELF_RISK: the author appears to describe their own suicidal thoughts, self-harm, preparation, behavior, or attempt.
+- INDICATOR: the post is about another person, general suicide discussion, concern for someone else, or denial of the author's own suicidal intent.
 
-Output format:
-Return only valid JSON with exactly these keys:
-{"answer": true}
-
-Rules:
-- "answer" must be true when the text matches Indicator, otherwise false.
-- "answer" must be a JSON boolean, not a string.
-- Do not include markdown, commentary, rationale, confidence, or extra keys."""
-
-IDEATION_SPECIALIST_PROMPT = """You are the Ideation Agent for a suicide-risk classification task.
-
-Target label: Ideation
-
-- The author expresses suicidal thoughts, wishes, or desire to die/end life.
-- Includes passive or active suicidal thinking, including hypothetical or unrealistic methods.
-- No concrete self-harm/suicide action has been taken in the post.
-
-Task:
-Decide only whether the input text matches the Ideation label. Do not choose the final four-class label.
-
-Input format:
-You will receive one user message:
-
-Text to classify:
-<text>
-
-Output format:
-Return only valid JSON with exactly these keys:
-{"answer": true}
+Return only valid JSON:
+{{
+  "decision": "SELF_RISK" | "INDICATOR",
+  "confidence": 0.0,
+  "reasoning": "brief explanation"
+}}
 
 Rules:
-- "answer" must be true when the text matches Ideation, otherwise false.
-- "answer" must be a JSON boolean, not a string.
-- Do not include markdown, commentary, rationale, confidence, or extra keys."""
-
-BEHAVIOR_SPECIALIST_PROMPT = """You are the Behavior Agent for a suicide-risk classification task.
-
-Target label: Behavior
-
-- The author describes preparatory or self-harm behavior beyond verbal thoughts.
-- Includes planning/preparation actions (for example, gathering means, writing notes, preparing for death).
-- Includes non-suicidal self-harm when self-inflicted harm is described, even without explicit intent to die.
-
-Task:
-Decide only whether the input text matches the Behavior label. Do not choose the final four-class label.
-
-Input format:
-You will receive one user message:
-
-Text to classify:
-<text>
-
-Output format:
-Return only valid JSON with exactly these keys:
-{"answer": true}
-
-Rules:
-- "answer" must be true when the text matches Behavior, otherwise false.
-- "answer" must be a JSON boolean, not a string.
-- Do not include markdown, commentary, rationale, confidence, or extra keys."""
-
-ATTEMPT_SPECIALIST_PROMPT = """You are the Attempt Agent for a suicide-risk classification task.
-
-Target label: Attempt
-
-- The post mentions a suicide attempt (current or past).
-- A past attempt should still be labeled Attempt, even if the current post does not express ongoing suicidal thoughts.
-
-Task:
-Decide only whether the input text matches the Attempt label. Do not choose the final four-class label.
-
-Input format:
-You will receive one user message:
-
-Text to classify:
-<text>
-
-Output format:
-Return only valid JSON with exactly these keys:
-{"answer": true}
-
-Rules:
-- "answer" must be true when the text matches Attempt, otherwise false.
-- "answer" must be a JSON boolean, not a string.
-- Do not include markdown, commentary, rationale, confidence, or extra keys."""
+- Use INDICATOR when there is no evidence of the author's own suicide/self-harm risk.
+- Do not include markdown.
+- Do not include extra keys.
+""".strip()
 
 
-@dataclass(frozen=True)
-class SpecialistPromptConfig:
-    """Maps one specialist agent name to one label and one static prompt."""
+IDEATION_ACTION_SYSTEM_PROMPT = """
+You are the Ideation vs Action Agent.
 
-    agent_name: str
-    label_name: str
-    system_prompt: str
-    input_format: str = "Text to classify:\\n\\n{text}"
-    output_format: str = '{"answer": true|false}'
-    parallel_group: str = "four_label_specialists"
+Goal:
+For posts about the author's own self-risk, decide whether the content is ideation only,
+or whether it describes action/preparation/behavior.
 
+Decision options:
+- IDEATION: suicidal thoughts, wishes, desire to die, or wanting life to end, without concrete action.
+- ACTION_PATHWAY: preparatory behavior, self-harm behavior, attempt, or action beyond thoughts.
 
-SPECIALIST_AGENT_PROMPTS: dict[str, SpecialistPromptConfig] = {
-    "Indicator Agent": SpecialistPromptConfig(
-        agent_name="Indicator Agent",
-        label_name="Indicator",
-        system_prompt=INDICATOR_SPECIALIST_PROMPT,
-    ),
-    "Ideation Agent": SpecialistPromptConfig(
-        agent_name="Ideation Agent",
-        label_name="Ideation",
-        system_prompt=IDEATION_SPECIALIST_PROMPT,
-    ),
-    "Behavior Agent": SpecialistPromptConfig(
-        agent_name="Behavior Agent",
-        label_name="Behavior",
-        system_prompt=BEHAVIOR_SPECIALIST_PROMPT,
-    ),
-    "Attempt Agent": SpecialistPromptConfig(
-        agent_name="Attempt Agent",
-        label_name="Attempt",
-        system_prompt=ATTEMPT_SPECIALIST_PROMPT,
-    ),
+Return only valid JSON:
+{
+  "decision": "IDEATION" | "ACTION_PATHWAY",
+  "confidence": 0.0,
+  "reasoning": "brief explanation"
 }
 
-LABEL_TO_AGENT_NAME: dict[str, str] = {
-    config.label_name: config.agent_name for config in SPECIALIST_AGENT_PROMPTS.values()
+Rules:
+- If concrete steps, preparation, self-harm, overdose, hanging, cutting, gathering means, or attempt are described, choose ACTION_PATHWAY.
+- Do not include markdown.
+- Do not include extra keys.
+""".strip()
+
+
+BEHAVIOR_ATTEMPT_SYSTEM_PROMPT = """
+You are the Behavior vs Attempt Agent.
+
+Goal:
+For posts that describe action/preparation/behavior, decide whether the best label is Behavior or Attempt.
+
+Decision options:
+- BEHAVIOR: self-harm, preparation, or suicidal behavior without clear suicide attempt.
+- ATTEMPT: current or past suicide attempt, including taking action with intent to die.
+
+Return only valid JSON:
+{
+  "decision": "BEHAVIOR" | "ATTEMPT",
+  "confidence": 0.0,
+  "reasoning": "brief explanation"
 }
 
+Rules:
+- Past suicide attempts are still ATTEMPT.
+- Preparatory actions without an actual attempt are BEHAVIOR.
+- Non-suicidal self-harm is BEHAVIOR.
+- Do not include markdown.
+- Do not include extra keys.
+""".strip()
 
-def specialist_system_prompt(label_name: str) -> str:
-    """Return the static system prompt for the specialist assigned to label_name."""
-    return SPECIALIST_AGENT_PROMPTS[LABEL_TO_AGENT_NAME[label_name]].system_prompt
+
+EVALUATOR_SYSTEM_PROMPT = f"""
+You are the Final Evaluator / Safety Checker.
+
+Goal:
+Review the hierarchical path and final proposed label for consistency.
+
+Valid final labels:
+{", ".join(VALID_LABELS)}
+
+Return only valid JSON:
+{{
+  "label_name": "<one valid final label>",
+  "confidence": 0.0,
+  "escalation_flag": true,
+  "reasoning": "brief explanation"
+}}
+
+Rules:
+- Preserve the proposed label unless the path is clearly inconsistent.
+- Set escalation_flag=true if confidence is low, evidence is ambiguous, or the case appears safety-critical.
+- Do not include markdown.
+- Do not include extra keys.
+""".strip()
 
 
-def specialist_user_prompt(text: str) -> str:
+def user_prompt(text: str) -> str:
     return f"Text to classify:\n\n{text}"
 
 
-def judge_system_prompt() -> str:
-    definitions = "\n".join(f"- {label}: {LABEL_DEFINITIONS[label]}" for label in VALID_LABELS)
+def evaluator_user_prompt(
+    *,
+    text: str,
+    proposed_label: str,
+    path: list[dict],
+) -> str:
     return (
-        "You are the final judge for a four-class suicide-risk classification task.\n"
-        "Use the original text and the four specialist answers to choose exactly one final label.\n\n"
-        "The four specialist agents run in parallel before you receive their answers:\n"
-        f"Label definitions:\n{definitions}\n\n"
-        "Input format:\n"
-        "You receive the original text plus a JSON object keyed by the four specialist labels.\n\n"
-        "Output format:\n"
-        "Return only valid JSON with exactly this shape:\n"
-        '{"label_name": "<label_name>"}'
-    )
-
-
-def judge_user_prompt(text: str, specialist_answers: dict[str, bool]) -> str:
-    payload = {label: specialist_answers[label] for label in VALID_LABELS}
-    return (
-        "Original text:\n"
-        f"{text}\n\n"
-        "Specialist answers:\n"
-        f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
+        f"Original text:\n{text}\n\n"
+        f"Proposed final label: {proposed_label}\n\n"
+        f"Hierarchical path:\n{path}"
     )
