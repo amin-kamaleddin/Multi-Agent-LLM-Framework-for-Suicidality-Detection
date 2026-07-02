@@ -100,7 +100,7 @@ Return only valid JSON:
 {{
   "label_name": "<one valid final label>",
   "confidence": 0.0,
-  "escalation_flag": true,
+  "escalation_flag": true | false,
   "reasoning": "brief explanation"
 }}
 

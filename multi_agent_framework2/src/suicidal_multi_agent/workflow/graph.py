@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import time
 from dataclasses import dataclass
 from typing import Any, Protocol, TypedDict
@@ -386,12 +385,16 @@ class MultiAgentWorkflow:
         }
 
         result = self.graph.invoke(initial_state)
-
+        final_label = result.get("final_label") or "Error"
+        specialist_answers = {
+            label: final_label == label
+            for label in VALID_LABELS
+        }
         return CaseResult(
             sample_id=sample_id,
             text=text,
-            final_label=result.get("final_label") or "Error",
-            specialist_answers=result.get("specialist_answers", {}),
+            final_label=final_label,
+            specialist_answers=specialist_answers,
             errors=result.get("errors", []),
             traces=result.get("traces", []),
             llm_calls=result.get("llm_calls", []),
