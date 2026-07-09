@@ -1,0 +1,77 @@
+{
+  "model_name": "openai/gpt-4o-mini",
+  "requested_model_name": "gpt-4o-mini",
+  "evaluation_status": "completed",
+  "processed_records": 100,
+  "total_records": 100,
+  "stop_reason": null,
+  "runtime": {
+    "call_count": 101,
+    "llm_request_count": 101,
+    "failed_llm_attempts": 1,
+    "latency_s": {
+      "min": 1.0396332499949494,
+      "max": 6.69725691700296,
+      "avg": 1.5917977133267593,
+      "total": 160.7715690460027
+    },
+    "tokens": {
+      "prompt_total": 40645,
+      "completion_total": 5991,
+      "total": 46636,
+      "cached_total": 0,
+      "cache_write_total": 0,
+      "avg_prompt_per_request": 402.4257425742574,
+      "avg_completion_per_request": 59.31683168316832,
+      "avg_total_per_request": 461.74257425742576,
+      "avg_cached_per_request": 0.0,
+      "avg_cache_write_per_request": 0.0
+    },
+    "cost_usd": {
+      "total": 0.00969135,
+      "avg_per_call": 9.59539603960396e-05
+    },
+    "provider_timing": {
+      "ttft_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "generation_time_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "provider_latency_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "moderation_latency_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "completion_tps": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "e2e_completion_tps": {
+        "count": 100,
+        "min": 16.380169421660522,
+        "max": 56.29154557730187,
+        "avg": 40.83981536766701
+      }
+    }
+  },
+  "failed_records": 0,
+  "failure_rate": 0.0,
+  "llm_trace_file": "llm_calls.jsonl",
+  "node_trace_file": "traces.jsonl"
+}
