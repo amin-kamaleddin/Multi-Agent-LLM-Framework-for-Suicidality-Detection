@@ -7,26 +7,34 @@ This folder vendors the standalone naive multi-agent suicide-risk classifier fro
 The framework evaluates this v1 workflow:
 
 ```text
-input text -> 4 parallel binary specialist agents -> JSON answers -> final judge -> one label
+input text -> 4 parallel binary specialist agents -> JSON answers -> final judge -> label + suicidal_intent
 ```
 
-Labels are exactly:
+The four specialist labels are:
 
 - `Indicator`
 - `Ideation`
 - `Behavior`
 - `Attempt`
 
-Specialist output schema:
+The final judge may also return `Unsupportive`.
+
+Default specialist output schema (`--mode bool`):
 
 ```json
 {"answer": true}
 ```
 
+Reasoned specialist output schema (`--mode reasoned`):
+
+```json
+{"answer": true, "reasoning": "1-3 sentence explanation including supporting evidence"}
+```
+
 Judge output schema:
 
 ```json
-{"label_name": "Ideation"}
+{"label_name": "Ideation", "suicidal_intent": true}
 ```
 
 ## Folder Index
@@ -34,6 +42,7 @@ Judge output schema:
 - `pyproject.toml`, `uv.lock`, `.python-version`: self-contained `uv` project configuration.
 - `.env.example`: environment template; copy to `.env` locally and fill API settings.
 - `src/suicidal_multi_agent/`: source package.
+- `src/suicidal_multi_agent/workflow/prompts.py`: prompt/schema mode registry. `bool` and `reasoned` modes reuse the same graph.
 - `tests/`: pytest suite for data rules, schemas, prompts, graph behavior, metrics, evaluator, and reporting.
 - `scripts/smoke_openrouter_weather.py`: optional OpenRouter smoke test.
 - `dataset/`: active anonymized dataset and processed evaluation samples used by the CLI.
@@ -71,10 +80,22 @@ Run a fake-LLM smoke evaluation:
 uv run python -m suicidal_multi_agent.cli evaluate --fake-llm --limit 4
 ```
 
+Run a fake-LLM smoke evaluation with specialist reasoning:
+
+```powershell
+uv run python -m suicidal_multi_agent.cli evaluate --fake-llm --limit 4 --mode reasoned
+```
+
 Run the real 500-row `gpt-4o` evaluation:
 
 ```powershell
 uv run python -m suicidal_multi_agent.cli evaluate --model gpt-4o --sample-path dataset/processed/dataset1_balanced_500_seed42.csv --dataset-audit-path dataset/processed/dataset1_audit.json --max-completion-tokens 256 --run-id gpt4o_dataset1_500
+```
+
+Run the real 500-row `gpt-4o` evaluation with specialist reasoning:
+
+```powershell
+uv run python -m suicidal_multi_agent.cli evaluate --model gpt-4o --mode reasoned --sample-path dataset/processed/dataset1_balanced_500_seed42.csv --dataset-audit-path dataset/processed/dataset1_audit.json --max-completion-tokens 256 --run-id gpt4o_reasoned_dataset1_500
 ```
 
 Compile a completed run:
@@ -86,5 +107,7 @@ uv run python -m suicidal_multi_agent.cli compile-results --run-dir logs/runs/<r
 ## Notes
 
 - Use `--max-completion-tokens 256` for `gpt-4o`; the previous 500,000-token default exceeds the model/provider limit.
+- `predictions.csv` always contains `specialist_answers` for metrics and `specialist_outputs` for the full per-label JSON. In `reasoned` mode it also includes per-label `*_reasoning` columns.
+- `run` and `evaluate` automatically write `compiled_results.csv` and `compiled_results.md` after final artifacts are complete. Use `compile-results` only to regenerate reports for an older run.
 - Real runs write artifacts under `logs/runs/`; those are local generated evidence and are not committed in this folder.
 - This is research evaluation code, not clinical deployment software.

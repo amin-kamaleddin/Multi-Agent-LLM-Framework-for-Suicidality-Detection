@@ -20,12 +20,14 @@ from .evaluation.evaluator import (
     DEFAULT_EVALUATION_SAMPLE_PATH,
     EvaluationConfig,
     build_prediction_row,
+    finalize_evaluation_artifacts,
     load_evaluation_sample,
     run_workflow_evaluation,
 )
 from .evaluation.metrics import compute_classification_metrics, summarize_runtime
 from .evaluation.reporting import compile_run_results
 from .workflow.graph import MultiAgentWorkflow
+from .workflow.prompts import WORKFLOW_MODE_NAMES
 
 
 class DeterministicFakeModel:
@@ -34,11 +36,22 @@ class DeterministicFakeModel:
     def invoke(self, messages: list[dict[str, str]]) -> str:
         system = messages[0]["content"]
         if "final judge" in system.lower():
-            return json.dumps({"label_name": "Indicator"})
+            return json.dumps({"label_name": "Indicator", "suicidal_intent": True})
         for label in VALID_LABELS:
             if f"Target label: {label}" in system:
-                return json.dumps({"answer": label == "Indicator"})
-        return json.dumps({"label_name": "Indicator"})
+                answer = label == "Indicator"
+                if '"reasoning"' in system:
+                    return json.dumps(
+                        {
+                            "answer": answer,
+                            "reasoning": (
+                                f"Synthetic fake-model rationale for {label}; "
+                                f"answer is {str(answer).lower()}."
+                            ),
+                        }
+                    )
+                return json.dumps({"answer": answer})
+        return json.dumps({"label_name": "Indicator", "suicidal_intent": True})
 
 
 def openai_base_url() -> str:
@@ -145,6 +158,7 @@ def cmd_prepare_data(args: argparse.Namespace) -> int:
 
 def cmd_run(args: argparse.Namespace) -> int:
     writer, _, sampled = _write_setup_artifacts(args, "run")
+    requested_model_name = "deterministic-fake-llm" if args.fake_llm else args.model
     model_name = (
         "deterministic-fake-llm"
         if args.fake_llm
@@ -159,6 +173,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         model=model,
         model_name=model_name,
         max_retries=args.max_retries,
+        mode=args.mode,
     )
 
     rows: list[dict[str, Any]] = []
@@ -178,34 +193,44 @@ def cmd_run(args: argparse.Namespace) -> int:
             build_prediction_row(record=record, result=result)
         )
 
-    predictions = pd.DataFrame(rows)
-    writer.write_dataframe("predictions.csv", predictions)
-    metrics = {
-        "classification": compute_classification_metrics(
-            predictions["ground_truth"].tolist(),
-            predictions["prediction"].tolist(),
-            model_name=model_name,
-        ),
-        "runtime": summarize_runtime(all_calls),
-    }
-    metrics["model_name"] = model_name
-    writer.write_dataframe("model_metrics.csv", pd.DataFrame([metrics["classification"]["model_summary"]]))
-    writer.write_dataframe("label_metrics.csv", pd.DataFrame(metrics["classification"]["per_label"]))
-    writer.write_json(
-        "trace_summary.json",
-        {
-            "model_name": model_name,
-            "runtime": metrics["runtime"],
-            "failed_records": metrics["classification"]["failed_records"],
-            "failure_rate": metrics["classification"]["failure_rate"],
-            "llm_trace_file": "llm_calls.jsonl",
-            "node_trace_file": "traces.jsonl",
-        },
+    config = EvaluationConfig(
+        model_name=model_name,
+        requested_model_name=requested_model_name,
+        sample_path=args.data_path,
+        dataset_audit_path=None,
+        max_retries=args.max_retries,
+        max_completion_tokens=args.max_completion_tokens,
+        temperature=args.temperature,
+        total_records=len(sampled),
+        mode=args.mode,
+        command="run",
     )
-    writer.write_json("metrics.json", metrics)
-    writer.write_metrics_md(metrics)
-    metrics["artifact_status"] = writer.required_artifact_status()
-    writer.write_json("metrics.json", metrics)
+    run_config = _args_config(args, "run")
+    run_config["resolved_model_name"] = model_name
+    run_config["agent_configuration"] = {
+        **{
+            f"{label} Agent": {
+                "role": f"{label}_specialist",
+                "model_name": model_name,
+                "temperature": args.temperature,
+            }
+            for label in VALID_LABELS
+        },
+        "Final Judge": {
+            "role": "judge",
+            "model_name": model_name,
+            "temperature": args.temperature,
+        },
+    }
+    writer.write_json("run_config.json", run_config)
+    metrics = finalize_evaluation_artifacts(
+        writer=writer,
+        rows=rows,
+        all_calls=all_calls,
+        config=config,
+        status="completed",
+        stop_reason=None,
+    )
     print(json.dumps({"run_dir": str(writer.run_dir), "metrics": metrics}, indent=2))
     return 0
 
@@ -233,6 +258,7 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
         temperature=args.temperature,
         total_records=len(sample_df),
         limit=args.limit,
+        mode=args.mode,
         error_stop_failed_llm_attempts=args.error_stop_failed_llm_attempts,
         error_stop_failed_records=args.error_stop_failed_records,
         error_stop_rate=args.error_stop_rate,
@@ -279,6 +305,7 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--temperature", type=float, default=float(os.environ.get("OPENAI_TEMPERATURE", "0") or 0))
     run.add_argument("--max-completion-tokens", type=int, default=int(os.environ.get("MAX_COMPLETION_TOKENS", "500000") or 500000))
     run.add_argument("--max-retries", type=int, default=int(os.environ.get("MAX_RETRIES", "3") or 3))
+    run.add_argument("--mode", choices=WORKFLOW_MODE_NAMES, default="bool", help="Prompt/schema mode for the shared graph.")
     run.set_defaults(func=cmd_run)
 
     evaluate = subparsers.add_parser("evaluate", help="Evaluate a configured model on a frozen sampled dataset.")
@@ -289,6 +316,7 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--temperature", type=float, default=float(os.environ.get("OPENAI_TEMPERATURE", "0") or 0))
     evaluate.add_argument("--max-completion-tokens", type=int, default=int(os.environ.get("MAX_COMPLETION_TOKENS", "500000") or 500000))
     evaluate.add_argument("--max-retries", type=int, default=int(os.environ.get("MAX_RETRIES", "3") or 3))
+    evaluate.add_argument("--mode", choices=WORKFLOW_MODE_NAMES, default="bool", help="Prompt/schema mode for the shared graph.")
     evaluate.add_argument("--limit", type=int, default=None, help="Optional first-N record limit for smoke tests.")
     evaluate.add_argument("--run-id", default=None, help="Optional run directory suffix.")
     evaluate.add_argument("--error-stop-failed-llm-attempts", type=int, default=int(os.environ.get("EVAL_ERROR_STOP_FAILED_LLM_ATTEMPTS", "10") or 10))

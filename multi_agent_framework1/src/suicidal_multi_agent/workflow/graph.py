@@ -9,12 +9,10 @@ from dataclasses import dataclass
 from typing import Annotated, Any, Protocol, TypedDict
 
 from ..core.labels import VALID_LABELS
-from ..core.schemas import JudgeAnswer, SpecialistAnswer, extract_json_object
+from ..core.schemas import extract_json_object
 from .prompts import (
-    LABEL_TO_AGENT_NAME,
-    SPECIALIST_AGENT_PROMPTS,
-    judge_system_prompt,
-    judge_user_prompt,
+    WorkflowModeConfig,
+    get_workflow_mode,
     specialist_user_prompt,
 )
 
@@ -30,7 +28,9 @@ class WorkflowState(TypedDict):
     sample_id: str
     text: str
     specialist_answers: Annotated[dict[str, bool], operator.or_]
+    specialist_outputs: Annotated[dict[str, dict[str, Any]], operator.or_]
     final_label: str
+    suicidal_intent: bool | None
     errors: Annotated[list[dict[str, Any]], operator.add]
     traces: Annotated[list[dict[str, Any]], operator.add]
     llm_calls: Annotated[list[dict[str, Any]], operator.add]
@@ -41,7 +41,9 @@ class CaseResult:
     sample_id: str
     text: str
     final_label: str
+    suicidal_intent: bool | None
     specialist_answers: dict[str, bool]
+    specialist_outputs: dict[str, dict[str, Any]]
     errors: list[dict[str, Any]]
     traces: list[dict[str, Any]]
     llm_calls: list[dict[str, Any]]
@@ -375,11 +377,18 @@ class MultiAgentWorkflow:
         model_name: str = "unknown",
         max_retries: int = 3,
         max_json_retries: int | None = None,
+        mode: str | WorkflowModeConfig = "bool",
+        models_by_role: dict[str, InvokableModel] | None = None,
+        model_names_by_role: dict[str, str] | None = None,
     ):
         self.model = model
         self.model_name = model_name
+        self.models_by_role = models_by_role or {}
+        self.model_names_by_role = model_names_by_role or {}
         self.max_retries = max(0, int(max_json_retries if max_json_retries is not None else max_retries))
-        self._structured_agent_cache: dict[tuple[str, str], Any] = {}
+        self.mode_config = get_workflow_mode(mode)
+        self.mode_name = self.mode_config.name
+        self._structured_agent_cache: dict[tuple[int, str, str], Any] = {}
         self.graph = self._build_graph()
 
     def _build_graph(self):
@@ -390,9 +399,12 @@ class MultiAgentWorkflow:
 
         builder = StateGraph(WorkflowState)
         node_names = []
+        prompt_by_label = {
+            prompt_config.label_name: prompt_config
+            for prompt_config in self.mode_config.specialist_prompts.values()
+        }
         for label in VALID_LABELS:
-            agent_name = LABEL_TO_AGENT_NAME[label]
-            prompt_config = SPECIALIST_AGENT_PROMPTS[agent_name]
+            prompt_config = prompt_by_label[label]
             node_name = f"{label.lower()}_specialist"
             node_names.append(node_name)
             builder.add_node(node_name, self._make_specialist_node(prompt_config))
@@ -402,11 +414,17 @@ class MultiAgentWorkflow:
         builder.add_edge("judge", END)
         return builder.compile()
 
-    def _can_use_create_agent(self) -> bool:
-        return hasattr(self.model, "bind_tools")
+    def _can_use_create_agent(self, model: InvokableModel) -> bool:
+        return hasattr(model, "bind_tools")
 
-    def _get_structured_agent(self, *, system_prompt: str, schema: type[Any]) -> Any:
-        cache_key = (schema.__name__, system_prompt)
+    def _get_structured_agent(
+        self,
+        *,
+        model: InvokableModel,
+        system_prompt: str,
+        schema: type[Any],
+    ) -> Any:
+        cache_key = (id(model), schema.__name__, system_prompt)
         if cache_key not in self._structured_agent_cache:
             try:
                 from langchain.agents import create_agent
@@ -415,7 +433,7 @@ class MultiAgentWorkflow:
                 raise ImportError("langchain is required for create_agent structured output.") from exc
 
             self._structured_agent_cache[cache_key] = create_agent(
-                model=self.model,
+                model=model,
                 tools=[],
                 system_prompt=system_prompt,
                 response_format=ToolStrategy(schema, handle_errors=True),
@@ -423,17 +441,39 @@ class MultiAgentWorkflow:
         return self._structured_agent_cache[cache_key]
 
     def _call_and_parse(self, *, role: str, messages: list[dict[str, str]], schema: type[Any]) -> tuple[Any, list[dict[str, Any]], list[dict[str, Any]]]:
-        if self._can_use_create_agent():
-            return self._call_with_create_agent(role=role, messages=messages, schema=schema)
-        return self._call_and_parse_manually(role=role, messages=messages, schema=schema)
+        model = self.models_by_role.get(role, self.model)
+        model_name = self.model_names_by_role.get(role, self.model_name)
+        if self._can_use_create_agent(model):
+            return self._call_with_create_agent(
+                role=role,
+                messages=messages,
+                schema=schema,
+                model=model,
+                model_name=model_name,
+            )
+        return self._call_and_parse_manually(
+            role=role,
+            messages=messages,
+            schema=schema,
+            model=model,
+            model_name=model_name,
+        )
 
-    def _call_with_create_agent(self, *, role: str, messages: list[dict[str, str]], schema: type[Any]) -> tuple[Any, list[dict[str, Any]], list[dict[str, Any]]]:
+    def _call_with_create_agent(
+        self,
+        *,
+        role: str,
+        messages: list[dict[str, str]],
+        schema: type[Any],
+        model: InvokableModel,
+        model_name: str,
+    ) -> tuple[Any, list[dict[str, Any]], list[dict[str, Any]]]:
         calls: list[dict[str, Any]] = []
         final_errors: list[dict[str, Any]] = []
         attempts = self.max_retries + 1
         system_prompt = next((message["content"] for message in messages if message["role"] == "system"), "")
         agent_messages = [message for message in messages if message["role"] != "system"]
-        agent = self._get_structured_agent(system_prompt=system_prompt, schema=schema)
+        agent = self._get_structured_agent(model=model, system_prompt=system_prompt, schema=schema)
 
         for attempt in range(1, attempts + 1):
             started = time.perf_counter()
@@ -446,7 +486,7 @@ class MultiAgentWorkflow:
                     _agent_call_records(
                         result=result,
                         role=role,
-                        model_name=self.model_name,
+                        model_name=model_name,
                         outer_attempt=attempt,
                         latency_s=latency_s,
                         parsed=parsed,
@@ -466,7 +506,7 @@ class MultiAgentWorkflow:
                     {
                         "role": role,
                         "attempt": attempt,
-                        "model_name": self.model_name,
+                        "model_name": model_name,
                         "latency_s": latency_s,
                         "prompt_tokens": 0,
                         "completion_tokens": 0,
@@ -496,21 +536,29 @@ class MultiAgentWorkflow:
                     return None, calls, final_errors
         return None, calls, final_errors
 
-    def _call_and_parse_manually(self, *, role: str, messages: list[dict[str, str]], schema: type[Any]) -> tuple[Any, list[dict[str, Any]], list[dict[str, Any]]]:
+    def _call_and_parse_manually(
+        self,
+        *,
+        role: str,
+        messages: list[dict[str, str]],
+        schema: type[Any],
+        model: InvokableModel,
+        model_name: str,
+    ) -> tuple[Any, list[dict[str, Any]], list[dict[str, Any]]]:
         calls: list[dict[str, Any]] = []
         final_errors: list[dict[str, Any]] = []
         attempts = self.max_retries + 1
         for attempt in range(1, attempts + 1):
             started = time.perf_counter()
             try:
-                response = self.model.invoke(messages)
+                response = model.invoke(messages)
                 latency_s = time.perf_counter() - started
                 raw = _response_text(response)
                 usage = _usage(response)
                 call_record = {
                     "role": role,
                     "attempt": attempt,
-                    "model_name": self.model_name,
+                    "model_name": model_name,
                     "latency_s": latency_s,
                     "prompt_tokens": usage["prompt_tokens"],
                     "completion_tokens": usage["completion_tokens"],
@@ -552,7 +600,7 @@ class MultiAgentWorkflow:
                         {
                             "role": role,
                             "attempt": attempt,
-                            "model_name": self.model_name,
+                            "model_name": model_name,
                             "latency_s": latency_s,
                             "prompt_tokens": 0,
                             "completion_tokens": 0,
@@ -591,10 +639,12 @@ class MultiAgentWorkflow:
             parsed, calls, errors = self._call_and_parse(
                 role=f"{prompt_config.label_name}_specialist",
                 messages=messages,
-                schema=SpecialistAnswer,
+                schema=self.mode_config.specialist_schema,
             )
             node_finished_at_s = time.perf_counter()
-            specialist_answers = {prompt_config.label_name: parsed.answer} if parsed is not None else {}
+            specialist_output = parsed.model_dump() if parsed is not None else None
+            specialist_answers = {prompt_config.label_name: specialist_output["answer"]} if specialist_output else {}
+            specialist_outputs = {prompt_config.label_name: specialist_output} if specialist_output else {}
             traces = [
                 {
                     "event": "specialist_complete",
@@ -607,7 +657,13 @@ class MultiAgentWorkflow:
                     "node_duration_s": node_finished_at_s - node_started_at_s,
                 }
             ]
-            return {"specialist_answers": specialist_answers, "errors": errors, "traces": traces, "llm_calls": calls}
+            return {
+                "specialist_answers": specialist_answers,
+                "specialist_outputs": specialist_outputs,
+                "errors": errors,
+                "traces": traces,
+                "llm_calls": calls,
+            }
 
         return node
 
@@ -615,22 +671,28 @@ class MultiAgentWorkflow:
         if state.get("errors"):
             return {
                 "final_label": "Error",
+                "suicidal_intent": None,
                 "traces": [{"event": "judge_skipped", "reason": "specialist_error"}],
             }
 
         answers = state.get("specialist_answers", {})
+        specialist_outputs = state.get("specialist_outputs", {})
         missing_labels = [label for label in VALID_LABELS if label not in answers]
         extra_labels = sorted(set(answers) - set(VALID_LABELS))
-        if missing_labels or extra_labels:
+        missing_output_labels = [label for label in VALID_LABELS if label not in specialist_outputs]
+        extra_output_labels = sorted(set(specialist_outputs) - set(VALID_LABELS))
+        if missing_labels or extra_labels or missing_output_labels or extra_output_labels:
             return {
                 "final_label": "Error",
+                "suicidal_intent": None,
                 "errors": [
                     {
                         "role": "judge",
                         "error_type": "MissingSpecialistOutput",
                         "error_message": (
                             "Expected one specialist answer for each label; "
-                            f"missing={missing_labels}, extra={extra_labels}"
+                            f"missing={missing_labels}, extra={extra_labels}, "
+                            f"missing_outputs={missing_output_labels}, extra_outputs={extra_output_labels}"
                         ),
                     }
                 ],
@@ -638,21 +700,28 @@ class MultiAgentWorkflow:
             }
 
         messages = [
-            {"role": "system", "content": judge_system_prompt()},
-            {"role": "user", "content": judge_user_prompt(state["text"], answers)},
+            {"role": "system", "content": self.mode_config.judge_system_prompt()},
+            {"role": "user", "content": self.mode_config.judge_user_prompt(state["text"], specialist_outputs)},
         ]
         node_started_at_s = time.perf_counter()
-        parsed, calls, errors = self._call_and_parse(role="judge", messages=messages, schema=JudgeAnswer)
+        parsed, calls, errors = self._call_and_parse(
+            role="judge",
+            messages=messages,
+            schema=self.mode_config.judge_schema,
+        )
         node_finished_at_s = time.perf_counter()
         final_label = parsed.label_name if parsed is not None else "Error"
+        suicidal_intent = parsed.suicidal_intent if parsed is not None else None
         return {
             "final_label": final_label,
+            "suicidal_intent": suicidal_intent,
             "errors": errors,
             "traces": [
                 {
                     "event": "judge_complete",
                     "ok": parsed is not None,
                     "final_label": final_label,
+                    "suicidal_intent": suicidal_intent,
                     "node_started_at_s": node_started_at_s,
                     "node_finished_at_s": node_finished_at_s,
                     "node_duration_s": node_finished_at_s - node_started_at_s,
@@ -666,7 +735,9 @@ class MultiAgentWorkflow:
             "sample_id": sample_id,
             "text": text,
             "specialist_answers": {},
+            "specialist_outputs": {},
             "final_label": "",
+            "suicidal_intent": None,
             "errors": [],
             "traces": [],
             "llm_calls": [],
@@ -677,11 +748,18 @@ class MultiAgentWorkflow:
             for label in VALID_LABELS
             if label in result.get("specialist_answers", {})
         }
+        specialist_outputs = {
+            label: result.get("specialist_outputs", {})[label]
+            for label in VALID_LABELS
+            if label in result.get("specialist_outputs", {})
+        }
         return CaseResult(
             sample_id=sample_id,
             text=text,
             final_label=result.get("final_label") or "Error",
+            suicidal_intent=result.get("suicidal_intent"),
             specialist_answers=specialist_answers,
+            specialist_outputs=specialist_outputs,
             errors=result.get("errors", []),
             traces=result.get("traces", []),
             llm_calls=result.get("llm_calls", []),

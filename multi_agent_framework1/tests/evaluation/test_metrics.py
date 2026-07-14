@@ -1,4 +1,8 @@
-from suicidal_multi_agent.evaluation.metrics import compute_classification_metrics, summarize_runtime
+from suicidal_multi_agent.evaluation.metrics import (
+    compute_binary_classification_metrics,
+    compute_classification_metrics,
+    summarize_runtime,
+)
 
 
 def test_classification_metrics_fixture():
@@ -57,7 +61,7 @@ def test_runtime_summary_fixture():
                 "cost": 0.02,
                 "prompt_tokens_details": {"cached_tokens": 6, "cache_write_tokens": 3},
                 "e2e_completion_tps": 2.5,
-                "error": {"error_type": "ValueError"},
+                "error": {"error_type": "ValidationError"},
             },
         ]
     )
@@ -65,6 +69,8 @@ def test_runtime_summary_fixture():
     assert summary["call_count"] == 2
     assert summary["llm_request_count"] == 2
     assert summary["failed_llm_attempts"] == 1
+    assert summary["json_parsing_errors"] == 1
+    assert summary["errors_by_type"] == {"ValidationError": 1}
     assert summary["latency_s"]["min"] == 1.0
     assert summary["latency_s"]["max"] == 3.0
     assert summary["latency_s"]["avg"] == 2.0
@@ -84,3 +90,27 @@ def test_runtime_summary_fixture():
     assert summary["provider_timing"]["moderation_latency_s"] == {"count": 1, "min": 0.1, "max": 0.1, "avg": 0.1}
     assert summary["provider_timing"]["completion_tps"] == {"count": 1, "min": 10.0, "max": 10.0, "avg": 10.0}
     assert summary["provider_timing"]["e2e_completion_tps"] == {"count": 2, "min": 2.5, "max": 5.0, "avg": 3.75}
+
+
+def test_binary_classification_metrics_include_confusion_matrix_and_limitation():
+    metrics = compute_binary_classification_metrics(
+        [False, False, True, True],
+        [False, True, True, None],
+        model_name="test-model",
+    )
+
+    assert metrics["accuracy"] == 0.5
+    assert metrics["failed_records"] == 1
+    assert metrics["confusion_matrix"] == {
+        "false": {"false": 1, "true": 1, "Error": 0},
+        "true": {"false": 0, "true": 1, "Error": 1},
+    }
+    assert metrics["positive_precision"] == 0.5
+    assert metrics["positive_recall"] == 0.5
+    assert metrics["positive_f1"] == 0.5
+    assert metrics["has_both_ground_truth_classes"] is True
+    assert metrics["metric_limitation"] is None
+
+    positive_only = compute_binary_classification_metrics([True, True], [True, True])
+    assert positive_only["has_both_ground_truth_classes"] is False
+    assert positive_only["metric_limitation"]

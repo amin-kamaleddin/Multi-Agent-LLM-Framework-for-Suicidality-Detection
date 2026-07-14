@@ -12,7 +12,7 @@ class ReportingFakeModel:
     def invoke(self, messages):
         system = messages[0]["content"]
         if "final judge" in system.lower():
-            return json.dumps({"label_name": "Indicator"})
+            return json.dumps({"label_name": "Indicator", "suicidal_intent": True})
         for label in VALID_LABELS:
             if f"Target label: {label}" in system:
                 return json.dumps({"answer": label == "Indicator"})
@@ -52,7 +52,15 @@ def test_compile_run_results_writes_csv_and_markdown_tables(tmp_path):
     assert compiled_markdown.exists()
 
     rows = pd.read_csv(compiled_csv, encoding="utf-8-sig")
-    assert {"model_metrics", "per_label_metrics", "confusion_matrix", "runtime_metrics"} <= set(rows["section"])
+    assert {
+        "model_metrics",
+        "per_label_metrics",
+        "agent_metrics",
+        "confusion_matrix",
+        "suicidal_intent_metrics",
+        "suicidal_intent_confusion_matrix",
+        "runtime_metrics",
+    } <= set(rows["section"])
     runtime_rows = rows[rows["section"] == "runtime_metrics"].set_index("metric_name")
     assert "avg_e2e_completion_tps" in runtime_rows.index
 
@@ -63,5 +71,7 @@ def test_compile_run_results_writes_csv_and_markdown_tables(tmp_path):
     markdown = compiled_markdown.read_text(encoding="utf-8")
     assert "## Model Metrics" in markdown
     assert "## Confusion Matrix" in markdown
+    assert "## Per-Agent Metrics" in markdown
+    assert "## Suicidal-Intent Metrics" in markdown
     assert "Average end-to-end completion TPS" in markdown
     assert "reporting-model" in markdown
