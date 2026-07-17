@@ -34,9 +34,12 @@ def load_raw_dataset(path: str | Path = DEFAULT_DATASET_PATH) -> pd.DataFrame:
         raise ValueError(f"Missing required columns: {sorted(missing)}")
 
     df = df.copy()
-    # Public row references use spreadsheet/CSV row numbers. Row 1 is the header,
-    # so the first data record is source_row=2.
-    df.insert(0, "source_row", range(2, len(df) + 2))
+    if "ID" not in df.columns:
+        # Match the repository's canonical RSD15K contract: a stable, zero-based
+        # per-row identifier distinct from the non-unique author identifier.
+        df.insert(0, "ID", range(len(df)))
+    if df["ID"].duplicated().any():
+        raise ValueError(f"ID must be unique in {csv_path}")
     df["_normalized_text"] = df["text"].map(normalize_text)
     return df
 
@@ -102,8 +105,12 @@ def sample_balanced(
 
 
 def public_dataset_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Return only columns needed for evaluation and source traceability."""
-    return df[["source_row", "text", "sentiment"]].copy()
+    """Preserve the original RSD15K fields needed by every framework."""
+    columns = ["ID", "users", "text", "sentiment", "time"]
+    missing = set(columns) - set(df.columns)
+    if missing:
+        raise ValueError(f"Missing canonical RSD15K columns: {sorted(missing)}")
+    return df[columns].copy()
 
 
 def duplicate_normalized_text_count(df: pd.DataFrame) -> int:

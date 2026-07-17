@@ -76,6 +76,7 @@ def _compiled_rows(
     rows: list[dict[str, Any]] = []
     runtime = metrics["runtime"]
     classification = metrics["classification"]
+    suicidal_intent = metrics.get("suicidal_intent") or {}
     provider_timing = runtime.get("provider_timing", {})
 
     for _, row in model_metrics.iterrows():
@@ -95,6 +96,23 @@ def _compiled_rows(
         payload = row.to_dict()
         payload["section"] = "per_label_metrics"
         rows.append(payload)
+
+    for row in metrics.get("agent_metrics", []):
+        rows.append({"section": "agent_metrics", **row})
+
+    for row in suicidal_intent.get("per_class", []):
+        rows.append({"section": "suicidal_intent_metrics", **row})
+
+    for actual, predicted_counts in suicidal_intent.get("confusion_matrix", {}).items():
+        for predicted, count in predicted_counts.items():
+            rows.append(
+                {
+                    "section": "suicidal_intent_confusion_matrix",
+                    "actual_label": actual,
+                    "predicted_label": predicted,
+                    "count": count,
+                }
+            )
 
     for actual, predicted_counts in classification["confusion_matrix"].items():
         for predicted, count in predicted_counts.items():
@@ -120,6 +138,7 @@ def _compiled_rows(
         "failure_rate": classification["failure_rate"],
         "llm_request_count": runtime["llm_request_count"],
         "failed_llm_attempts": runtime["failed_llm_attempts"],
+        "json_parsing_errors": runtime.get("json_parsing_errors", 0),
         "total_latency_s": runtime["latency_s"]["total"],
         "avg_latency_s": runtime["latency_s"]["avg"],
         "min_latency_s": runtime["latency_s"]["min"],
@@ -160,8 +179,8 @@ def _compiled_rows(
                 "section": "notes",
                 "metric_name": "cost_usd",
                 "note": (
-                    "This run recorded zero provider cost because it was executed before "
-                    "OpenRouter response_metadata cost extraction was patched."
+                    "No provider cost was recorded. This is expected for fake or free models, "
+                    "and can also mean that the provider did not expose cost metadata."
                 ),
             }
         )
@@ -169,8 +188,10 @@ def _compiled_rows(
     rows.append(
         {
             "section": "trace_summary",
+            "workflow_name": trace_summary.get("workflow_name") or metrics.get("workflow_name"),
             "model_name": trace_summary["model_name"],
             "requested_model_name": trace_summary.get("requested_model_name"),
+            "mode": trace_summary.get("mode") or metrics.get("mode"),
             "evaluation_status": trace_summary["evaluation_status"],
             "processed_records": trace_summary["processed_records"],
             "total_records": trace_summary["total_records"],
@@ -192,16 +213,32 @@ def _compiled_markdown(
 ) -> str:
     runtime = metrics["runtime"]
     classification = metrics["classification"]
+    suicidal_intent = metrics.get("suicidal_intent") or {}
     provider_timing = runtime.get("provider_timing", {})
     failed_calls = [call for call in llm_calls if call.get("error")]
     error_summary = Counter(call["error"].get("error_type", "Unknown") for call in failed_calls)
+    agent_metrics = metrics.get("agent_metrics", [])
+    agent_metric_lines = []
+    if agent_metrics:
+        agent_metric_lines = [
+            "## Per-Agent Metrics",
+            "",
+            _markdown_table(
+                pd.DataFrame(agent_metrics),
+                ["agent_name", "model_name", "task", "accuracy", "f1_score", "precision", "recall"],
+                {"agent_name": "Agent", "model_name": "Model", "f1_score": "F1 Score"},
+            ),
+            "",
+        ]
 
     lines = [
         "# Compiled Evaluation Results",
         "",
         f"- Run directory: `{run_dir}`",
+        f"- Workflow: `{metrics.get('workflow_name', 'framework1')}`",
         f"- Model: `{metrics['model_name']}`",
         f"- Requested model: `{metrics.get('requested_model_name')}`",
+        f"- Mode: `{metrics.get('mode', 'bool')}`",
         f"- Evaluation status: `{metrics['evaluation_status']}`",
         f"- Stop reason: `{metrics.get('stop_reason')}`",
         "",
@@ -216,6 +253,7 @@ def _compiled_markdown(
         f"| Failure rate | {classification['failure_rate']:.6f} |",
         f"| LLM requests | {runtime['llm_request_count']} |",
         f"| Failed LLM attempts | {runtime['failed_llm_attempts']} |",
+        f"| JSON/schema parsing errors | {runtime.get('json_parsing_errors', 0)} |",
         "",
         "## Model Metrics",
         "",
@@ -233,9 +271,24 @@ def _compiled_markdown(
             {"label_name": "Label", "f1_score": "F1 Score", "tp": "TP", "fp": "FP", "tn": "TN", "fn": "FN"},
         ),
         "",
+        *agent_metric_lines,
         "## Confusion Matrix",
         "",
         _confusion_matrix_table(classification["confusion_matrix"]),
+        "",
+        "## Suicidal-Intent Positive-Class Grouping Metrics",
+        "",
+        _markdown_table(
+            pd.DataFrame(suicidal_intent.get("per_class", [])),
+            ["class_name", "accuracy", "f1_score", "precision", "recall", "support", "tp", "fp", "tn", "fn"],
+            {"class_name": "Value", "f1_score": "F1 Score", "tp": "TP", "fp": "FP", "tn": "TN", "fn": "FN"},
+        ) if suicidal_intent else "Not available for this legacy run.",
+        "",
+        "### Suicidal-Intent Positive-Class Grouping Confusion Matrix",
+        "",
+        _confusion_matrix_table(suicidal_intent["confusion_matrix"])
+        if suicidal_intent.get("confusion_matrix")
+        else "Not available for this legacy run.",
         "",
         "## Label Distributions",
         "",
@@ -284,6 +337,10 @@ def _compiled_markdown(
     else:
         lines.append("| None | 0 |")
 
+    limitation = suicidal_intent.get("metric_limitation")
+    if limitation:
+        lines.extend(["", "## Suicidal-Intent Grouping Metric Limitation", "", f"> {limitation}"])
+
     if failed_calls:
         lines.extend(
             [
@@ -306,7 +363,7 @@ def _compiled_markdown(
                 "",
                 "## Notes",
                 "",
-                "- Cost is shown exactly as recorded in this first run. It is `0.0` because this run happened before OpenRouter cost extraction from `response_metadata.token_usage` was patched.",
+                "- No provider cost was recorded. This is expected for fake or free models, and can also mean that the provider did not expose cost metadata.",
             ]
         )
 
@@ -317,12 +374,19 @@ def _compiled_markdown(
             "",
             "| Artifact | Purpose |",
             "|---|---|",
-            "| `predictions.csv` | Per-record ground truth, prediction, correctness, errors, label-keyed specialist answers, and flat specialist answer columns. |",
+            "| `predictions.csv` | Per-record source fields, shared outputs, correctness, errors, and optional workflow-supplied agent outputs. |",
             "| `model_metrics.csv` | Aggregate model-level Accuracy, F1, Precision, Recall. |",
             "| `label_metrics.csv` | Per-label one-vs-rest metrics. |",
+            "| `agent_metrics.csv` | Optional workflow-supplied per-agent metric summary; absent when agent tasks are not comparable to ground truth. |",
+            "| `suicidal_intent_metrics.csv` | Binary false/true per-class metrics. |",
             "| `metrics.json` | Complete metrics payload. |",
+            "| `results.json` | Complete per-record outputs and metrics payload. |",
+            "| `misclassified_ids.txt` | IDs with an incorrect final-label evaluation. |",
+            "| `suicidal_intent_misclassified_ids.txt` | IDs with an incorrect binary evaluation. |",
+            "| `classification_metrics.svg` | Final-label and suicidal-intent positive-class grouping visualization. |",
+            "| `runtime_metrics.svg` | Cost, token, latency, call, failure, and parse-error visualization. |",
             "| `llm_calls.jsonl` | Every LLM request attempt and retry. |",
-            "| `traces.jsonl` | Graph specialist/judge events. |",
+            "| `traces.jsonl` | Workflow-supplied execution events. |",
             "| `trace_summary.json` | Runtime, token, and failure summary. |",
         ]
     )

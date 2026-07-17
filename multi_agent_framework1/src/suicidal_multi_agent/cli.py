@@ -12,67 +12,28 @@ from typing import Any
 import pandas as pd
 from dotenv import load_dotenv
 
-from .core.labels import VALID_LABELS
 from .data.dataset import DEFAULT_DATASET_PATH, DEFAULT_PROCESSED_DIR, audit_dataset, prepare_dataset_files, sample_balanced
 from .evaluation.artifacts import ArtifactWriter
 from .evaluation.evaluator import (
     DEFAULT_EVALUATION_AUDIT_PATH,
     DEFAULT_EVALUATION_SAMPLE_PATH,
     EvaluationConfig,
-    build_prediction_row,
     load_evaluation_sample,
     run_workflow_evaluation,
 )
 from .evaluation.metrics import compute_classification_metrics, summarize_runtime
 from .evaluation.reporting import compile_run_results
-from .workflow.graph import MultiAgentWorkflow
+from .workflow.models import (
+    DeterministicFakeModel,
+    build_real_model,
+    openai_base_url,
+    resolve_model_name_for_base_url,
+)
+from .workflow.prompts import WORKFLOW_MODE_NAMES
+from .workflow.registry import WORKFLOW_REGISTRY, WorkflowRunRequest
 
 
-class DeterministicFakeModel:
-    """Small fake model for smoke tests and artifact verification."""
-
-    def invoke(self, messages: list[dict[str, str]]) -> str:
-        system = messages[0]["content"]
-        if "final judge" in system.lower():
-            return json.dumps({"label_name": "Indicator"})
-        for label in VALID_LABELS:
-            if f"Target label: {label}" in system:
-                return json.dumps({"answer": label == "Indicator"})
-        return json.dumps({"label_name": "Indicator"})
-
-
-def openai_base_url() -> str:
-    load_dotenv()
-    return os.environ.get("OPENAI_BASE_URL", "https://openrouter.ai/api/v1")
-
-
-def resolve_model_name_for_base_url(model_name: str, base_url: str) -> str:
-    """Resolve common OpenAI aliases for OpenRouter's provider/model syntax."""
-    if "openrouter.ai" in base_url.lower() and "/" not in model_name and model_name.startswith("gpt-"):
-        return f"openai/{model_name}"
-    return model_name
-
-
-def build_real_model(model_name: str, temperature: float, max_completion_tokens: int):
-    load_dotenv()
-    try:
-        from langchain_openai import ChatOpenAI
-    except ImportError as exc:
-        raise ImportError("langchain-openai is required for real LLM runs. Install with: pip install -e .") from exc
-
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError("Set OPENAI_API_KEY in .env, or use --fake-llm for artifact smoke runs.")
-    base_url = openai_base_url()
-    resolved_model_name = resolve_model_name_for_base_url(model_name, base_url)
-    return ChatOpenAI(
-        model=resolved_model_name,
-        temperature=temperature,
-        api_key=api_key,
-        base_url=base_url,
-        max_completion_tokens=max_completion_tokens,
-        max_retries=0,
-    )
+DEFAULT_MAX_COMPLETION_TOKENS = 256
 
 
 def _ensure_help_log(argv: list[str]) -> None:
@@ -89,6 +50,50 @@ def _add_common_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--data-path", default=str(DEFAULT_DATASET_PATH), help="Path to the active anonymized CSV.")
     parser.add_argument("--seed", type=int, default=42, help="Sampling seed.")
     parser.add_argument("--sample-size", type=int, default=500, help="Balanced sample size. Must divide by 4.")
+
+
+def _positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("value must be greater than zero")
+    return parsed
+
+
+def _nonnegative_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("value must be zero or greater")
+    return parsed
+
+
+def _load_workflow_config(path: str | None) -> dict[str, Any]:
+    if path is None:
+        return {}
+    config_path = Path(path)
+    with config_path.open(encoding="utf-8") as f:
+        payload = json.load(f)
+    if not isinstance(payload, dict):
+        raise ValueError(f"Workflow config must be a JSON object: {config_path}")
+    return payload
+
+
+def _workflow_setting(
+    args: argparse.Namespace,
+    workflow_config: dict[str, Any],
+    name: str,
+    default: Any,
+) -> Any:
+    cli_value = getattr(args, name)
+    return cli_value if cli_value is not None else workflow_config.get(name, default)
+
+
+def _evaluation_audit_path(sample_path: str, requested_audit_path: str | None) -> str | None:
+    """Use the paired default audit only with the default evaluation sample."""
+    if requested_audit_path is not None:
+        return requested_audit_path
+    if Path(sample_path).resolve() == DEFAULT_EVALUATION_SAMPLE_PATH.resolve():
+        return str(DEFAULT_EVALUATION_AUDIT_PATH)
+    return None
 
 
 def _args_config(args: argparse.Namespace, command_name: str) -> dict[str, Any]:
@@ -144,7 +149,9 @@ def cmd_prepare_data(args: argparse.Namespace) -> int:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    writer, _, sampled = _write_setup_artifacts(args, "run")
+    _, dataset1, audit = audit_dataset(args.data_path)
+    sampled = sample_balanced(dataset1, sample_size=args.sample_size, seed=args.seed)
+    requested_model_name = "deterministic-fake-llm" if args.fake_llm else args.model
     model_name = (
         "deterministic-fake-llm"
         if args.fake_llm
@@ -155,94 +162,105 @@ def cmd_run(args: argparse.Namespace) -> int:
         if args.fake_llm
         else build_real_model(args.model, args.temperature, args.max_completion_tokens)
     )
-    workflow = MultiAgentWorkflow(
-        model=model,
+    config = EvaluationConfig(
         model_name=model_name,
+        requested_model_name=requested_model_name,
+        sample_path=args.data_path,
+        dataset_audit_path=None,
         max_retries=args.max_retries,
+        max_completion_tokens=args.max_completion_tokens,
+        temperature=args.temperature,
+        total_records=len(sampled),
+        mode=args.mode,
+        command="run",
     )
-
-    rows: list[dict[str, Any]] = []
-    all_calls: list[dict[str, Any]] = []
-    for record in sampled.to_dict(orient="records"):
-        result = workflow.run_case(sample_id=str(record["source_row"]), text=record["text"])
-        for call in result.llm_calls:
-            call = {"sample_id": result.sample_id, **call}
-            all_calls.append(call)
-            writer.append_jsonl("llm_calls.jsonl", call)
-        for trace in result.traces:
-            writer.append_jsonl("traces.jsonl", {"sample_id": result.sample_id, **trace})
-        for error in result.errors:
-            writer.append_jsonl("errors.jsonl", {"sample_id": result.sample_id, **error})
-
-        rows.append(
-            build_prediction_row(record=record, result=result)
-        )
-
-    predictions = pd.DataFrame(rows)
-    writer.write_dataframe("predictions.csv", predictions)
-    metrics = {
-        "classification": compute_classification_metrics(
-            predictions["ground_truth"].tolist(),
-            predictions["prediction"].tolist(),
-            model_name=model_name,
-        ),
-        "runtime": summarize_runtime(all_calls),
-    }
-    metrics["model_name"] = model_name
-    writer.write_dataframe("model_metrics.csv", pd.DataFrame([metrics["classification"]["model_summary"]]))
-    writer.write_dataframe("label_metrics.csv", pd.DataFrame(metrics["classification"]["per_label"]))
-    writer.write_json(
-        "trace_summary.json",
-        {
-            "model_name": model_name,
-            "runtime": metrics["runtime"],
-            "failed_records": metrics["classification"]["failed_records"],
-            "failure_rate": metrics["classification"]["failure_rate"],
-            "llm_trace_file": "llm_calls.jsonl",
-            "node_trace_file": "traces.jsonl",
-        },
+    result = run_workflow_evaluation(
+        sample_df=sampled,
+        model=model,
+        config=config,
+        dataset_audit={**audit, "evaluation_sample_path": args.data_path},
     )
-    writer.write_json("metrics.json", metrics)
-    writer.write_metrics_md(metrics)
-    metrics["artifact_status"] = writer.required_artifact_status()
-    writer.write_json("metrics.json", metrics)
-    print(json.dumps({"run_dir": str(writer.run_dir), "metrics": metrics}, indent=2))
-    return 0
+    print(json.dumps(result.__dict__, indent=2))
+    return 2 if result.status == "stopped_early" else 0
 
 
 def cmd_evaluate(args: argparse.Namespace) -> int:
-    requested_model_name = "deterministic-fake-llm" if args.fake_llm else args.model
+    workflow_config = _load_workflow_config(args.workflow_config)
+    configured_model = str(_workflow_setting(args, workflow_config, "model", "gpt-4o"))
+    temperature = float(
+        _workflow_setting(
+            args,
+            workflow_config,
+            "temperature",
+            float(os.environ.get("OPENAI_TEMPERATURE", "0") or 0),
+        )
+    )
+    max_completion_tokens = int(
+        _workflow_setting(
+            args,
+            workflow_config,
+            "max_completion_tokens",
+            int(
+                os.environ.get("MAX_COMPLETION_TOKENS", str(DEFAULT_MAX_COMPLETION_TOKENS))
+                or DEFAULT_MAX_COMPLETION_TOKENS
+            ),
+        )
+    )
+    max_retries = int(
+        _workflow_setting(
+            args,
+            workflow_config,
+            "max_retries",
+            int(os.environ.get("MAX_RETRIES", "3") or 3),
+        )
+    )
+    mode = str(_workflow_setting(args, workflow_config, "mode", "bool"))
+    fake_llm = _workflow_setting(args, workflow_config, "fake_llm", False)
+    if not isinstance(fake_llm, bool):
+        raise ValueError("workflow-config 'fake_llm' must be a JSON boolean")
+    if max_completion_tokens <= 0:
+        raise ValueError("max_completion_tokens must be greater than zero")
+    if max_retries < 0:
+        raise ValueError("max_retries must be zero or greater")
+
+    requested_model_name = "deterministic-fake-llm" if fake_llm else configured_model
     resolved_model_name = (
         "deterministic-fake-llm"
-        if args.fake_llm
-        else resolve_model_name_for_base_url(args.model, openai_base_url())
+        if fake_llm
+        else resolve_model_name_for_base_url(configured_model, openai_base_url())
     )
     sample_df = load_evaluation_sample(args.sample_path, limit=args.limit)
-    model = (
-        DeterministicFakeModel()
-        if args.fake_llm
-        else build_real_model(args.model, args.temperature, args.max_completion_tokens)
-    )
     config = EvaluationConfig(
         model_name=resolved_model_name,
         requested_model_name=requested_model_name,
         sample_path=args.sample_path,
-        dataset_audit_path=args.dataset_audit_path,
-        max_retries=args.max_retries,
-        max_completion_tokens=args.max_completion_tokens,
-        temperature=args.temperature,
+        dataset_audit_path=_evaluation_audit_path(
+            args.sample_path,
+            args.dataset_audit_path,
+        ),
+        max_retries=max_retries,
+        max_completion_tokens=max_completion_tokens,
+        temperature=temperature,
         total_records=len(sample_df),
         limit=args.limit,
+        mode=mode,
+        workflow_name=args.workflow,
+        workflow_config=workflow_config,
         error_stop_failed_llm_attempts=args.error_stop_failed_llm_attempts,
         error_stop_failed_records=args.error_stop_failed_records,
         error_stop_rate=args.error_stop_rate,
         error_stop_min_records=args.error_stop_min_records,
     )
-    result = run_workflow_evaluation(
-        sample_df=sample_df,
-        model=model,
-        config=config,
-        run_id=args.run_id,
+    registration = WORKFLOW_REGISTRY.get(args.workflow)
+    result = registration.runner(
+        WorkflowRunRequest(
+            sample_df=sample_df,
+            config=config,
+            workflow_config=workflow_config,
+            fake_llm=fake_llm,
+            run_id=args.run_id,
+            artifact_base_dir=args.artifact_base_dir,
+        )
     )
     print(json.dumps(result.__dict__, indent=2))
     return 2 if result.status == "stopped_early" else 0
@@ -251,6 +269,11 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
 def cmd_compile_results(args: argparse.Namespace) -> int:
     outputs = compile_run_results(args.run_dir)
     print(json.dumps(outputs, indent=2))
+    return 0
+
+
+def cmd_list_workflows(_args: argparse.Namespace) -> int:
+    print(json.dumps({"workflows": WORKFLOW_REGISTRY.describe()}, indent=2))
     return 0
 
 
@@ -277,25 +300,94 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--fake-llm", action="store_true", help="Use a deterministic fake model for artifact smoke tests.")
     run.add_argument("--model", default=os.environ.get("OPENAI_MODEL", "openai/gpt-4o-mini"), help="Chat model name.")
     run.add_argument("--temperature", type=float, default=float(os.environ.get("OPENAI_TEMPERATURE", "0") or 0))
-    run.add_argument("--max-completion-tokens", type=int, default=int(os.environ.get("MAX_COMPLETION_TOKENS", "500000") or 500000))
+    run.add_argument(
+        "--max-completion-tokens",
+        type=int,
+        default=int(
+            os.environ.get("MAX_COMPLETION_TOKENS", str(DEFAULT_MAX_COMPLETION_TOKENS))
+            or DEFAULT_MAX_COMPLETION_TOKENS
+        ),
+    )
     run.add_argument("--max-retries", type=int, default=int(os.environ.get("MAX_RETRIES", "3") or 3))
+    run.add_argument("--mode", choices=WORKFLOW_MODE_NAMES, default="bool", help="Prompt/schema mode for the shared graph.")
     run.set_defaults(func=cmd_run)
 
-    evaluate = subparsers.add_parser("evaluate", help="Evaluate a configured model on a frozen sampled dataset.")
+    evaluate = subparsers.add_parser(
+        "evaluate",
+        help="Evaluate a registered workflow on a frozen sampled dataset.",
+    )
+    evaluate.add_argument(
+        "--workflow",
+        choices=WORKFLOW_REGISTRY.names(),
+        default="framework1",
+        help="Registered workflow name. Use list-workflows to inspect available names.",
+    )
+    evaluate.add_argument(
+        "--workflow-config",
+        default=None,
+        help="Optional workflow-specific JSON configuration file.",
+    )
     evaluate.add_argument("--sample-path", default=str(DEFAULT_EVALUATION_SAMPLE_PATH), help="Frozen sampled CSV to evaluate.")
-    evaluate.add_argument("--dataset-audit-path", default=str(DEFAULT_EVALUATION_AUDIT_PATH), help="Dataset audit JSON copied into run artifacts.")
-    evaluate.add_argument("--fake-llm", action="store_true", help="Use a deterministic fake model for evaluator smoke tests.")
-    evaluate.add_argument("--model", default="gpt-4o", help="Chat model name. OpenRouter aliases like gpt-4o resolve to openai/gpt-4o.")
-    evaluate.add_argument("--temperature", type=float, default=float(os.environ.get("OPENAI_TEMPERATURE", "0") or 0))
-    evaluate.add_argument("--max-completion-tokens", type=int, default=int(os.environ.get("MAX_COMPLETION_TOKENS", "500000") or 500000))
-    evaluate.add_argument("--max-retries", type=int, default=int(os.environ.get("MAX_RETRIES", "3") or 3))
-    evaluate.add_argument("--limit", type=int, default=None, help="Optional first-N record limit for smoke tests.")
+    evaluate.add_argument(
+        "--dataset-audit-path",
+        default=None,
+        help=(
+            "Dataset audit JSON copied into run artifacts. The paired Dataset1 audit is used "
+            "only with the default sample; custom samples default to audit unavailable."
+        ),
+    )
+    evaluate.add_argument(
+        "--artifact-base-dir",
+        default="logs/runs",
+        help="Base directory under which the timestamped run directory is created.",
+    )
+    evaluate.add_argument(
+        "--fake-llm",
+        action="store_true",
+        default=None,
+        help="Use a deterministic fake model; overrides workflow-config.",
+    )
+    evaluate.add_argument(
+        "--model",
+        default=None,
+        help="Default chat model name; overrides workflow-config.",
+    )
+    evaluate.add_argument("--temperature", type=float, default=None, help="Default temperature; overrides workflow-config.")
+    evaluate.add_argument(
+        "--max-completion-tokens",
+        type=_positive_int,
+        default=None,
+        help="Default maximum completion tokens; overrides workflow-config.",
+    )
+    evaluate.add_argument(
+        "--max-retries",
+        type=_nonnegative_int,
+        default=None,
+        help="Default workflow retry policy; overrides workflow-config.",
+    )
+    evaluate.add_argument(
+        "--mode",
+        default=None,
+        help="Workflow-defined mode; overrides workflow-config.",
+    )
+    evaluate.add_argument(
+        "--limit",
+        type=_positive_int,
+        default=None,
+        help="Optional positive first-N record limit for smoke tests.",
+    )
     evaluate.add_argument("--run-id", default=None, help="Optional run directory suffix.")
     evaluate.add_argument("--error-stop-failed-llm-attempts", type=int, default=int(os.environ.get("EVAL_ERROR_STOP_FAILED_LLM_ATTEMPTS", "10") or 10))
     evaluate.add_argument("--error-stop-failed-records", type=int, default=int(os.environ.get("EVAL_ERROR_STOP_FAILED_RECORDS", "3") or 3))
     evaluate.add_argument("--error-stop-rate", type=float, default=float(os.environ.get("EVAL_ERROR_STOP_RATE", "0.5") or 0.5))
     evaluate.add_argument("--error-stop-min-records", type=int, default=int(os.environ.get("EVAL_ERROR_STOP_MIN_RECORDS", "10") or 10))
     evaluate.set_defaults(func=cmd_evaluate)
+
+    list_workflows = subparsers.add_parser(
+        "list-workflows",
+        help="List workflow names accepted by evaluate --workflow.",
+    )
+    list_workflows.set_defaults(func=cmd_list_workflows)
 
     compile_results = subparsers.add_parser("compile-results", help="Compile a run directory into CSV and Markdown summary tables.")
     compile_results.add_argument("--run-dir", required=True, help="Run directory containing evaluator artifacts.")

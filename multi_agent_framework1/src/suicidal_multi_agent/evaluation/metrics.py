@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any
 
-from ..core.labels import VALID_LABELS
+from ..core.labels import FINAL_LABELS
 
 
 def compute_classification_metrics(
@@ -14,7 +15,7 @@ def compute_classification_metrics(
     model_name: str | None = None,
 ) -> dict[str, Any]:
     """Compute model-level and one-vs-rest per-label classification metrics."""
-    labels = list(VALID_LABELS)
+    labels = list(FINAL_LABELS)
     matrix = {actual: {pred: 0 for pred in labels + ["Error"]} for actual in labels}
     correct = 0
 
@@ -89,6 +90,94 @@ def compute_classification_metrics(
     }
 
 
+def compute_binary_classification_metrics(
+    y_true: list[bool],
+    y_pred: list[bool | None],
+    *,
+    model_name: str | None = None,
+) -> dict[str, Any]:
+    """Compute the same metric family for a strict false/true classification task."""
+    labels = (False, True)
+    keys = {False: "false", True: "true"}
+    matrix = {keys[actual]: {keys[pred]: 0 for pred in labels} | {"Error": 0} for actual in labels}
+    correct = 0
+
+    for actual, predicted in zip(y_true, y_pred):
+        actual_key = keys[actual]
+        pred_key = keys[predicted] if isinstance(predicted, bool) else "Error"
+        matrix[actual_key][pred_key] += 1
+        if actual is predicted:
+            correct += 1
+
+    per_class = []
+    for label in labels:
+        label_key = keys[label]
+        other_key = keys[not label]
+        tp = matrix[label_key][label_key]
+        fp = matrix[other_key][label_key]
+        fn = sum(matrix[label_key][pred] for pred in (*keys.values(), "Error") if pred != label_key)
+        tn = sum(matrix[other_key][pred] for pred in (*keys.values(), "Error") if pred != label_key)
+        support = sum(matrix[label_key].values())
+        precision = tp / (tp + fp) if tp + fp else 0.0
+        recall = tp / (tp + fn) if tp + fn else 0.0
+        f1 = (2 * precision * recall / (precision + recall)) if precision + recall else 0.0
+        per_class.append(
+            {
+                "model_name": model_name,
+                "class_name": label_key,
+                "value": label,
+                "accuracy": (tp + tn) / len(y_true) if y_true else 0.0,
+                "precision": precision,
+                "recall": recall,
+                "f1": f1,
+                "f1_score": f1,
+                "support": support,
+                "tp": tp,
+                "fp": fp,
+                "tn": tn,
+                "fn": fn,
+            }
+        )
+
+    total = len(y_true)
+    failed_records = sum(1 for value in y_pred if not isinstance(value, bool))
+    accuracy = correct / total if total else 0.0
+    macro_precision = sum(row["precision"] for row in per_class) / len(per_class)
+    macro_recall = sum(row["recall"] for row in per_class) / len(per_class)
+    macro_f1 = sum(row["f1"] for row in per_class) / len(per_class)
+    positive_class = next(row for row in per_class if row["value"] is True)
+    ground_truth_classes = sorted({value for value in y_true})
+    has_both_ground_truth_classes = len(ground_truth_classes) == 2
+    return {
+        "model_name": model_name,
+        "accuracy": accuracy,
+        "precision": macro_precision,
+        "recall": macro_recall,
+        "f1_score": macro_f1,
+        "macro_f1": macro_f1,
+        "positive_precision": positive_class["precision"],
+        "positive_recall": positive_class["recall"],
+        "positive_f1": positive_class["f1"],
+        "per_class": per_class,
+        "confusion_matrix": matrix,
+        "total": total,
+        "correct": correct,
+        "failed_records": failed_records,
+        "failure_rate": failed_records / total if total else 0.0,
+        "ground_truth_counts": {
+            "false": sum(value is False for value in y_true),
+            "true": sum(value is True for value in y_true),
+        },
+        "has_both_ground_truth_classes": has_both_ground_truth_classes,
+        "metric_limitation": (
+            None
+            if has_both_ground_truth_classes or not y_true
+            else "Only one suicidal_intent ground-truth class is present; the confusion matrix is valid, "
+            "but macro and missing-class metrics are not representative of two-class performance."
+        ),
+    }
+
+
 def summarize_runtime(llm_calls: list[dict[str, Any]]) -> dict[str, Any]:
     """Summarize local runtime, token, cost, and optional provider timing telemetry."""
     latencies = [float(call.get("latency_s", 0.0)) for call in llm_calls]
@@ -110,6 +199,21 @@ def summarize_runtime(llm_calls: list[dict[str, Any]]) -> dict[str, Any]:
     ]
     e2e_completion_tps = [value for value in e2e_completion_tps if value is not None]
     failed_attempts = [call for call in llm_calls if call.get("error")]
+    errors_by_type = Counter(
+        call.get("error", {}).get("error_type", "Unknown")
+        for call in failed_attempts
+    )
+    json_parsing_errors = sum(
+        count
+        for error_type, count in errors_by_type.items()
+        if error_type
+        in {
+            "JSONDecodeError",
+            "ValidationError",
+            "StructuredOutputValidationError",
+            "MultipleStructuredOutputsError",
+        }
+    )
 
     def avg(values: list[float]) -> float:
         return sum(values) / len(values) if values else 0.0
@@ -119,6 +223,8 @@ def summarize_runtime(llm_calls: list[dict[str, Any]]) -> dict[str, Any]:
         "call_count": request_count,
         "llm_request_count": request_count,
         "failed_llm_attempts": len(failed_attempts),
+        "json_parsing_errors": json_parsing_errors,
+        "errors_by_type": dict(sorted(errors_by_type.items())),
         "latency_s": {
             "min": min(latencies) if latencies else 0.0,
             "max": max(latencies) if latencies else 0.0,

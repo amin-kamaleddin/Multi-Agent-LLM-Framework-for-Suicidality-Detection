@@ -6,6 +6,8 @@ from typing import Final
 
 
 VALID_LABELS: Final[tuple[str, ...]] = ("Indicator", "Ideation", "Behavior", "Attempt")
+UNSUPPORTIVE_LABEL: Final[str] = "Unsupportive"
+FINAL_LABELS: Final[tuple[str, ...]] = (*VALID_LABELS, UNSUPPORTIVE_LABEL)
 
 LABEL_DEFINITIONS: Final[dict[str, str]] = {
     "Indicator": (
@@ -26,13 +28,19 @@ LABEL_DEFINITIONS: Final[dict[str, str]] = {
         "The post mentions a suicide attempt, current or past. A past attempt should "
         "still be labeled Attempt."
     ),
+    "Unsupportive": "The text does not match any of the four suicide-risk labels.",
 }
 
 
 def canonicalize_label(value: str) -> str:
     """Return the canonical label spelling or raise ValueError."""
     normalized = str(value).strip().lower()
-    for label in VALID_LABELS:
+    for label in FINAL_LABELS:
         if normalized == label.lower():
             return label
-    raise ValueError(f"Invalid label_name={value!r}. Expected one of {', '.join(VALID_LABELS)}.")
+    raise ValueError(f"Invalid label_name={value!r}. Expected one of {', '.join(FINAL_LABELS)}.")
+
+
+def label_to_suicidal_intent(value: str) -> bool:
+    """Map the final label to the required binary suicidal-intent flag."""
+    return canonicalize_label(value) != UNSUPPORTIVE_LABEL

@@ -1,8 +1,9 @@
 import json
 import time
+from types import SimpleNamespace
 
 from suicidal_multi_agent.core.labels import VALID_LABELS
-from suicidal_multi_agent.core.schemas import JudgeAnswer, SpecialistAnswer
+from suicidal_multi_agent.core.schemas import JudgeAnswer, SpecialistAnswer, SpecialistReasonedAnswer
 from suicidal_multi_agent.workflow.graph import MultiAgentWorkflow
 
 
@@ -17,7 +18,7 @@ class FakeGraphModel:
             assert "Specialist answers" in messages[1]["content"]
             for label in VALID_LABELS:
                 assert label in messages[1]["content"]
-            return json.dumps({"label_name": "Attempt"})
+            return json.dumps({"label_name": "Attempt", "suicidal_intent": True})
 
         for label in VALID_LABELS:
             if f"Target label: {label}" in system:
@@ -32,12 +33,14 @@ def test_graph_runs_four_specialists_and_judge():
     result = workflow.run_case(sample_id="case-1", text="test text")
 
     assert result.final_label == "Attempt"
+    assert result.suicidal_intent is True
     assert result.specialist_answers == {
         "Indicator": False,
         "Ideation": False,
         "Behavior": False,
         "Attempt": True,
     }
+    assert result.specialist_outputs["Attempt"] == {"answer": True}
     assert len(result.errors) == 0
     assert len(model.calls) == 5
     assert [call["role"] for call in result.llm_calls].count("judge") == 1
@@ -47,11 +50,87 @@ def test_graph_runs_four_specialists_and_judge():
     assert all(trace["node_duration_s"] >= 0 for trace in specialist_traces)
 
 
+class UnsupportiveJudgeModel:
+    def invoke(self, messages):
+        assert "final judge" in messages[0]["content"].lower()
+        return json.dumps({"label_name": "Unsupportive", "suicidal_intent": False})
+
+
+def test_graph_routes_optional_per_agent_models_and_names():
+    default_model = FakeGraphModel()
+    workflow = MultiAgentWorkflow(
+        model=default_model,
+        model_name="default-model",
+        max_retries=0,
+        models_by_role={"judge": UnsupportiveJudgeModel()},
+        model_names_by_role={"judge": "judge-model"},
+    )
+
+    result = workflow.run_case(sample_id="case-routed", text="test text")
+
+    assert result.final_label == "Unsupportive"
+    assert result.suicidal_intent is False
+    assert len(default_model.calls) == 4
+    assert next(call for call in result.llm_calls if call["role"] == "judge")["model_name"] == "judge-model"
+    assert {
+        call["model_name"]
+        for call in result.llm_calls
+        if call["role"].endswith("_specialist")
+    } == {"default-model"}
+
+
+class ReasonedFakeGraphModel:
+    def __init__(self):
+        self.calls = []
+
+    def invoke(self, messages):
+        self.calls.append(messages)
+        system = messages[0]["content"]
+        if "final judge" in system.lower():
+            assert "Specialist outputs" in messages[1]["content"]
+            assert '"reasoning"' in messages[1]["content"]
+            assert '"evidence"' not in messages[1]["content"]
+            return json.dumps({"label_name": "Behavior", "suicidal_intent": True})
+
+        for label in VALID_LABELS:
+            if f"Target label: {label}" in system:
+                answer = label == "Behavior"
+                return json.dumps(
+                    {
+                        "answer": answer,
+                        "reasoning": f"{label} rationale",
+                    }
+                )
+        raise AssertionError("Unexpected prompt")
+
+
+def test_reasoned_mode_runs_same_graph_with_rich_specialist_outputs():
+    model = ReasonedFakeGraphModel()
+    workflow = MultiAgentWorkflow(model=model, max_retries=0, mode="reasoned")
+
+    result = workflow.run_case(sample_id="case-reasoned", text="test text")
+
+    assert result.final_label == "Behavior"
+    assert result.suicidal_intent is True
+    assert result.specialist_answers == {
+        "Indicator": False,
+        "Ideation": False,
+        "Behavior": True,
+        "Attempt": False,
+    }
+    assert result.specialist_outputs["Behavior"] == {
+        "answer": True,
+        "reasoning": "Behavior rationale",
+    }
+    assert len(result.errors) == 0
+    assert len(model.calls) == 5
+
+
 class SlowSpecialistModel:
     def invoke(self, messages):
         system = messages[0]["content"]
         if "final judge" in system.lower():
-            return json.dumps({"label_name": "Indicator"})
+            return json.dumps({"label_name": "Indicator", "suicidal_intent": True})
         for label in VALID_LABELS:
             if f"Target label: {label}" in system:
                 time.sleep(0.2)
@@ -94,7 +173,7 @@ class MalformedThenValidModel:
         if role == "Indicator" and self.calls_by_role[role] == 1:
             return "not json"
         if role == "judge":
-            return json.dumps({"label_name": "Indicator"})
+            return json.dumps({"label_name": "Indicator", "suicidal_intent": True})
         return json.dumps({"answer": role == "Indicator"})
 
 
@@ -150,7 +229,7 @@ class UsageModel:
     def invoke(self, messages):
         system = messages[0]["content"]
         if "final judge" in system.lower():
-            return UsageResponse('{"label_name": "Indicator"}')
+            return UsageResponse('{"label_name": "Indicator", "suicidal_intent": true}')
         for label in VALID_LABELS:
             if f"Target label: {label}" in system:
                 return UsageResponse(json.dumps({"answer": label == "Indicator"}))
@@ -208,7 +287,7 @@ class OpenRouterCostModel:
     def invoke(self, messages):
         system = messages[0]["content"]
         if "final judge" in system.lower():
-            return OpenRouterCostResponse('{"label_name": "Indicator"}')
+            return OpenRouterCostResponse('{"label_name": "Indicator", "suicidal_intent": true}')
         for label in VALID_LABELS:
             if f"Target label: {label}" in system:
                 return OpenRouterCostResponse(json.dumps({"answer": label == "Indicator"}))
@@ -277,15 +356,55 @@ class FakeStructuredAgent:
         self.invocations.append((self.schema, payload))
         if self.schema is SpecialistAnswer:
             return {"messages": [], "structured_response": {"answer": True}}
+        if self.schema is SpecialistReasonedAnswer:
+            return {
+                "messages": [],
+                "structured_response": {
+                    "answer": True,
+                    "reasoning": "Structured rationale",
+                },
+            }
         if self.schema is JudgeAnswer:
-            return {"messages": [], "structured_response": {"label_name": "Indicator"}}
+            return {
+                "messages": [],
+                "structured_response": {"label_name": "Indicator", "suicidal_intent": True},
+            }
         raise AssertionError(f"Unexpected schema {self.schema}")
+
+
+class StructuredOutputValidationError(Exception):
+    def __init__(self, ai_message):
+        self.ai_message = ai_message
+        super().__init__("synthetic structured-output failure")
+
+
+class StructuredFailureThenValidAgent:
+    def __init__(self):
+        self.invocations = 0
+
+    def invoke(self, payload):
+        self.invocations += 1
+        if self.invocations == 1:
+            raise StructuredOutputValidationError(
+                SimpleNamespace(
+                    content="invalid structured output",
+                    usage_metadata={
+                        "input_tokens": 7,
+                        "output_tokens": 2,
+                        "total_tokens": 9,
+                        "cost": 0.003,
+                    },
+                    response_metadata={},
+                )
+            )
+        return {"messages": [], "structured_response": {"answer": True}}
 
 
 def test_graph_uses_create_agent_path_for_bindable_models(monkeypatch):
     invocations = []
 
-    def fake_get_structured_agent(self, *, system_prompt, schema):
+    def fake_get_structured_agent(self, *, model, system_prompt, schema):
+        assert model
         assert system_prompt
         return FakeStructuredAgent(schema, invocations)
 
@@ -301,3 +420,76 @@ def test_graph_uses_create_agent_path_for_bindable_models(monkeypatch):
     assert [schema for schema, _ in invocations].count(SpecialistAnswer) == 4
     assert [schema for schema, _ in invocations].count(JudgeAnswer) == 1
     assert all(call["structured_output_strategy"] == "create_agent_tool_strategy" for call in result.llm_calls)
+
+
+def test_create_agent_strategy_leaves_retries_to_evaluator(monkeypatch):
+    captured = {}
+
+    def fake_create_agent(**kwargs):
+        captured.update(kwargs)
+        return object()
+
+    monkeypatch.setattr("langchain.agents.create_agent", fake_create_agent)
+    workflow = MultiAgentWorkflow(model=BindableStructuredModel(), max_retries=1)
+
+    workflow._get_structured_agent(
+        model=workflow.model,
+        system_prompt="system",
+        schema=SpecialistAnswer,
+    )
+
+    assert captured["response_format"].handle_errors is False
+
+
+def test_create_agent_retries_once_and_preserves_failed_response_usage(monkeypatch):
+    agent = StructuredFailureThenValidAgent()
+    workflow = MultiAgentWorkflow(model=BindableStructuredModel(), max_retries=1)
+    monkeypatch.setattr(workflow, "_get_structured_agent", lambda **kwargs: agent)
+
+    parsed, calls, errors = workflow._call_with_create_agent(
+        role="Indicator_specialist",
+        messages=[
+            {"role": "system", "content": "system"},
+            {"role": "user", "content": "text"},
+        ],
+        schema=SpecialistAnswer,
+        model=workflow.model,
+        model_name="structured-model",
+    )
+
+    assert agent.invocations == 2
+    assert parsed.answer is True
+    assert errors == []
+    assert calls[0]["error"]["error_type"] == "StructuredOutputValidationError"
+    assert calls[0]["prompt_tokens"] == 7
+    assert calls[0]["completion_tokens"] == 2
+    assert calls[0]["total_tokens"] == 9
+    assert calls[0]["cost"] == 0.003
+    assert calls[0]["raw_output"] == "invalid structured output"
+
+
+def test_graph_uses_create_agent_path_with_reasoned_schema(monkeypatch):
+    invocations = []
+
+    def fake_get_structured_agent(self, *, model, system_prompt, schema):
+        assert model
+        assert system_prompt
+        return FakeStructuredAgent(schema, invocations)
+
+    monkeypatch.setattr(MultiAgentWorkflow, "_get_structured_agent", fake_get_structured_agent)
+
+    workflow = MultiAgentWorkflow(
+        model=BindableStructuredModel(),
+        model_name="structured-model",
+        max_retries=0,
+        mode="reasoned",
+    )
+
+    result = workflow.run_case(sample_id="case-7", text="test text")
+
+    assert result.final_label == "Indicator"
+    assert len(result.errors) == 0
+    assert result.specialist_outputs["Indicator"]["reasoning"] == "Structured rationale"
+    assert len(invocations) == 5
+    assert [schema for schema, _ in invocations].count(SpecialistReasonedAnswer) == 4
+    assert [schema for schema, _ in invocations].count(JudgeAnswer) == 1
