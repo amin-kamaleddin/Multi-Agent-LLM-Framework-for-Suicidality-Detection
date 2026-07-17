@@ -2,10 +2,12 @@ import pytest
 from pydantic import ValidationError
 
 from suicidal_multi_agent.core.schemas import (
+    EvidenceCollectorAnswer,
     JudgeAnswer,
     SpecialistAnswer,
     SpecialistReasonedAnswer,
     extract_json_object,
+    validate_evidence_answer,
 )
 
 
@@ -61,6 +63,83 @@ def test_reasoned_specialist_answer_rejects_string_answer_and_extra_keys():
         )
     with pytest.raises(ValidationError):
         SpecialistReasonedAnswer.model_validate({"answer": False, "reasoning": " "})
+
+
+def test_evidence_collector_answer_accepts_compact_five_field_items():
+    parsed = EvidenceCollectorAnswer.model_validate(
+        {
+            "evidence": [
+                {
+                    "quote": "I wrote a note",
+                    "type": "preparation",
+                    "subject": "author",
+                    "time": "past",
+                    "observation": "The author reports writing a note.",
+                }
+            ]
+        }
+    )
+
+    validate_evidence_answer(
+        parsed,
+        text="Yesterday I wrote a note before leaving.",
+        allowed_types={"suicide_plan", "preparation", "self_harm"},
+    )
+    assert parsed.model_dump()["evidence"][0]["type"] == "preparation"
+
+
+def test_evidence_collector_answer_rejects_extra_fields_limits_and_bad_grounding():
+    valid_item = {
+        "quote": "I wrote a note",
+        "type": "preparation",
+        "subject": "author",
+        "time": "past",
+        "observation": "The author reports writing a note.",
+    }
+    with pytest.raises(ValidationError):
+        EvidenceCollectorAnswer.model_validate(
+            {"evidence": [{**valid_item, "confidence": 0.9}]}
+        )
+    with pytest.raises(ValidationError):
+        EvidenceCollectorAnswer.model_validate({})
+    with pytest.raises(ValidationError):
+        EvidenceCollectorAnswer.model_validate({"evidence": [valid_item] * 4})
+
+    parsed = EvidenceCollectorAnswer.model_validate({"evidence": [valid_item]})
+    with pytest.raises(ValueError, match="not allowed"):
+        validate_evidence_answer(
+            parsed,
+            text="I wrote a note",
+            allowed_types={"attempt_report"},
+        )
+    with pytest.raises(ValueError, match="exact substring"):
+        validate_evidence_answer(
+            parsed,
+            text="No matching quote here.",
+            allowed_types={"preparation"},
+        )
+
+
+def test_evidence_quote_and_observation_allow_100_words_but_reject_101():
+    hundred_words = " ".join(f"word{i}" for i in range(100))
+    item = {
+        "quote": hundred_words,
+        "type": "preparation",
+        "subject": "author",
+        "time": "past",
+        "observation": hundred_words,
+    }
+
+    assert EvidenceCollectorAnswer.model_validate({"evidence": [item]}).evidence
+    too_long = f"{hundred_words} extra"
+    with pytest.raises(ValidationError, match="quote must contain at most 100 words"):
+        EvidenceCollectorAnswer.model_validate(
+            {"evidence": [{**item, "quote": too_long}]}
+        )
+    with pytest.raises(ValidationError, match="observation must contain at most 100 words"):
+        EvidenceCollectorAnswer.model_validate(
+            {"evidence": [{**item, "observation": too_long}]}
+        )
 
 
 def test_judge_answer_requires_known_label_only():

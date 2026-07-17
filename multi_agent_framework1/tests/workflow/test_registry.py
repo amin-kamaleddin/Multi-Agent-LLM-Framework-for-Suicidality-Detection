@@ -8,7 +8,7 @@ from suicidal_multi_agent.workflow.registry import (
 
 
 def test_builtin_registry_exposes_framework1_metadata():
-    assert WORKFLOW_REGISTRY.names() == ("framework1",)
+    assert WORKFLOW_REGISTRY.names() == ("framework1", "framework2")
     assert WORKFLOW_REGISTRY.get("framework1").name == "framework1"
     assert WORKFLOW_REGISTRY.describe()[0]["config_keys"] == [
         "model",
@@ -19,6 +19,7 @@ def test_builtin_registry_exposes_framework1_metadata():
         "fake_llm",
         "agents",
     ]
+    assert WORKFLOW_REGISTRY.get("framework2").default_mode == "evidence"
 
 
 def test_registry_accepts_new_named_runner_and_rejects_invalid_names():

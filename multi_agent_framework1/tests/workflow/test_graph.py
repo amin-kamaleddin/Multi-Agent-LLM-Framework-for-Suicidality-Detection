@@ -2,7 +2,7 @@ import json
 import time
 from types import SimpleNamespace
 
-from suicidal_multi_agent.core.labels import VALID_LABELS
+from suicidal_multi_agent.core.labels import FINAL_LABELS, LABEL_DEFINITIONS, VALID_LABELS
 from suicidal_multi_agent.core.schemas import JudgeAnswer, SpecialistAnswer, SpecialistReasonedAnswer
 from suicidal_multi_agent.workflow.graph import MultiAgentWorkflow
 
@@ -124,6 +124,113 @@ def test_reasoned_mode_runs_same_graph_with_rich_specialist_outputs():
     }
     assert len(result.errors) == 0
     assert len(model.calls) == 5
+
+
+class EvidenceFakeGraphModel:
+    def __init__(self):
+        self.calls = []
+
+    def invoke(self, messages):
+        self.calls.append(messages)
+        system = messages[0]["content"]
+        if "final judge" in system.lower():
+            assert "Validated evidence packets" in messages[1]["content"]
+            for label in FINAL_LABELS:
+                assert LABEL_DEFINITIONS[label] in system
+                assert label in messages[1]["content"]
+            assert "attempt_report" in system
+            assert '"answer"' not in messages[1]["content"]
+            return json.dumps({"label_name": "Attempt", "suicidal_intent": True})
+
+        for label in FINAL_LABELS:
+            if f"Evidence family: {label}" in system:
+                if label == "Attempt":
+                    return json.dumps(
+                        {
+                            "evidence": [
+                                {
+                                    "quote": "I tried to die yesterday",
+                                    "type": "attempt_report",
+                                    "subject": "author",
+                                    "time": "past",
+                                    "observation": "The author explicitly reports a past suicide attempt.",
+                                }
+                            ]
+                        }
+                    )
+                return json.dumps({"evidence": []})
+        raise AssertionError("Unexpected prompt")
+
+
+def test_evidence_mode_runs_five_parallel_collectors_then_judge():
+    model = EvidenceFakeGraphModel()
+    workflow = MultiAgentWorkflow(model=model, max_retries=0, mode="evidence")
+
+    result = workflow.run_case(
+        sample_id="case-evidence",
+        text="I tried to die yesterday but survived.",
+    )
+
+    assert result.final_label == "Attempt"
+    assert result.suicidal_intent is True
+    assert result.specialist_answers == {}
+    assert result.specialist_outputs == {}
+    assert set(result.collector_outputs) == set(FINAL_LABELS)
+    assert result.collector_outputs["Attempt"]["evidence"][0]["type"] == "attempt_report"
+    assert len(result.errors) == 0
+    assert len(model.calls) == 6
+    collector_traces = [trace for trace in result.traces if trace["event"] == "collector_complete"]
+    assert len(collector_traces) == 5
+    assert {trace["parallel_group"] for trace in collector_traces} == {
+        "five_evidence_collectors"
+    }
+
+
+class InvalidEvidenceThenValidModel(EvidenceFakeGraphModel):
+    def __init__(self):
+        super().__init__()
+        self.indicator_calls = 0
+
+    def invoke(self, messages):
+        system = messages[0]["content"]
+        if "Evidence family: Indicator" in system:
+            self.calls.append(messages)
+            self.indicator_calls += 1
+            if self.indicator_calls == 1:
+                return json.dumps(
+                    {
+                        "evidence": [
+                            {
+                                "quote": "fabricated quote",
+                                "type": "attempt_report",
+                                "subject": "author",
+                                "time": "past",
+                                "observation": "This item violates type and grounding rules.",
+                            }
+                        ]
+                    }
+                )
+            return json.dumps({"evidence": []})
+        return super().invoke(messages)
+
+
+def test_evidence_mode_retries_invalid_type_or_non_verbatim_quote():
+    model = InvalidEvidenceThenValidModel()
+    workflow = MultiAgentWorkflow(model=model, max_retries=1, mode="evidence")
+
+    result = workflow.run_case(
+        sample_id="case-evidence-retry",
+        text="I tried to die yesterday but survived.",
+    )
+
+    assert result.final_label == "Attempt"
+    assert result.errors == []
+    assert model.indicator_calls == 2
+    indicator_calls = [
+        call for call in result.llm_calls if call["role"] == "Indicator_collector"
+    ]
+    assert len(indicator_calls) == 2
+    assert indicator_calls[0]["error"]["error_type"] == "ValueError"
 
 
 class SlowSpecialistModel:

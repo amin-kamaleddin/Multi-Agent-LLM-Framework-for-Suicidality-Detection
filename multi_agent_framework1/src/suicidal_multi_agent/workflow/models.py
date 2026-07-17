@@ -7,7 +7,7 @@ import os
 
 from dotenv import load_dotenv
 
-from ..core.labels import VALID_LABELS
+from ..core.labels import FINAL_LABELS, VALID_LABELS
 
 
 class DeterministicFakeModel:
@@ -17,6 +17,9 @@ class DeterministicFakeModel:
         system = messages[0]["content"]
         if "final judge" in system.lower():
             return json.dumps({"label_name": "Indicator", "suicidal_intent": True})
+        for label in FINAL_LABELS:
+            if f"Evidence family: {label}" in system:
+                return json.dumps({"evidence": []})
         for label in VALID_LABELS:
             if f"Target label: {label}" in system:
                 answer = label == "Indicator"

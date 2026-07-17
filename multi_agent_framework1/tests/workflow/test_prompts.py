@@ -1,8 +1,15 @@
-from suicidal_multi_agent.core.labels import LABEL_DEFINITIONS, VALID_LABELS
-from suicidal_multi_agent.core.schemas import JudgeAnswer, SpecialistAnswer, SpecialistReasonedAnswer
+from suicidal_multi_agent.core.labels import FINAL_LABELS, LABEL_DEFINITIONS, VALID_LABELS
+from suicidal_multi_agent.core.schemas import (
+    EvidenceCollectorAnswer,
+    JudgeAnswer,
+    SpecialistAnswer,
+    SpecialistReasonedAnswer,
+)
 from suicidal_multi_agent.workflow.prompts import (
     ATTEMPT_SPECIALIST_PROMPT,
     BEHAVIOR_SPECIALIST_PROMPT,
+    EVIDENCE_COLLECTOR_PROMPTS,
+    EVIDENCE_TYPE_DEFINITIONS,
     IDEATION_SPECIALIST_PROMPT,
     INDICATOR_SPECIALIST_PROMPT,
     LABEL_TO_AGENT_NAME,
@@ -56,16 +63,48 @@ def test_agent_to_prompt_mapping_is_one_to_one():
 
 
 def test_workflow_modes_reuse_same_agent_names_with_different_schemas():
-    assert set(WORKFLOW_MODES) == {"bool", "reasoned"}
+    assert set(WORKFLOW_MODES) == {"bool", "reasoned", "evidence"}
     assert WORKFLOW_MODES["bool"].specialist_schema is SpecialistAnswer
     assert WORKFLOW_MODES["bool"].judge_schema is JudgeAnswer
     assert WORKFLOW_MODES["reasoned"].specialist_schema is SpecialistReasonedAnswer
     assert WORKFLOW_MODES["reasoned"].judge_schema is JudgeAnswer
+    assert WORKFLOW_MODES["evidence"].specialist_schema is EvidenceCollectorAnswer
+    assert WORKFLOW_MODES["evidence"].judge_schema is JudgeAnswer
     assert set(REASONED_SPECIALIST_AGENT_PROMPTS) == set(SPECIALIST_AGENT_PROMPTS)
     for mode in WORKFLOW_MODES.values():
         judge_prompt = mode.judge_system_prompt()
         assert "Unsupportive" in judge_prompt
         assert '"suicidal_intent": true' in judge_prompt
+
+
+def test_evidence_prompts_define_five_non_voting_collectors_and_compact_contract():
+    assert {config.label_name for config in EVIDENCE_COLLECTOR_PROMPTS.values()} == set(
+        FINAL_LABELS
+    )
+    for config in EVIDENCE_COLLECTOR_PROMPTS.values():
+        prompt = config.system_prompt
+        assert LABEL_DEFINITIONS[config.label_name] in prompt
+        assert set(EVIDENCE_TYPE_DEFINITIONS[config.label_name])
+        for evidence_type, description in EVIDENCE_TYPE_DEFINITIONS[config.label_name].items():
+            assert evidence_type in prompt
+            assert description in prompt
+        assert "zero to three evidence items" in prompt
+        assert "at most 100 words" in prompt
+        assert "do not classify" in prompt.lower()
+        assert config.parallel_group == "five_evidence_collectors"
+        assert config.role_suffix == "collector"
+        assert config.produces_answer is False
+
+
+def test_evidence_judge_prompt_contains_all_label_and_evidence_type_descriptions():
+    prompt = WORKFLOW_MODES["evidence"].judge_system_prompt()
+    for label in FINAL_LABELS:
+        assert LABEL_DEFINITIONS[label] in prompt
+        for evidence_type, description in EVIDENCE_TYPE_DEFINITIONS[label].items():
+            assert evidence_type in prompt
+            assert description in prompt
+    assert "A packet is not a vote" in prompt
+    assert "Empty evidence" in prompt
 
 
 def test_reasoned_prompts_request_reasoning_without_separate_evidence_or_final_label():

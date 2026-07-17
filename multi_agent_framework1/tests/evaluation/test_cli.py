@@ -52,7 +52,10 @@ def test_cli_rejects_nonpositive_limits_and_uses_safe_token_default(monkeypatch,
 def test_list_workflows_reports_valid_cli_names(capsys):
     assert cli.main(["list-workflows"]) == 0
     payload = json.loads(capsys.readouterr().out)
-    assert [workflow["name"] for workflow in payload["workflows"]] == ["framework1"]
+    assert [workflow["name"] for workflow in payload["workflows"]] == [
+        "framework1",
+        "framework2",
+    ]
 
 
 def test_shared_cli_uses_registered_workflow_config_dataset_and_output_dir(tmp_path):
@@ -117,3 +120,50 @@ def test_shared_cli_uses_registered_workflow_config_dataset_and_output_dir(tmp_p
     )
     assert (run_dir / "compiled_results.csv").exists()
     assert (run_dir / "compiled_results.md").exists()
+
+
+def test_framework2_cli_smoke_persists_evidence_without_specialist_metrics(tmp_path):
+    sample_path = tmp_path / "sample.csv"
+    pd.DataFrame(
+        [
+            {
+                "ID": 18,
+                "users": 5,
+                "text": "ordinary test record",
+                "sentiment": "Unsupportive",
+                "time": 124,
+            }
+        ]
+    ).to_csv(sample_path, index=False, encoding="utf-8-sig")
+    artifact_base_dir = tmp_path / "framework2-runs"
+
+    exit_code = cli.main(
+        [
+            "evaluate",
+            "--workflow",
+            "framework2",
+            "--fake-llm",
+            "--sample-path",
+            str(sample_path),
+            "--artifact-base-dir",
+            str(artifact_base_dir),
+            "--run-id",
+            "evidence-smoke",
+        ]
+    )
+
+    assert exit_code == 0
+    run_dir = next(artifact_base_dir.glob("*_evidence-smoke"))
+    run_config = json.loads((run_dir / "run_config.json").read_text(encoding="utf-8"))
+    predictions = pd.read_csv(run_dir / "predictions.csv", encoding="utf-8-sig")
+    collector_outputs = json.loads(predictions.loc[0, "collector_outputs"])
+    assert run_config["mode"] == "evidence"
+    assert set(collector_outputs) == {
+        "Indicator",
+        "Ideation",
+        "Behavior",
+        "Attempt",
+        "Unsupportive",
+    }
+    assert "specialist_answers" not in predictions.columns
+    assert not (run_dir / "agent_metrics.csv").exists()

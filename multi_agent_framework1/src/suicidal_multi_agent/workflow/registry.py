@@ -10,6 +10,7 @@ import pandas as pd
 
 from ..evaluation.evaluator import (
     FRAMEWORK1_AGENT_ROLES,
+    FRAMEWORK2_AGENT_ROLES,
     EvaluationConfig,
     EvaluationResult,
     run_workflow_evaluation,
@@ -20,7 +21,7 @@ from .models import (
     openai_base_url,
     resolve_model_name_for_base_url,
 )
-from .prompts import WORKFLOW_MODE_NAMES
+from .prompts import FRAMEWORK1_MODE_NAMES
 
 
 @dataclass(frozen=True)
@@ -46,6 +47,7 @@ class WorkflowRegistration:
     description: str
     runner: WorkflowRunner
     config_keys: tuple[str, ...] = ()
+    default_mode: str = "bool"
 
 
 class WorkflowRegistry:
@@ -92,6 +94,7 @@ FRAMEWORK1_CONFIG_KEYS = (
     "fake_llm",
     "agents",
 )
+FRAMEWORK2_CONFIG_KEYS = FRAMEWORK1_CONFIG_KEYS
 FRAMEWORK1_AGENT_CONFIG_KEYS = (
     "agent_name",
     "model",
@@ -104,9 +107,9 @@ def _run_framework1(request: WorkflowRunRequest) -> EvaluationResult:
     unknown_keys = sorted(set(request.workflow_config) - set(FRAMEWORK1_CONFIG_KEYS))
     if unknown_keys:
         raise ValueError(f"Unknown framework1 workflow-config keys: {unknown_keys}")
-    if request.config.mode not in WORKFLOW_MODE_NAMES:
+    if request.config.mode not in FRAMEWORK1_MODE_NAMES:
         raise ValueError(
-            f"framework1 mode must be one of {list(WORKFLOW_MODE_NAMES)}; "
+            f"framework1 mode must be one of {list(FRAMEWORK1_MODE_NAMES)}; "
             f"got {request.config.mode!r}"
         )
 
@@ -119,7 +122,12 @@ def _run_framework1(request: WorkflowRunRequest) -> EvaluationResult:
             request.config.max_completion_tokens,
         )
     )
-    agent_configuration, agent_models = _framework1_agent_overrides(request)
+    agent_configuration, agent_models = _agent_overrides(
+        request,
+        config=request.config,
+        allowed_roles=FRAMEWORK1_AGENT_ROLES,
+        framework_name="framework1",
+    )
     resolved_config = replace(
         request.config,
         agent_configuration=agent_configuration or None,
@@ -134,33 +142,77 @@ def _run_framework1(request: WorkflowRunRequest) -> EvaluationResult:
     )
 
 
-def _framework1_agent_overrides(
+def _run_framework2(request: WorkflowRunRequest) -> EvaluationResult:
+    unknown_keys = sorted(set(request.workflow_config) - set(FRAMEWORK2_CONFIG_KEYS))
+    if unknown_keys:
+        raise ValueError(f"Unknown framework2 workflow-config keys: {unknown_keys}")
+    if request.config.mode != "evidence":
+        raise ValueError("framework2 mode must be 'evidence'")
+
+    model = (
+        DeterministicFakeModel()
+        if request.fake_llm
+        else build_real_model(
+            request.config.requested_model_name,
+            request.config.temperature,
+            request.config.max_completion_tokens,
+        )
+    )
+    agent_configuration, agent_models = _agent_overrides(
+        request,
+        config=request.config,
+        allowed_roles=FRAMEWORK2_AGENT_ROLES,
+        framework_name="framework2",
+    )
+    resolved_config = replace(
+        request.config,
+        agent_configuration=agent_configuration or None,
+    )
+    return run_workflow_evaluation(
+        sample_df=request.sample_df,
+        model=model,
+        config=resolved_config,
+        run_id=request.run_id,
+        artifact_base_dir=request.artifact_base_dir,
+        agent_models=agent_models or None,
+    )
+
+
+def _agent_overrides(
     request: WorkflowRunRequest,
+    *,
+    config: EvaluationConfig,
+    allowed_roles: tuple[str, ...],
+    framework_name: str,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     agent_specs = request.workflow_config.get("agents") or {}
     if not isinstance(agent_specs, dict):
-        raise ValueError("framework1 workflow-config 'agents' must be a JSON object")
+        raise ValueError(f"{framework_name} workflow-config 'agents' must be a JSON object")
 
-    unknown_roles = sorted(set(agent_specs) - set(FRAMEWORK1_AGENT_ROLES))
+    unknown_roles = sorted(set(agent_specs) - set(allowed_roles))
     if unknown_roles:
         raise ValueError(
-            f"Unknown framework1 agent roles: {unknown_roles}. "
-            f"Expected roles: {list(FRAMEWORK1_AGENT_ROLES)}"
+            f"Unknown {framework_name} agent roles: {unknown_roles}. "
+            f"Expected roles: {list(allowed_roles)}"
         )
 
     agent_configuration: dict[str, dict[str, Any]] = {}
     agent_models: dict[str, Any] = {}
     for role, raw_spec in agent_specs.items():
         if not isinstance(raw_spec, dict):
-            raise ValueError(f"framework1 agent configuration for {role!r} must be a JSON object")
+            raise ValueError(
+                f"{framework_name} agent configuration for {role!r} must be a JSON object"
+            )
         unknown_keys = sorted(set(raw_spec) - set(FRAMEWORK1_AGENT_CONFIG_KEYS))
         if unknown_keys:
-            raise ValueError(f"Unknown framework1 agent config keys for {role!r}: {unknown_keys}")
+            raise ValueError(
+                f"Unknown {framework_name} agent config keys for {role!r}: {unknown_keys}"
+            )
 
-        requested_model = str(raw_spec.get("model") or request.config.requested_model_name)
-        temperature = float(raw_spec.get("temperature", request.config.temperature))
+        requested_model = str(raw_spec.get("model") or config.requested_model_name)
+        temperature = float(raw_spec.get("temperature", config.temperature))
         max_completion_tokens = int(
-            raw_spec.get("max_completion_tokens", request.config.max_completion_tokens)
+            raw_spec.get("max_completion_tokens", config.max_completion_tokens)
         )
         if max_completion_tokens <= 0:
             raise ValueError(f"max_completion_tokens for {role!r} must be greater than zero")
@@ -192,5 +244,14 @@ WORKFLOW_REGISTRY.register(
         description="Four parallel suicide-risk specialists followed by a final judge.",
         runner=_run_framework1,
         config_keys=FRAMEWORK1_CONFIG_KEYS,
+    )
+)
+WORKFLOW_REGISTRY.register(
+    WorkflowRegistration(
+        name="framework2",
+        description="Five parallel evidence collectors followed by a final judge.",
+        runner=_run_framework2,
+        config_keys=FRAMEWORK2_CONFIG_KEYS,
+        default_mode="evidence",
     )
 )

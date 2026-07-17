@@ -1,0 +1,9 @@
+{
+  "model": "gpt-4o",
+  "temperature": 0.0,
+  "max_completion_tokens": 1024,
+  "max_retries": 2,
+  "mode": "evidence",
+  "fake_llm": false,
+  "agents": {}
+}

@@ -1,4 +1,4 @@
-"""LangGraph workflow for four specialists plus final judge."""
+"""LangGraph workflow for parallel specialists or evidence collectors plus a judge."""
 
 from __future__ import annotations
 
@@ -6,11 +6,11 @@ import operator
 import re
 import time
 from dataclasses import dataclass
-from typing import Annotated, Any, Protocol, TypedDict
+from typing import Annotated, Any, Callable, Protocol, TypedDict
 
-from ..core.labels import VALID_LABELS
-from ..core.schemas import extract_json_object
+from ..core.schemas import extract_json_object, validate_evidence_answer
 from .prompts import (
+    EVIDENCE_TYPE_DEFINITIONS,
     WorkflowModeConfig,
     get_workflow_mode,
     specialist_user_prompt,
@@ -29,6 +29,7 @@ class WorkflowState(TypedDict):
     text: str
     specialist_answers: Annotated[dict[str, bool], operator.or_]
     specialist_outputs: Annotated[dict[str, dict[str, Any]], operator.or_]
+    collector_outputs: Annotated[dict[str, dict[str, Any]], operator.or_]
     final_label: str
     suicidal_intent: bool | None
     errors: Annotated[list[dict[str, Any]], operator.add]
@@ -44,6 +45,7 @@ class CaseResult:
     suicidal_intent: bool | None
     specialist_answers: dict[str, bool]
     specialist_outputs: dict[str, dict[str, Any]]
+    collector_outputs: dict[str, dict[str, Any]]
     errors: list[dict[str, Any]]
     traces: list[dict[str, Any]]
     llm_calls: list[dict[str, Any]]
@@ -404,11 +406,11 @@ class MultiAgentWorkflow:
             prompt_config.label_name: prompt_config
             for prompt_config in self.mode_config.specialist_prompts.values()
         }
-        for label in VALID_LABELS:
+        for label in self.mode_config.agent_labels:
             prompt_config = prompt_by_label[label]
-            node_name = f"{label.lower()}_specialist"
+            node_name = f"{label.lower()}_{prompt_config.role_suffix}"
             node_names.append(node_name)
-            builder.add_node(node_name, self._make_specialist_node(prompt_config))
+            builder.add_node(node_name, self._make_intermediate_node(prompt_config))
             builder.add_edge(START, node_name)
         builder.add_node("judge", self._judge_node)
         builder.add_edge(node_names, "judge")
@@ -444,7 +446,14 @@ class MultiAgentWorkflow:
             )
         return self._structured_agent_cache[cache_key]
 
-    def _call_and_parse(self, *, role: str, messages: list[dict[str, str]], schema: type[Any]) -> tuple[Any, list[dict[str, Any]], list[dict[str, Any]]]:
+    def _call_and_parse(
+        self,
+        *,
+        role: str,
+        messages: list[dict[str, str]],
+        schema: type[Any],
+        validator: Callable[[Any], None] | None = None,
+    ) -> tuple[Any, list[dict[str, Any]], list[dict[str, Any]]]:
         model = self.models_by_role.get(role, self.model)
         model_name = self.model_names_by_role.get(role, self.model_name)
         if self._can_use_create_agent(model):
@@ -454,6 +463,7 @@ class MultiAgentWorkflow:
                 schema=schema,
                 model=model,
                 model_name=model_name,
+                validator=validator,
             )
         return self._call_and_parse_manually(
             role=role,
@@ -461,6 +471,7 @@ class MultiAgentWorkflow:
             schema=schema,
             model=model,
             model_name=model_name,
+            validator=validator,
         )
 
     def _call_with_create_agent(
@@ -471,6 +482,7 @@ class MultiAgentWorkflow:
         schema: type[Any],
         model: InvokableModel,
         model_name: str,
+        validator: Callable[[Any], None] | None = None,
     ) -> tuple[Any, list[dict[str, Any]], list[dict[str, Any]]]:
         calls: list[dict[str, Any]] = []
         final_errors: list[dict[str, Any]] = []
@@ -486,6 +498,8 @@ class MultiAgentWorkflow:
                 latency_s = time.perf_counter() - started
                 structured = result.get("structured_response")
                 parsed = structured if isinstance(structured, schema) else schema.model_validate(structured)
+                if validator is not None:
+                    validator(parsed)
                 calls.extend(
                     _agent_call_records(
                         result=result,
@@ -556,6 +570,7 @@ class MultiAgentWorkflow:
         schema: type[Any],
         model: InvokableModel,
         model_name: str,
+        validator: Callable[[Any], None] | None = None,
     ) -> tuple[Any, list[dict[str, Any]], list[dict[str, Any]]]:
         calls: list[dict[str, Any]] = []
         final_errors: list[dict[str, Any]] = []
@@ -594,6 +609,8 @@ class MultiAgentWorkflow:
                 }
                 calls.append(call_record)
                 parsed = schema.model_validate(extract_json_object(raw))
+                if validator is not None:
+                    validator(parsed)
                 call_record["parsed"] = parsed.model_dump()
                 return parsed, calls, final_errors
             except Exception as exc:
@@ -641,25 +658,47 @@ class MultiAgentWorkflow:
                     return None, calls, final_errors
         return None, calls, final_errors
 
-    def _make_specialist_node(self, prompt_config):
+    def _make_intermediate_node(self, prompt_config):
         def node(state: WorkflowState) -> dict[str, Any]:
             messages = [
                 {"role": "system", "content": prompt_config.system_prompt},
                 {"role": "user", "content": specialist_user_prompt(state["text"])},
             ]
+            validator = None
+            if not prompt_config.produces_answer:
+                allowed_types = set(EVIDENCE_TYPE_DEFINITIONS[prompt_config.label_name])
+                validator = lambda answer: validate_evidence_answer(
+                    answer,
+                    text=state["text"],
+                    allowed_types=allowed_types,
+                )
             node_started_at_s = time.perf_counter()
             parsed, calls, errors = self._call_and_parse(
-                role=f"{prompt_config.label_name}_specialist",
+                role=f"{prompt_config.label_name}_{prompt_config.role_suffix}",
                 messages=messages,
                 schema=self.mode_config.specialist_schema,
+                validator=validator,
             )
             node_finished_at_s = time.perf_counter()
-            specialist_output = parsed.model_dump() if parsed is not None else None
-            specialist_answers = {prompt_config.label_name: specialist_output["answer"]} if specialist_output else {}
-            specialist_outputs = {prompt_config.label_name: specialist_output} if specialist_output else {}
+            output = parsed.model_dump() if parsed is not None else None
+            specialist_answers = (
+                {prompt_config.label_name: output["answer"]}
+                if output and prompt_config.produces_answer
+                else {}
+            )
+            specialist_outputs = (
+                {prompt_config.label_name: output}
+                if output and prompt_config.produces_answer
+                else {}
+            )
+            collector_outputs = (
+                {prompt_config.label_name: output}
+                if output and not prompt_config.produces_answer
+                else {}
+            )
             traces = [
                 {
-                    "event": "specialist_complete",
+                    "event": f"{prompt_config.role_suffix}_complete",
                     "agent_name": prompt_config.agent_name,
                     "label_name": prompt_config.label_name,
                     "parallel_group": prompt_config.parallel_group,
@@ -672,6 +711,7 @@ class MultiAgentWorkflow:
             return {
                 "specialist_answers": specialist_answers,
                 "specialist_outputs": specialist_outputs,
+                "collector_outputs": collector_outputs,
                 "errors": errors,
                 "traces": traces,
                 "llm_calls": calls,
@@ -681,39 +721,57 @@ class MultiAgentWorkflow:
 
     def _judge_node(self, state: WorkflowState) -> dict[str, Any]:
         if state.get("errors"):
+            agent_kind = "collector" if self.mode_config.evidence_mode else "specialist"
             return {
                 "final_label": "Error",
                 "suicidal_intent": None,
-                "traces": [{"event": "judge_skipped", "reason": "specialist_error"}],
+                "traces": [{"event": "judge_skipped", "reason": f"{agent_kind}_error"}],
             }
 
+        expected_labels = self.mode_config.agent_labels
+        intermediate_outputs = (
+            state.get("collector_outputs", {})
+            if self.mode_config.evidence_mode
+            else state.get("specialist_outputs", {})
+        )
+        missing_output_labels = [label for label in expected_labels if label not in intermediate_outputs]
+        extra_output_labels = sorted(set(intermediate_outputs) - set(expected_labels))
         answers = state.get("specialist_answers", {})
-        specialist_outputs = state.get("specialist_outputs", {})
-        missing_labels = [label for label in VALID_LABELS if label not in answers]
-        extra_labels = sorted(set(answers) - set(VALID_LABELS))
-        missing_output_labels = [label for label in VALID_LABELS if label not in specialist_outputs]
-        extra_output_labels = sorted(set(specialist_outputs) - set(VALID_LABELS))
+        missing_labels = (
+            []
+            if self.mode_config.evidence_mode
+            else [label for label in expected_labels if label not in answers]
+        )
+        extra_labels = (
+            []
+            if self.mode_config.evidence_mode
+            else sorted(set(answers) - set(expected_labels))
+        )
         if missing_labels or extra_labels or missing_output_labels or extra_output_labels:
+            agent_kind = "collector" if self.mode_config.evidence_mode else "specialist"
             return {
                 "final_label": "Error",
                 "suicidal_intent": None,
                 "errors": [
                     {
                         "role": "judge",
-                        "error_type": "MissingSpecialistOutput",
+                        "error_type": f"Missing{agent_kind.title()}Output",
                         "error_message": (
-                            "Expected one specialist answer for each label; "
+                            f"Expected one {agent_kind} output for each label; "
                             f"missing={missing_labels}, extra={extra_labels}, "
                             f"missing_outputs={missing_output_labels}, extra_outputs={extra_output_labels}"
                         ),
                     }
                 ],
-                "traces": [{"event": "judge_skipped", "reason": "missing_specialist_output"}],
+                "traces": [{"event": "judge_skipped", "reason": f"missing_{agent_kind}_output"}],
             }
 
         messages = [
             {"role": "system", "content": self.mode_config.judge_system_prompt()},
-            {"role": "user", "content": self.mode_config.judge_user_prompt(state["text"], specialist_outputs)},
+            {
+                "role": "user",
+                "content": self.mode_config.judge_user_prompt(state["text"], intermediate_outputs),
+            },
         ]
         node_started_at_s = time.perf_counter()
         parsed, calls, errors = self._call_and_parse(
@@ -748,6 +806,7 @@ class MultiAgentWorkflow:
             "text": text,
             "specialist_answers": {},
             "specialist_outputs": {},
+            "collector_outputs": {},
             "final_label": "",
             "suicidal_intent": None,
             "errors": [],
@@ -757,18 +816,29 @@ class MultiAgentWorkflow:
         result = self.graph.invoke(initial_state)
         specialist_answers = {
             label: result.get("specialist_answers", {})[label]
-            for label in VALID_LABELS
+            for label in self.mode_config.agent_labels
             if label in result.get("specialist_answers", {})
         }
         specialist_outputs = {
             label: result.get("specialist_outputs", {})[label]
-            for label in VALID_LABELS
+            for label in self.mode_config.agent_labels
             if label in result.get("specialist_outputs", {})
+        }
+        collector_outputs = {
+            label: result.get("collector_outputs", {})[label]
+            for label in self.mode_config.agent_labels
+            if label in result.get("collector_outputs", {})
         }
         agent_outputs = {
             f"{label}_specialist": output
             for label, output in specialist_outputs.items()
         }
+        agent_outputs.update(
+            {
+                f"{label}_collector": output
+                for label, output in collector_outputs.items()
+            }
+        )
         if result.get("final_label"):
             agent_outputs["judge"] = {
                 "label_name": result.get("final_label") or "Error",
@@ -781,6 +851,7 @@ class MultiAgentWorkflow:
             suicidal_intent=result.get("suicidal_intent"),
             specialist_answers=specialist_answers,
             specialist_outputs=specialist_outputs,
+            collector_outputs=collector_outputs,
             errors=result.get("errors", []),
             traces=result.get("traces", []),
             llm_calls=result.get("llm_calls", []),

@@ -24,6 +24,7 @@ SPECIALIST_ANSWER_COLUMNS = {
     for label in VALID_LABELS
 }
 FRAMEWORK1_AGENT_ROLES = tuple(f"{label}_specialist" for label in VALID_LABELS) + ("judge",)
+FRAMEWORK2_AGENT_ROLES = tuple(f"{label}_collector" for label in FINAL_LABELS) + ("judge",)
 
 
 class EvaluationCaseResult(Protocol):
@@ -237,7 +238,7 @@ def run_workflow_evaluation(
     agent_models: dict[str, InvokableModel] | None = None,
     dataset_audit: dict[str, Any] | None = None,
 ) -> EvaluationResult:
-    """Compatibility wrapper for the four-specialist framework1 workflow."""
+    """Compatibility wrapper for framework1 specialists or framework2 collectors."""
     agent_configuration = _framework1_agent_configuration(config)
     _validate_framework1_agent_overrides(config, agent_models, agent_configuration)
     model_names_by_role = {
@@ -258,6 +259,7 @@ def run_workflow_evaluation(
             "agent_configuration": agent_configuration,
         }
     )
+    evidence_mode = config.mode == "evidence"
     return run_evaluation(
         sample_df=sample_df,
         workflow=workflow,
@@ -265,8 +267,10 @@ def run_workflow_evaluation(
         run_id=run_id,
         artifact_base_dir=artifact_base_dir,
         dataset_audit=dataset_audit,
-        prediction_enricher=_specialist_prediction_fields,
-        agent_metrics_provider=_specialist_agent_metric_payload,
+        prediction_enricher=(
+            _collector_prediction_fields if evidence_mode else _specialist_prediction_fields
+        ),
+        agent_metrics_provider=None if evidence_mode else _specialist_agent_metric_payload,
     )
 
 
@@ -355,6 +359,18 @@ def _specialist_prediction_fields(
         output = specialist_outputs[label] if isinstance(specialist_outputs[label], dict) else {}
         row[f"{label.lower()}_reasoning"] = output.get("reasoning")
     return row
+
+
+def _collector_prediction_fields(
+    _record: dict[str, Any],
+    result: EvaluationCaseResult,
+) -> dict[str, Any]:
+    """Persist validated evidence packets without treating collectors as classifiers."""
+    collector_outputs = {
+        label: getattr(result, "collector_outputs", {}).get(label)
+        for label in FINAL_LABELS
+    }
+    return {"collector_outputs": json.dumps(collector_outputs, ensure_ascii=False)}
 
 
 def _sample_id_column(columns: Any) -> str:
@@ -542,7 +558,12 @@ def _complete_results_payload(rows: list[dict[str, Any]], metrics: dict[str, Any
     results = []
     for row in rows:
         result = dict(row)
-        for field in ("agent_outputs", "specialist_answers", "specialist_outputs"):
+        for field in (
+            "agent_outputs",
+            "specialist_answers",
+            "specialist_outputs",
+            "collector_outputs",
+        ):
             if isinstance(result.get(field), str):
                 result[field] = json.loads(result[field])
         result["ground_truth_output"] = {
@@ -558,13 +579,17 @@ def _complete_results_payload(rows: list[dict[str, Any]], metrics: dict[str, Any
 
 
 def _framework1_agent_configuration(config: EvaluationConfig) -> dict[str, dict[str, Any]]:
+    evidence_mode = config.mode == "evidence"
+    labels = FINAL_LABELS if evidence_mode else VALID_LABELS
+    role_suffix = "collector" if evidence_mode else "specialist"
+    agent_suffix = " Evidence Collector" if evidence_mode else " Agent"
     configuration = {
-        f"{label}_specialist": {
-            "agent_name": f"{label} Agent",
+        f"{label}_{role_suffix}": {
+            "agent_name": f"{label}{agent_suffix}",
             "model_name": config.model_name,
             "temperature": config.temperature,
         }
-        for label in VALID_LABELS
+        for label in labels
     }
     configuration["judge"] = {
         "agent_name": "Final Judge",
@@ -588,11 +613,13 @@ def _validate_framework1_agent_overrides(
 ) -> None:
     supplied_roles = set(agent_models or {})
     configured_roles = set(agent_configuration)
-    unknown_roles = sorted((supplied_roles | configured_roles) - set(FRAMEWORK1_AGENT_ROLES))
+    allowed_roles = FRAMEWORK2_AGENT_ROLES if config.mode == "evidence" else FRAMEWORK1_AGENT_ROLES
+    unknown_roles = sorted((supplied_roles | configured_roles) - set(allowed_roles))
     if unknown_roles:
+        framework_name = "framework2" if config.mode == "evidence" else "framework1"
         raise ValueError(
-            f"Unknown framework1 role overrides: {unknown_roles}. "
-            f"Expected roles: {list(FRAMEWORK1_AGENT_ROLES)}"
+            f"Unknown {framework_name} role overrides: {unknown_roles}. "
+            f"Expected roles: {list(allowed_roles)}"
         )
     override_roles = {
         role

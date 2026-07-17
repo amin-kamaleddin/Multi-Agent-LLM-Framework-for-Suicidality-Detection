@@ -29,11 +29,11 @@ from .workflow.models import (
     openai_base_url,
     resolve_model_name_for_base_url,
 )
-from .workflow.prompts import WORKFLOW_MODE_NAMES
+from .workflow.prompts import FRAMEWORK1_MODE_NAMES
 from .workflow.registry import WORKFLOW_REGISTRY, WorkflowRunRequest
 
 
-DEFAULT_MAX_COMPLETION_TOKENS = 256
+DEFAULT_MAX_COMPLETION_TOKENS = 1024
 
 
 def _ensure_help_log(argv: list[str]) -> None:
@@ -214,7 +214,8 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
             int(os.environ.get("MAX_RETRIES", "3") or 3),
         )
     )
-    mode = str(_workflow_setting(args, workflow_config, "mode", "bool"))
+    registration = WORKFLOW_REGISTRY.get(args.workflow)
+    mode = str(_workflow_setting(args, workflow_config, "mode", registration.default_mode))
     fake_llm = _workflow_setting(args, workflow_config, "fake_llm", False)
     if not isinstance(fake_llm, bool):
         raise ValueError("workflow-config 'fake_llm' must be a JSON boolean")
@@ -251,7 +252,6 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
         error_stop_rate=args.error_stop_rate,
         error_stop_min_records=args.error_stop_min_records,
     )
-    registration = WORKFLOW_REGISTRY.get(args.workflow)
     result = registration.runner(
         WorkflowRunRequest(
             sample_df=sample_df,
@@ -309,7 +309,12 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     run.add_argument("--max-retries", type=int, default=int(os.environ.get("MAX_RETRIES", "3") or 3))
-    run.add_argument("--mode", choices=WORKFLOW_MODE_NAMES, default="bool", help="Prompt/schema mode for the shared graph.")
+    run.add_argument(
+        "--mode",
+        choices=FRAMEWORK1_MODE_NAMES,
+        default="bool",
+        help="Prompt/schema mode for framework1.",
+    )
     run.set_defaults(func=cmd_run)
 
     evaluate = subparsers.add_parser(

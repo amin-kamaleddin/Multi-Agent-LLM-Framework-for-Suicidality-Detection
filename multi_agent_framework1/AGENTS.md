@@ -1,4 +1,4 @@
-# Multi-Agent Framework 1
+# Multi-Agent Frameworks
 
 This folder vendors the standalone naive multi-agent suicide-risk classifier from `suicidal_multi_agent` into the legacy `Suicide-Detection-Agent` repository without changing the legacy code paths.
 
@@ -18,6 +18,32 @@ The four specialist labels are:
 - `Attempt`
 
 The final judge may also return `Unsupportive`.
+
+The second workflow is evidence-first and has exactly two stages:
+
+```text
+input text -> 5 parallel evidence collectors -> validate and aggregate -> final judge -> label + suicidal_intent
+```
+
+The five collectors cover `Indicator`, `Ideation`, `Behavior`, `Attempt`, and `Unsupportive`. They collect evidence only; they do not return predictions, booleans, scores, confidence, citations, or review status.
+
+Evidence collector output schema (`framework2`, fixed `evidence` mode):
+
+```json
+{
+  "evidence": [
+    {
+      "quote": "verbatim input span",
+      "type": "collector-specific evidence type",
+      "subject": "author",
+      "time": "current",
+      "observation": "What the quote factually shows."
+    }
+  ]
+}
+```
+
+Each collector returns zero to three items. Quotes and observations are each limited to 100 words, and quotes must be exact input substrings. Each collector has only three allowed evidence types, defined with their interpretations in `workflow/prompts.py` and repeated in the final judge prompt.
 
 Default specialist output schema (`--mode bool`):
 
@@ -41,10 +67,10 @@ Judge output schema:
 
 - `pyproject.toml`, `uv.lock`, `.python-version`: self-contained `uv` project configuration.
 - `.env.example`: environment template; copy to `.env` locally and fill API settings.
-- `configs/framework1.example.json`: copyable shared-CLI configuration for framework1.
+- `configs/framework1.example.json`, `configs/framework2.example.json`: copyable shared-CLI configurations.
 - `src/suicidal_multi_agent/`: source package.
-- `src/suicidal_multi_agent/workflow/prompts.py`: prompt/schema mode registry. `bool` and `reasoned` modes reuse the same graph.
-- `src/suicidal_multi_agent/workflow/registry.py`: CLI workflow-name registry and built-in framework1 runner.
+- `src/suicidal_multi_agent/workflow/prompts.py`: prompt/schema registry for `bool`, `reasoned`, and `evidence` modes.
+- `src/suicidal_multi_agent/workflow/registry.py`: CLI registry for framework1 and framework2.
 - `src/suicidal_multi_agent/evaluation/ADAPTING_WORKFLOWS.md`: copyable guide for connecting another agentic workflow to the shared evaluator.
 - `src/suicidal_multi_agent/evaluation/EVALUATION_CONTRACT.md`: exhaustive input, output, metric, guardrail, and artifact reference.
 - `tests/`: pytest suite for data rules, schemas, prompts, graph behavior, metrics, evaluator, and reporting.
@@ -83,12 +109,14 @@ Run a fake-LLM smoke evaluation:
 ```powershell
 uv run python -m suicidal_multi_agent.cli list-workflows
 uv run python -m suicidal_multi_agent.cli evaluate --workflow framework1 --fake-llm --limit 4
+uv run python -m suicidal_multi_agent.cli evaluate --workflow framework2 --fake-llm --limit 4
 ```
 
 Select a dataset, workflow JSON configuration, and log base directory:
 
 ```powershell
 uv run python -m suicidal_multi_agent.cli evaluate --workflow framework1 --workflow-config configs/framework1.example.json --sample-path dataset/processed/dataset1_balanced_500_seed42.csv --artifact-base-dir logs/experiments --run-id framework1_dataset1_500
+uv run python -m suicidal_multi_agent.cli evaluate --workflow framework2 --workflow-config configs/framework2.example.json --sample-path dataset/processed/dataset1_balanced_500_seed42.csv --artifact-base-dir logs/experiments --run-id framework2_dataset1_500
 ```
 
 Run a fake-LLM smoke evaluation with specialist reasoning:
@@ -100,13 +128,13 @@ uv run python -m suicidal_multi_agent.cli evaluate --fake-llm --limit 4 --mode r
 Run the real 500-row `gpt-4o` evaluation:
 
 ```powershell
-uv run python -m suicidal_multi_agent.cli evaluate --model gpt-4o --sample-path dataset/processed/dataset1_balanced_500_seed42.csv --dataset-audit-path dataset/processed/dataset1_audit.json --max-completion-tokens 256 --run-id gpt4o_dataset1_500
+uv run python -m suicidal_multi_agent.cli evaluate --model gpt-4o --sample-path dataset/processed/dataset1_balanced_500_seed42.csv --dataset-audit-path dataset/processed/dataset1_audit.json --max-completion-tokens 1024 --run-id gpt4o_dataset1_500
 ```
 
 Run the real 500-row `gpt-4o` evaluation with specialist reasoning:
 
 ```powershell
-uv run python -m suicidal_multi_agent.cli evaluate --model gpt-4o --mode reasoned --sample-path dataset/processed/dataset1_balanced_500_seed42.csv --dataset-audit-path dataset/processed/dataset1_audit.json --max-completion-tokens 256 --run-id gpt4o_reasoned_dataset1_500
+uv run python -m suicidal_multi_agent.cli evaluate --model gpt-4o --mode reasoned --sample-path dataset/processed/dataset1_balanced_500_seed42.csv --dataset-audit-path dataset/processed/dataset1_audit.json --max-completion-tokens 1024 --run-id gpt4o_reasoned_dataset1_500
 ```
 
 Compile a completed run:
@@ -117,8 +145,9 @@ uv run python -m suicidal_multi_agent.cli compile-results --run-dir logs/runs/<r
 
 ## Notes
 
-- The default maximum completion-token setting is 256. Override it only with a value supported by the selected model and provider.
+- The default maximum completion-token setting is 1024 to accommodate evidence packets. Override it only with a value supported by the selected model and provider.
 - Framework1 compatibility runs contain `specialist_answers` for metrics and `specialist_outputs` for the full per-label JSON in `predictions.csv`. In `reasoned` mode they also include per-label `*_reasoning` columns. Architecture-neutral evaluator runs omit those framework-specific fields unless an adapter supplies them.
+- Framework2 runs contain `collector_outputs` and role-keyed `agent_outputs`. Collector outputs are never converted into predictions or one-vs-rest metrics; only the final judge is evaluated.
 - `run` and `evaluate` automatically write `compiled_results.csv` and `compiled_results.md` after final artifacts are complete. Use `compile-results` only to regenerate reports for an older run.
 - Real runs write artifacts under `logs/runs/` by default; `evaluate --artifact-base-dir` selects another base directory. These are local generated evidence and are not committed in this folder.
 - This is research evaluation code, not clinical deployment software.

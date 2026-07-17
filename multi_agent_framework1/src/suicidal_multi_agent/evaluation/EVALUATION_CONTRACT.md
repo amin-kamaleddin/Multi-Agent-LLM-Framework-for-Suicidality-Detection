@@ -1,6 +1,6 @@
 # Evaluation Contracts, Metrics, and Guardrails
 
-This document maps every requirement in the evaluation checklist to the code and run artifact that implements it. The architecture-neutral contract is produced by `run_evaluation`; `run_workflow_evaluation` is the compatibility wrapper that adds framework1's specialist outputs and metrics. The legacy `run` command uses that wrapper directly; the shared `evaluate` command dispatches through `workflow/registry.py`, whose framework1 registration uses the wrapper.
+This document maps every requirement in the evaluation checklist to the code and run artifact that implements it. The architecture-neutral contract is produced by `run_evaluation`; `run_workflow_evaluation` is the compatibility wrapper for framework1 specialist outputs/metrics and framework2 evidence packets. The legacy `run` command uses that wrapper directly; the shared `evaluate` command dispatches through `workflow/registry.py`.
 
 For a copyable adapter and runner, start with [Adapting another workflow](ADAPTING_WORKFLOWS.md). This document is the exhaustive schema and artifact reference.
 
@@ -98,7 +98,7 @@ For existing fixtures, `source_row,text,sentiment[,real]` remains accepted as a 
 
 `evaluation/evaluator.py::EvaluationConfig` is serialized into `run_config.json`. It records the selected workflow name, raw workflow JSON configuration, resolved and requested model names, temperature, maximum completion tokens, retry thresholds, prompt/schema mode, dataset paths, early-stop guardrails, and an optional arbitrary role-keyed `agent_configuration` mapping.
 
-The normal framework1 CLI configures one model for all five calls in a case and defaults to temperature `0`. Its optional workflow JSON can override the model, temperature, and token limit for any of the four specialists or final judge. Its compatibility wrapper expands the resolved configuration for the four specialists and final judge. The shared evaluator itself does not maintain an agent-role allowlist.
+The normal framework1 CLI configures one model for five calls per case: four specialists and the judge. Framework2 uses six calls: five collectors and the judge. Both default to temperature `0`; their optional workflow JSON can override model settings per allowed role. The shared evaluator itself does not maintain an agent-role allowlist.
 
 For independent models, use the role keys `Indicator_specialist`, `Ideation_specialist`, `Behavior_specialist`, `Attempt_specialist`, and `judge`:
 
@@ -117,7 +117,7 @@ result = run_workflow_evaluation(
 )
 ```
 
-The caller constructs each model object with the recorded temperature. Framework1 validates only its own five roles and routes overrides in `workflow/graph.py::MultiAgentWorkflow._call_and_parse`. Other workflows may use any role names in `agent_configuration` and `llm_calls.jsonl`.
+The caller constructs each model object with the recorded temperature. Framework1 validates its five roles, framework2 validates its six roles, and both route overrides in `workflow/graph.py::MultiAgentWorkflow._call_and_parse`. Other workflows may use any role names in `agent_configuration` and `llm_calls.jsonl`.
 
 ## Architecture-neutral workflow contract
 
@@ -168,6 +168,24 @@ The Pydantic contracts live in `core/schemas.py`; prompts that request these sha
 
 `reasoning` must be a nonblank string. Extra keys, including a separate `evidence` key, are forbidden.
 
+### Evidence collector, framework2
+
+```json
+{
+  "evidence": [
+    {
+      "quote": "I wrote a note",
+      "type": "preparation",
+      "subject": "author",
+      "time": "past",
+      "observation": "The author reports writing a note."
+    }
+  ]
+}
+```
+
+The top-level object has only `evidence`. It contains zero to three items with exactly five fields. `quote` is a verbatim input substring of at most 100 words; `observation` is at most 100 words. `subject` and `time` use the enums enforced in `core/schemas.py`. Each collector accepts only its three evidence types from `workflow/prompts.py`. Schema, type, and quote-grounding failures are retried. Collectors do not return decisions, scores, confidence, citations, or review status.
+
 ### Final judge
 
 ```json
@@ -217,7 +235,7 @@ The strict JSON Schema is:
 - optional `agent_outputs`
 - `error`
 
-The framework1 wrapper additionally preserves `specialist_answers`, `specialist_outputs`, and one `*_answer`/`*_reasoning` column per specialist.
+The framework1 wrapper additionally preserves `specialist_answers`, `specialist_outputs`, and one `*_answer`/`*_reasoning` column per specialist. Framework2 preserves `collector_outputs`; collector packets are stored but not interpreted as predictions and do not produce agent classification metrics.
 
 `results.json` combines complete records and metrics:
 
@@ -314,7 +332,7 @@ Thresholds and the stop reason are persisted in `run_config.json`, `metrics.json
 
 | Artifact | Created by | Contents |
 |---|---|---|
-| `run_config.json` | `run_evaluation` | Run and arbitrary role-keyed agent configuration; framework1's wrapper records its resolved five-role configuration. |
+| `run_config.json` | `run_evaluation` | Run and arbitrary role-keyed agent configuration; the built-in wrappers record their resolved five- or six-role configuration. |
 | `dataset_audit.json` | `run_evaluation` | Source audit or explicit audit-unavailable marker. |
 | `sampled_dataset.csv` | `run_evaluation` | Exact evaluated inputs and ground truth. |
 | `predictions.csv` | `_write_evaluation_artifacts` | Source fields, shared outputs, correctness, errors, and optional workflow data. |
