@@ -83,7 +83,7 @@ The suicide detection runner supports multiple modes via `--agent-mode`.
 - Example:
 
 ```json
-{"ideation": 0.8, "behavior": 0.1, "indicator": 0.05, "attempt": 0.05}
+{"unsupportive": 0.1, "ideation": 0.7, "behavior": 0.1, "indicator": 0.05, "attempt": 0.05}
 ```
 
 - Evaluator resolves top class automatically for accuracy/F1 metrics.
@@ -101,7 +101,7 @@ The suicide detection runner supports multiple modes via `--agent-mode`.
 - Example:
 
 ```json
-{"ideation": 8, "behavior": 2, "indicator": 1, "attempt": 1}
+{"unsupportive": 1, "ideation": 7, "behavior": 2, "indicator": 1, "attempt": 1}
 ```
 
 - Evaluator resolves the top class automatically by picking the highest-scored class.
@@ -123,7 +123,7 @@ From the EvalRing root:
 - `--max-retries`: retries per sample inside evaluator execution
 - `--seed`: recorded in metadata for reproducibility
 - `--agent-mode`: `single-class`, `multi-class-chance`, `base-vs-rest-binary`, `multi-agent-host`, or `per-class-score`
-- `--base-class`: used by `base-vs-rest-binary`; one of `Indicator`, `Ideation`, `Behavior`, `Attempt`
+- `--base-class`: used by `base-vs-rest-binary`; one of `Unsupportive`, `Indicator`, `Ideation`, `Behavior`, `Attempt`
 - `--retry-failed`: rerun only error cases from an existing run
 - `--meta-path`: specific `Meta.json` to use with `--retry-failed`
 

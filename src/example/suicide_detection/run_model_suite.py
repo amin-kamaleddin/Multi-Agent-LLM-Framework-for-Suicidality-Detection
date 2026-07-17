@@ -8,6 +8,7 @@ import argparse
 
 script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parent.parent.parent
+
 sys.path.insert(0, str(project_root))
 
 from src.EvalRing.utils.suite_runner import run_suite
@@ -17,7 +18,7 @@ def run_local_suite(
     max_workers: int = 50,
     seed: int = 42,
     agent_mode: str = "single-class",
-    base_class: str = "Indicator",
+    base_class: str = "Unsupportive",
     models_file: str = "model_list.json",
     cache: str = "latest",
     cache_mode: str = "both",
@@ -55,7 +56,7 @@ if __name__ == "__main__":
     parser.add_argument("--agent-mode", type=str, default="single-class", help="Agent execution mode")
     parser.add_argument("--base-class", type=str, default="Indicator", help="Base class for binary modes")
     parser.add_argument("--models-file", type=str, default="model_list.json", help="Model list filename in this directory")
-    parser.add_argument("--data-path", type=str, default=r"C:\Users\guanz\OneDrive - UBC\Desktop\project-py-NLP toolbox\nlp_application_toolbox\EvalRing\src\example\suicide_detection\data\rsd_15k_random_700_generated.csv", help="Optional path to custom dataset CSV")
+    parser.add_argument("--data-path", type=str, default=r"C:\Users\Owner\Documents\UofT\LMP2392\old_repo\Suicide-Detection-Agent\src\example\suicide_detection\data\rsd_new_200_small_2.csv", help="Optional path to custom dataset CSV")
     parser.add_argument("--no-cache", action="store_true", help="Disable caching")
     parser.add_argument("--cache-mode", type=str, default="both", choices=["runs_only", "cache_file", "both", "none"], help="Global cache operation mode")
     parser.add_argument("--ignore-errors", action="store_true", help="Ignore cached errors, forcing them to re-run.")

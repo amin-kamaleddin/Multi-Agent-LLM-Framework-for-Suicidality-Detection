@@ -75,7 +75,7 @@ class LLMJudgeEvaluator(BaseEvaluator):
         cls,
         rubric: Union[str, Rubric, Dict[str, Union[str, Rubric]]],
         criteria: Optional[Union[str, Dict[str, str]]] = None,
-        judge_model: str = "gpt-4o",
+        judge_model: str = "gpt-4o-mini",
         api_key: Optional[str] = None,
         judge_temperature: float = 0.0,
         judge_max_tokens: int = 512,

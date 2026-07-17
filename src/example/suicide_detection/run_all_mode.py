@@ -4,25 +4,25 @@ Convenience wrapper to execute all evaluation modes sequentially.
 
 import argparse
 from pathlib import Path
-
 script_dir = Path(__file__).resolve().parent
 
 from run_model_suite import run_local_suite
 
 MODES = [
-    #"single-class",
-    # "multi-class-chance",
-    # "base-vs-rest-binary",
-    # "per-class-score",
-    "multi-agent-host"
+    "single-class",
+    "multi-class-chance",
+    "base-vs-rest-binary",
+    "per-class-score",
+    # "multi-agent-host"
 ]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run all evaluation modes sequentially via python invocation.")
-    parser.add_argument("--n-samples", type=int, default=100)
+    parser.add_argument("--n-samples", type=int, default=200)
     parser.add_argument("--max-workers", type=int, default=50)
     parser.add_argument("--models-file", type=str, default="model_list.json")
     parser.add_argument("--cache-mode", type=str, default="both", choices=["runs_only", "cache_file", "both"], help="Global cache operation mode")
+    parser.add_argument("--data-path", type=str, default=r"C:\Users\Owner\Documents\UofT\LMP2392\old_repo\Suicide-Detection-Agent\src\example\suicide_detection\data\rsd_new_200_small_2.csv", help="Optional path to custom dataset CSV")
     args = parser.parse_args()
 
     print("=" * 80)
@@ -39,6 +39,7 @@ if __name__ == "__main__":
             n_samples=args.n_samples,
             max_workers=args.max_workers,
             models_file=args.models_file,
+            data_path=args.data_path,
             cache_mode=args.cache_mode
         )
         

@@ -230,7 +230,7 @@ run_suite(
     max_workers=1000,
     seed=42,
     agent_mode="multi-agent-host",
-    base_class="Indicator",
+    base_class="Unsupportive",
     host_model="openai/gpt-4o-mini",
     role_models_json='{"expert":"anthropic/claude-3-haiku"}',
     max_host_iterations=10,
