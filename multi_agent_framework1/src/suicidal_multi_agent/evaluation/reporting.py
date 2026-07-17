@@ -188,6 +188,7 @@ def _compiled_rows(
     rows.append(
         {
             "section": "trace_summary",
+            "workflow_name": trace_summary.get("workflow_name") or metrics.get("workflow_name"),
             "model_name": trace_summary["model_name"],
             "requested_model_name": trace_summary.get("requested_model_name"),
             "mode": trace_summary.get("mode") or metrics.get("mode"),
@@ -234,6 +235,7 @@ def _compiled_markdown(
         "# Compiled Evaluation Results",
         "",
         f"- Run directory: `{run_dir}`",
+        f"- Workflow: `{metrics.get('workflow_name', 'framework1')}`",
         f"- Model: `{metrics['model_name']}`",
         f"- Requested model: `{metrics.get('requested_model_name')}`",
         f"- Mode: `{metrics.get('mode', 'bool')}`",

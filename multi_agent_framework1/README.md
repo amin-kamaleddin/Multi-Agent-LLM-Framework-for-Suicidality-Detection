@@ -6,6 +6,8 @@ Start here:
 
 - [Adapting another workflow](src/suicidal_multi_agent/evaluation/ADAPTING_WORKFLOWS.md) provides a copyable adapter and runner.
 - [Evaluation contract](src/suicidal_multi_agent/evaluation/EVALUATION_CONTRACT.md) defines all input/output schemas, metrics, guardrails, and artifacts.
+- [Shared CLI usage](../docs/USAGE.md#shared-agent-workflow-evaluator-cli) explains workflow selection, JSON configuration, datasets, log directories, and registry extension.
+- [Framework1 example configuration](configs/framework1.example.json) can be copied and adjusted per run.
 - [Framework1 guide](AGENTS.md) documents the built-in four-specialist commands.
 
 ## Setup
@@ -20,7 +22,8 @@ Copy-Item .env.example .env
 Edit `.env` before using a real OpenAI-compatible endpoint. A local fake-model smoke run requires no API key:
 
 ```powershell
-uv run python -m suicidal_multi_agent.cli evaluate --fake-llm --limit 4
+uv run python -m suicidal_multi_agent.cli list-workflows
+uv run python -m suicidal_multi_agent.cli evaluate --workflow framework1 --fake-llm --limit 4
 ```
 
 Run the test suite with:

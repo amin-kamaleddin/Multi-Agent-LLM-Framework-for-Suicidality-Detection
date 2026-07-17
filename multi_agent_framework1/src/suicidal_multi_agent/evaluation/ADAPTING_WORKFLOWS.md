@@ -165,7 +165,16 @@ The shared evaluator calculates call count, failed-attempt count, latency, promp
 
 ## 4. Call the generic evaluator
 
-Create a small runner in your framework, for example `scripts/run_my_framework.py`:
+For repeatable CLI use, register the adapter in `workflow/registry.py`, then select its exact registered name:
+
+```powershell
+uv run python -m suicidal_multi_agent.cli list-workflows
+uv run python -m suicidal_multi_agent.cli evaluate --workflow framework1 --sample-path dataset/my_combined_sample.csv --artifact-base-dir logs/experiments
+```
+
+`--workflow` accepts a predetermined lowercase registry key. It is not a file path or class name. See the [shared CLI usage guide](../../../../docs/USAGE.md#shared-agent-workflow-evaluator-cli) for configuration files and registration instructions.
+
+For direct API use, create a small runner in your framework, for example `scripts/run_my_framework.py`:
 
 ```python
 from suicidal_multi_agent.evaluation import (
@@ -243,7 +252,7 @@ python -m suicidal_multi_agent.cli evaluate
   -> MultiAgentWorkflow.run_case (once per record)
 ```
 
-Other frameworks should call `run_evaluation` directly through their adapter; they do not need to imitate the four-specialist graph.
+Other frameworks can call `run_evaluation` directly or register a runner that calls it; they do not need to imitate the four-specialist graph.
 
 ## Integration checklist
 

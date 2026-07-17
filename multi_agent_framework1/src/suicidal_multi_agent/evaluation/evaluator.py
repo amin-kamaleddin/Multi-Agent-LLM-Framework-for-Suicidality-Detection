@@ -65,6 +65,8 @@ class EvaluationConfig:
     total_records: int
     limit: int | None = None
     mode: str = "bool"
+    workflow_name: str = "framework1"
+    workflow_config: dict[str, Any] | None = None
     agent_configuration: dict[str, dict[str, Any]] | None = None
     error_stop_failed_llm_attempts: int = 10
     error_stop_failed_records: int = 3
@@ -406,6 +408,7 @@ def _write_evaluation_artifacts(
     agent_metrics = list(agent_metric_payload.get("agent_metrics") or [])
     runtime = summarize_runtime(all_calls)
     metrics = {
+        "workflow_name": config.workflow_name,
         "model_name": config.model_name,
         "requested_model_name": config.requested_model_name,
         "mode": config.mode,
@@ -444,6 +447,7 @@ def _write_evaluation_artifacts(
     writer.write_json(
         "trace_summary.json",
         {
+            "workflow_name": config.workflow_name,
             "model_name": config.model_name,
             "requested_model_name": config.requested_model_name,
             "mode": config.mode,

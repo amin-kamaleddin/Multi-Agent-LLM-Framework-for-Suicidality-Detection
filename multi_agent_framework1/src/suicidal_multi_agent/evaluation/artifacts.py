@@ -84,6 +84,7 @@ class ArtifactWriter:
         lines = [
             "# Run Metrics",
             "",
+            f"- Workflow: {metrics.get('workflow_name', 'framework1')}",
             f"- Accuracy: {metrics['classification']['accuracy']:.6f}",
             f"- Macro F1: {metrics['classification']['f1_score']:.6f}",
             f"- Macro Precision: {metrics['classification']['precision']:.6f}",

@@ -1,6 +1,6 @@
 # Evaluation Contracts, Metrics, and Guardrails
 
-This document maps every requirement in the evaluation checklist to the code and run artifact that implements it. The architecture-neutral contract is produced by `run_evaluation`; `run_workflow_evaluation` is the compatibility wrapper that adds framework1's specialist outputs and metrics. Both the `run` and `evaluate` CLI commands use that wrapper.
+This document maps every requirement in the evaluation checklist to the code and run artifact that implements it. The architecture-neutral contract is produced by `run_evaluation`; `run_workflow_evaluation` is the compatibility wrapper that adds framework1's specialist outputs and metrics. The legacy `run` command uses that wrapper directly; the shared `evaluate` command dispatches through `workflow/registry.py`, whose framework1 registration uses the wrapper.
 
 For a copyable adapter and runner, start with [Adapting another workflow](ADAPTING_WORKFLOWS.md). This document is the exhaustive schema and artifact reference.
 
@@ -35,7 +35,7 @@ The frozen 500-row evaluation sample contains only the original four labels. Und
 | Dataset text plus ground-truth label | Satisfied | `evaluation/evaluator.py::load_evaluation_sample` validates canonical RSD15K fields or the legacy `source_row` fixture schema. |
 | Current four risk labels | Satisfied | `core/labels.py::VALID_LABELS`; `Unsupportive` is an additional final-only label in `FINAL_LABELS`. |
 | Temperature 0 and per-run configuration | Satisfied | CLI default and `EvaluationConfig.temperature`; persisted in `run_config.json`. |
-| Per-agent model configuration | Satisfied through the Python API | Record arbitrary role-keyed metadata in `EvaluationConfig.agent_configuration`; framework1 also accepts matching role-keyed model objects through `agent_models`. |
+| Per-agent model configuration | Satisfied | The shared CLI loads per-workflow JSON; framework1 builds matching role-keyed model objects from its optional `agents` object. The Python API also accepts arbitrary role-keyed metadata in `EvaluationConfig.agent_configuration`. |
 | Markdown summary per agent | Conditional | Included when a workflow supplies comparable agent metrics. Shared final-output metrics are always present. |
 | Text files with wrong-evaluation IDs | Satisfied | `misclassified_ids.txt` and `suicidal_intent_misclassified_ids.txt`. |
 | JSON with complete results and metrics | Satisfied | `results.json`; written by `evaluation/evaluator.py::_complete_results_payload`. |
@@ -96,9 +96,9 @@ For existing fixtures, `source_row,text,sentiment[,real]` remains accepted as a 
 
 ## Model configuration
 
-`evaluation/evaluator.py::EvaluationConfig` is serialized into `run_config.json`. It records the resolved and requested model names, temperature, maximum completion tokens, retry thresholds, prompt/schema mode, dataset paths, early-stop guardrails, and an optional arbitrary role-keyed `agent_configuration` mapping.
+`evaluation/evaluator.py::EvaluationConfig` is serialized into `run_config.json`. It records the selected workflow name, raw workflow JSON configuration, resolved and requested model names, temperature, maximum completion tokens, retry thresholds, prompt/schema mode, dataset paths, early-stop guardrails, and an optional arbitrary role-keyed `agent_configuration` mapping.
 
-The normal framework1 CLI configures one model for all five calls in a case and defaults to temperature `0`. Its compatibility wrapper expands the resolved configuration for the four specialists and final judge. The shared evaluator itself does not maintain an agent-role allowlist.
+The normal framework1 CLI configures one model for all five calls in a case and defaults to temperature `0`. Its optional workflow JSON can override the model, temperature, and token limit for any of the four specialists or final judge. Its compatibility wrapper expands the resolved configuration for the four specialists and final judge. The shared evaluator itself does not maintain an agent-role allowlist.
 
 For independent models, use the role keys `Indicator_specialist`, `Ideation_specialist`, `Behavior_specialist`, `Attempt_specialist`, and `judge`:
 
