@@ -27,6 +27,9 @@ from .evaluation.reporting import compile_run_results
 from .workflow.prompts import WORKFLOW_MODE_NAMES
 
 
+DEFAULT_MAX_COMPLETION_TOKENS = 256
+
+
 class DeterministicFakeModel:
     """Small fake model for smoke tests and artifact verification."""
 
@@ -99,6 +102,22 @@ def _add_common_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--data-path", default=str(DEFAULT_DATASET_PATH), help="Path to the active anonymized CSV.")
     parser.add_argument("--seed", type=int, default=42, help="Sampling seed.")
     parser.add_argument("--sample-size", type=int, default=500, help="Balanced sample size. Must divide by 4.")
+
+
+def _positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("value must be greater than zero")
+    return parsed
+
+
+def _evaluation_audit_path(sample_path: str, requested_audit_path: str | None) -> str | None:
+    """Use the paired default audit only with the default evaluation sample."""
+    if requested_audit_path is not None:
+        return requested_audit_path
+    if Path(sample_path).resolve() == DEFAULT_EVALUATION_SAMPLE_PATH.resolve():
+        return str(DEFAULT_EVALUATION_AUDIT_PATH)
+    return None
 
 
 def _args_config(args: argparse.Namespace, command_name: str) -> dict[str, Any]:
@@ -206,7 +225,10 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
         model_name=resolved_model_name,
         requested_model_name=requested_model_name,
         sample_path=args.sample_path,
-        dataset_audit_path=args.dataset_audit_path,
+        dataset_audit_path=_evaluation_audit_path(
+            args.sample_path,
+            args.dataset_audit_path,
+        ),
         max_retries=args.max_retries,
         max_completion_tokens=args.max_completion_tokens,
         temperature=args.temperature,
@@ -257,21 +279,47 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--fake-llm", action="store_true", help="Use a deterministic fake model for artifact smoke tests.")
     run.add_argument("--model", default=os.environ.get("OPENAI_MODEL", "openai/gpt-4o-mini"), help="Chat model name.")
     run.add_argument("--temperature", type=float, default=float(os.environ.get("OPENAI_TEMPERATURE", "0") or 0))
-    run.add_argument("--max-completion-tokens", type=int, default=int(os.environ.get("MAX_COMPLETION_TOKENS", "500000") or 500000))
+    run.add_argument(
+        "--max-completion-tokens",
+        type=int,
+        default=int(
+            os.environ.get("MAX_COMPLETION_TOKENS", str(DEFAULT_MAX_COMPLETION_TOKENS))
+            or DEFAULT_MAX_COMPLETION_TOKENS
+        ),
+    )
     run.add_argument("--max-retries", type=int, default=int(os.environ.get("MAX_RETRIES", "3") or 3))
     run.add_argument("--mode", choices=WORKFLOW_MODE_NAMES, default="bool", help="Prompt/schema mode for the shared graph.")
     run.set_defaults(func=cmd_run)
 
     evaluate = subparsers.add_parser("evaluate", help="Evaluate a configured model on a frozen sampled dataset.")
     evaluate.add_argument("--sample-path", default=str(DEFAULT_EVALUATION_SAMPLE_PATH), help="Frozen sampled CSV to evaluate.")
-    evaluate.add_argument("--dataset-audit-path", default=str(DEFAULT_EVALUATION_AUDIT_PATH), help="Dataset audit JSON copied into run artifacts.")
+    evaluate.add_argument(
+        "--dataset-audit-path",
+        default=None,
+        help=(
+            "Dataset audit JSON copied into run artifacts. The paired Dataset1 audit is used "
+            "only with the default sample; custom samples default to audit unavailable."
+        ),
+    )
     evaluate.add_argument("--fake-llm", action="store_true", help="Use a deterministic fake model for evaluator smoke tests.")
     evaluate.add_argument("--model", default="gpt-4o", help="Chat model name. OpenRouter aliases like gpt-4o resolve to openai/gpt-4o.")
     evaluate.add_argument("--temperature", type=float, default=float(os.environ.get("OPENAI_TEMPERATURE", "0") or 0))
-    evaluate.add_argument("--max-completion-tokens", type=int, default=int(os.environ.get("MAX_COMPLETION_TOKENS", "500000") or 500000))
+    evaluate.add_argument(
+        "--max-completion-tokens",
+        type=int,
+        default=int(
+            os.environ.get("MAX_COMPLETION_TOKENS", str(DEFAULT_MAX_COMPLETION_TOKENS))
+            or DEFAULT_MAX_COMPLETION_TOKENS
+        ),
+    )
     evaluate.add_argument("--max-retries", type=int, default=int(os.environ.get("MAX_RETRIES", "3") or 3))
     evaluate.add_argument("--mode", choices=WORKFLOW_MODE_NAMES, default="bool", help="Prompt/schema mode for the shared graph.")
-    evaluate.add_argument("--limit", type=int, default=None, help="Optional first-N record limit for smoke tests.")
+    evaluate.add_argument(
+        "--limit",
+        type=_positive_int,
+        default=None,
+        help="Optional positive first-N record limit for smoke tests.",
+    )
     evaluate.add_argument("--run-id", default=None, help="Optional run directory suffix.")
     evaluate.add_argument("--error-stop-failed-llm-attempts", type=int, default=int(os.environ.get("EVAL_ERROR_STOP_FAILED_LLM_ATTEMPTS", "10") or 10))
     evaluate.add_argument("--error-stop-failed-records", type=int, default=int(os.environ.get("EVAL_ERROR_STOP_FAILED_RECORDS", "3") or 3))

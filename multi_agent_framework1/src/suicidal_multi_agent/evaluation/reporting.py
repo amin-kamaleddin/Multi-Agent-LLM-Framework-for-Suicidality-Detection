@@ -179,8 +179,8 @@ def _compiled_rows(
                 "section": "notes",
                 "metric_name": "cost_usd",
                 "note": (
-                    "This run recorded zero provider cost because it was executed before "
-                    "OpenRouter response_metadata cost extraction was patched."
+                    "No provider cost was recorded. This is expected for fake or free models, "
+                    "and can also mean that the provider did not expose cost metadata."
                 ),
             }
         )
@@ -361,7 +361,7 @@ def _compiled_markdown(
                 "",
                 "## Notes",
                 "",
-                "- Cost is shown exactly as recorded in this first run. It is `0.0` because this run happened before OpenRouter cost extraction from `response_metadata.token_usage` was patched.",
+                "- No provider cost was recorded. This is expected for fake or free models, and can also mean that the provider did not expose cost metadata.",
             ]
         )
 

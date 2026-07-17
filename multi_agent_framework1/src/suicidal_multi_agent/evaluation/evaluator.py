@@ -132,6 +132,8 @@ def run_evaluation(
     agent_metrics_provider: AgentMetricsProvider | None = None,
 ) -> EvaluationResult:
     """Evaluate any workflow that implements the shared per-case result contract."""
+    if sample_df.empty:
+        raise ValueError("sample_df must contain at least one evaluation record")
     writer = ArtifactWriter(base_dir=artifact_base_dir, run_id=run_id)
 
     run_config = asdict(config)

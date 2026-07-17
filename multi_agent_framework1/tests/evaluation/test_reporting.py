@@ -75,3 +75,8 @@ def test_compile_run_results_writes_csv_and_markdown_tables(tmp_path):
     assert "## Suicidal-Intent Positive-Class Grouping Metrics" in markdown
     assert "Average end-to-end completion TPS" in markdown
     assert "reporting-model" in markdown
+    assert "No provider cost was recorded" in markdown
+    assert "before OpenRouter" not in markdown
+
+    notes = rows[rows["section"] == "notes"]
+    assert notes["note"].str.contains("No provider cost was recorded").all()

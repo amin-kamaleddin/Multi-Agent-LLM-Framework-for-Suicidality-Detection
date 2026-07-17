@@ -43,6 +43,8 @@ Judge output schema:
 - `.env.example`: environment template; copy to `.env` locally and fill API settings.
 - `src/suicidal_multi_agent/`: source package.
 - `src/suicidal_multi_agent/workflow/prompts.py`: prompt/schema mode registry. `bool` and `reasoned` modes reuse the same graph.
+- `src/suicidal_multi_agent/evaluation/ADAPTING_WORKFLOWS.md`: copyable guide for connecting another agentic workflow to the shared evaluator.
+- `src/suicidal_multi_agent/evaluation/EVALUATION_CONTRACT.md`: exhaustive input, output, metric, guardrail, and artifact reference.
 - `tests/`: pytest suite for data rules, schemas, prompts, graph behavior, metrics, evaluator, and reporting.
 - `scripts/smoke_openrouter_weather.py`: optional OpenRouter smoke test.
 - `dataset/`: active anonymized dataset and processed evaluation samples used by the CLI.
@@ -106,7 +108,7 @@ uv run python -m suicidal_multi_agent.cli compile-results --run-dir logs/runs/<r
 
 ## Notes
 
-- Use `--max-completion-tokens 256` for `gpt-4o`; the previous 500,000-token default exceeds the model/provider limit.
+- The default maximum completion-token setting is 256. Override it only with a value supported by the selected model and provider.
 - Framework1 compatibility runs contain `specialist_answers` for metrics and `specialist_outputs` for the full per-label JSON in `predictions.csv`. In `reasoned` mode they also include per-label `*_reasoning` columns. Architecture-neutral evaluator runs omit those framework-specific fields unless an adapter supplies them.
 - `run` and `evaluate` automatically write `compiled_results.csv` and `compiled_results.md` after final artifacts are complete. Use `compile-results` only to regenerate reports for an older run.
 - Real runs write artifacts under `logs/runs/`; those are local generated evidence and are not committed in this folder.

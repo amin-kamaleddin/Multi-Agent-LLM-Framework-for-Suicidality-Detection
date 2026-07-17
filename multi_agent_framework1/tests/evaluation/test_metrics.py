@@ -92,6 +92,18 @@ def test_runtime_summary_fixture():
     assert summary["provider_timing"]["e2e_completion_tps"] == {"count": 2, "min": 2.5, "max": 5.0, "avg": 3.75}
 
 
+def test_runtime_summary_counts_langchain_structured_output_errors():
+    summary = summarize_runtime(
+        [
+            {"error": {"error_type": "StructuredOutputValidationError"}},
+            {"error": {"error_type": "MultipleStructuredOutputsError"}},
+        ]
+    )
+
+    assert summary["failed_llm_attempts"] == 2
+    assert summary["json_parsing_errors"] == 2
+
+
 def test_binary_classification_metrics_include_confusion_matrix_and_limitation():
     metrics = compute_binary_classification_metrics(
         [False, False, True, True],

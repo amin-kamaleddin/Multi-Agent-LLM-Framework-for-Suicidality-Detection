@@ -246,6 +246,19 @@ def test_generic_evaluator_keeps_agent_outputs_and_metrics_optional(tmp_path):
     assert set(run_config["agent_configuration"]) == {"router", "critic"}
 
 
+def test_generic_evaluator_rejects_empty_samples_before_creating_artifacts(tmp_path):
+    with pytest.raises(ValueError, match="at least one evaluation record"):
+        run_evaluation(
+            sample_df=pd.DataFrame(columns=["ID", "users", "text", "sentiment", "time"]),
+            workflow=GenericWorkflow(),
+            config=_config(tmp_path, total_records=0),
+            run_id="empty-sample",
+            artifact_base_dir=tmp_path / "runs",
+        )
+
+    assert not (tmp_path / "runs").exists()
+
+
 def test_generic_evaluator_propagates_canonical_id_to_results_and_wrong_id_file(tmp_path):
     sample = pd.DataFrame(
         [{"ID": 99, "users": 7, "text": "indicator", "sentiment": "Ideation", "time": 300}]

@@ -1,5 +1,6 @@
 import json
 import time
+from types import SimpleNamespace
 
 from suicidal_multi_agent.core.labels import VALID_LABELS
 from suicidal_multi_agent.core.schemas import JudgeAnswer, SpecialistAnswer, SpecialistReasonedAnswer
@@ -371,6 +372,34 @@ class FakeStructuredAgent:
         raise AssertionError(f"Unexpected schema {self.schema}")
 
 
+class StructuredOutputValidationError(Exception):
+    def __init__(self, ai_message):
+        self.ai_message = ai_message
+        super().__init__("synthetic structured-output failure")
+
+
+class StructuredFailureThenValidAgent:
+    def __init__(self):
+        self.invocations = 0
+
+    def invoke(self, payload):
+        self.invocations += 1
+        if self.invocations == 1:
+            raise StructuredOutputValidationError(
+                SimpleNamespace(
+                    content="invalid structured output",
+                    usage_metadata={
+                        "input_tokens": 7,
+                        "output_tokens": 2,
+                        "total_tokens": 9,
+                        "cost": 0.003,
+                    },
+                    response_metadata={},
+                )
+            )
+        return {"messages": [], "structured_response": {"answer": True}}
+
+
 def test_graph_uses_create_agent_path_for_bindable_models(monkeypatch):
     invocations = []
 
@@ -391,6 +420,52 @@ def test_graph_uses_create_agent_path_for_bindable_models(monkeypatch):
     assert [schema for schema, _ in invocations].count(SpecialistAnswer) == 4
     assert [schema for schema, _ in invocations].count(JudgeAnswer) == 1
     assert all(call["structured_output_strategy"] == "create_agent_tool_strategy" for call in result.llm_calls)
+
+
+def test_create_agent_strategy_leaves_retries_to_evaluator(monkeypatch):
+    captured = {}
+
+    def fake_create_agent(**kwargs):
+        captured.update(kwargs)
+        return object()
+
+    monkeypatch.setattr("langchain.agents.create_agent", fake_create_agent)
+    workflow = MultiAgentWorkflow(model=BindableStructuredModel(), max_retries=1)
+
+    workflow._get_structured_agent(
+        model=workflow.model,
+        system_prompt="system",
+        schema=SpecialistAnswer,
+    )
+
+    assert captured["response_format"].handle_errors is False
+
+
+def test_create_agent_retries_once_and_preserves_failed_response_usage(monkeypatch):
+    agent = StructuredFailureThenValidAgent()
+    workflow = MultiAgentWorkflow(model=BindableStructuredModel(), max_retries=1)
+    monkeypatch.setattr(workflow, "_get_structured_agent", lambda **kwargs: agent)
+
+    parsed, calls, errors = workflow._call_with_create_agent(
+        role="Indicator_specialist",
+        messages=[
+            {"role": "system", "content": "system"},
+            {"role": "user", "content": "text"},
+        ],
+        schema=SpecialistAnswer,
+        model=workflow.model,
+        model_name="structured-model",
+    )
+
+    assert agent.invocations == 2
+    assert parsed.answer is True
+    assert errors == []
+    assert calls[0]["error"]["error_type"] == "StructuredOutputValidationError"
+    assert calls[0]["prompt_tokens"] == 7
+    assert calls[0]["completion_tokens"] == 2
+    assert calls[0]["total_tokens"] == 9
+    assert calls[0]["cost"] == 0.003
+    assert calls[0]["raw_output"] == "invalid structured output"
 
 
 def test_graph_uses_create_agent_path_with_reasoned_schema(monkeypatch):

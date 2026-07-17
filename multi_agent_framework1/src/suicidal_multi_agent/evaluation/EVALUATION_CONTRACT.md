@@ -2,6 +2,8 @@
 
 This document maps every requirement in the evaluation checklist to the code and run artifact that implements it. The architecture-neutral contract is produced by `run_evaluation`; `run_workflow_evaluation` is the compatibility wrapper that adds framework1's specialist outputs and metrics. Both the `run` and `evaluate` CLI commands use that wrapper.
 
+For a copyable adapter and runner, start with [Adapting another workflow](ADAPTING_WORKFLOWS.md). This document is the exhaustive schema and artifact reference.
+
 ## Important label and binary-metric interpretation
 
 The final label set is now:
@@ -296,7 +298,7 @@ Every attempt, including retries, is written to `llm_calls.jsonl`. `evaluation/m
 - provider timing when exposed: TTFT, generation time, provider latency, moderation latency, and throughput;
 - end-to-end completion throughput;
 - error counts by type;
-- JSON/schema parsing errors, counted from `JSONDecodeError` and Pydantic `ValidationError` attempts.
+- JSON/schema parsing errors, counted from JSON decoding, Pydantic validation, and LangChain structured-output validation failures.
 
 Transport or provider metadata may omit tokens, cost, or provider timing. Missing values remain zero or `null` rather than being estimated. Local end-to-end latency is always measured.
 

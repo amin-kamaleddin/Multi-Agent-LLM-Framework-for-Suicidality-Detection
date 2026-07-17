@@ -437,7 +437,10 @@ class MultiAgentWorkflow:
                 model=model,
                 tools=[],
                 system_prompt=system_prompt,
-                response_format=ToolStrategy(schema, handle_errors=True),
+                # The evaluator owns retry limits and telemetry. Let one malformed
+                # structured response escape so the outer loop records exactly one
+                # request per configured attempt.
+                response_format=ToolStrategy(schema, handle_errors=False),
             )
         return self._structured_agent_cache[cache_key]
 
@@ -496,6 +499,8 @@ class MultiAgentWorkflow:
                 return parsed, calls, final_errors
             except Exception as exc:
                 latency_s = time.perf_counter() - started
+                failed_message = getattr(exc, "ai_message", None)
+                usage = _usage(failed_message)
                 error = {
                     "role": role,
                     "attempt": attempt,
@@ -509,25 +514,31 @@ class MultiAgentWorkflow:
                         "attempt": attempt,
                         "model_name": model_name,
                         "latency_s": latency_s,
-                        "prompt_tokens": 0,
-                        "completion_tokens": 0,
-                        "total_tokens": 0,
-                        "cost": None,
-                        "cost_details": {},
-                        "prompt_tokens_details": {},
-                        "completion_tokens_details": {},
-                        "raw_usage": {},
-                        "generation_id": None,
-                        "request_id": None,
-                        "upstream_id": None,
-                        "provider_name": None,
-                        "provider_latency_s": None,
-                        "generation_time_s": None,
-                        "moderation_latency_s": None,
-                        "ttft_s": None,
-                        "completion_tps": None,
-                        "e2e_completion_tps": None,
-                        "raw_output": "",
+                        "prompt_tokens": usage["prompt_tokens"],
+                        "completion_tokens": usage["completion_tokens"],
+                        "total_tokens": usage["total_tokens"],
+                        "cost": usage.get("cost"),
+                        "cost_details": usage.get("cost_details") or {},
+                        "prompt_tokens_details": usage.get("prompt_tokens_details") or {},
+                        "completion_tokens_details": usage.get("completion_tokens_details") or {},
+                        "raw_usage": usage.get("raw_usage") or {},
+                        "generation_id": usage.get("generation_id"),
+                        "request_id": usage.get("request_id"),
+                        "upstream_id": usage.get("upstream_id"),
+                        "provider_name": usage.get("provider_name"),
+                        "provider_latency_s": usage.get("provider_latency_s"),
+                        "generation_time_s": usage.get("generation_time_s"),
+                        "moderation_latency_s": usage.get("moderation_latency_s"),
+                        "ttft_s": usage.get("ttft_s"),
+                        "completion_tps": usage.get("completion_tps"),
+                        "e2e_completion_tps": _e2e_completion_tps(
+                            usage["completion_tokens"], latency_s
+                        ),
+                        "raw_output": (
+                            _message_raw_output(failed_message)
+                            if failed_message is not None
+                            else ""
+                        ),
                         "structured_output_strategy": "create_agent_tool_strategy",
                         "error": error,
                     }

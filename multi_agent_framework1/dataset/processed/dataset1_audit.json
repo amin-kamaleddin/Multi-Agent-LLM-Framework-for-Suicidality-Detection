@@ -1,7 +1,7 @@
 {
   "source_path": "dataset\\anonymizing_suicidal_dataset.csv",
   "normalized_columns": [
-    "source_row",
+    "ID",
     "users",
     "text",
     "sentiment",

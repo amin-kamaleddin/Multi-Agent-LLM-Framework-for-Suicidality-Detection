@@ -206,7 +206,13 @@ def summarize_runtime(llm_calls: list[dict[str, Any]]) -> dict[str, Any]:
     json_parsing_errors = sum(
         count
         for error_type, count in errors_by_type.items()
-        if error_type in {"JSONDecodeError", "ValidationError"}
+        if error_type
+        in {
+            "JSONDecodeError",
+            "ValidationError",
+            "StructuredOutputValidationError",
+            "MultipleStructuredOutputsError",
+        }
     )
 
     def avg(values: list[float]) -> float:
