@@ -1,0 +1,775 @@
+Incorrect Cases Log — Agent: gpt-4o-mini-suicide-detector | Task: suicide_risk_classification
+================================================================================
+
+Sample ID : 150
+GT        : Ideation
+Pred      : Indicator
+Text:
+My theory on why some people “feel so bad” after a family member commits suicide. It’s the epitome of narcissistic abuse. Your dysfunctional family will scapegoat you and leach of of you spiritually, mentally, physically, emotionally, basically in every sense of the word until you’re dead. But even then they don’t stop. Even then they suck on supply from people around who comfort them at your expense. Painting themselves to be victims and you either selfish or unstable. Selfish for not tolerating their abuse anymore and leaving them behind looking bad. Without giving them the last word, another chance to manipulate and gaslight you, which normally allows them to absolve themselves of all fault leaving you feeling inherently defective. It’s the sad reality for many in our world. Maybe this isn’t everyone’s experience, people are suicidal for different reasons but I think it’s the case for many. It’s parasitic. It’s tragic. It’a heartbreaking.
+----------------------------------------
+
+Sample ID : 491
+GT        : Ideation
+Pred      : Indicator
+Text:
+You can do everything correctly; but if God just throws his hate upon you nothing means anything
+----------------------------------------
+
+Sample ID : 821
+GT        : Attempt
+Pred      : Ideation
+Text:
+I don’t really wanna live past my next birthday My birthday is coming up in a few months and I’ll be turning 20.  Every birthday for me is just depressing, as I was supposed to die years ago, and nobody even cares that I’m still here anyways.  In fact, my birthday has literally been ignored throughout my whole life.  I’ve only had one decent birthday, and now it’s just a bittersweet memory because it was all lies. 
+
+Anyways, so I’ve basically given up on life.  I don’t really see a future for me, as the future I had envisioned for years all came crashing down and destroyed my sense of reality.  
+
+I’m also stuck right now.  My parents are basically holding me hostage, and I feel like a loser and a failure.  I lie to people who question why I ride the bus, or don’t have a job, or still live with my parents.  It’s not like I’m “lazy” or “stupid.”  I don’t even know why that would be the first thing to come to mind about these things, as cars are expensive and housing in my state is horrendously high.  I actually have problems, and my parents are psychotic.  It’s easier to explain that I ride the bus to save money on gas, or say that I’m just living with them until I get enough money for an apartment.  In fact, I had a job once.  I had a car once.  I had an apartment once too.  But I lost all those things because of mental illness and being a fucking stupid idiot.  Now I’m stuck here with my parents, who won’t let me get a job, a car, or mental help.  I rather stay here and suffer than be homeless again, ik, I’m weak.  I rather just die at this point.
+
+Plus, I’ve been winging it for awhile.  I planned on dying years ago, and ever since I failed the first time.  The only future I planned out was with my bf, who I now refer to as an abusive ex, because he severely damaged me.  A lot of people severely damaged me.  Where’s their punishment?  Where’s their damage?  I’ve tried to not think about it, but I feel so fucking angry about it.  I guess me caring is just me being stupid again. 
+
+I also feel like my reason for killing myself this time is stupid.  Last time I killed myself, it was because my ex abused the shit out of me and felt worthless.  Now it’s just because I’m scared of life, which people do everyday just fine.  Why can’t I just be fucking normal.  I’m pathetic.
+----------------------------------------
+
+Sample ID : 1366
+GT        : Attempt
+Pred      : Ideation
+Text:
+It’s been 10 yrs of the worst of this hell, 8 yrs of constant attempts but obv I wasn’t trying hard enough... enough is enough This Friday, May 14, 2021 is my suicide date either that day or before it (doubt ill make it that long)... currently waiting to see my psychiatrist who I don’t trust anymore as I TRuST NOT 1 SINGLE soul in this entire world anymore because of long history of trauma/ptsd and shit but then bc of trauma from a few days ago that literally I told all the “professionals” about and they didn’t care btw it was them fucking me over (cops physically and verbally abused me, and I told the hospital staff and they didn’t care and just watched them continue to do it and took part in some stuff too) I’m fucking done.. only reason I didn’t die last night was bc I actually wanna live if I could get the help I need right now but bc of my city and it’s healthcare system and workers and how they view me bc of how much I struggle with sh/suicidality they just treat me like shit or are done with me... I just hoped I could get some comfort if there was any left with my psych before I end thing v v soon... save some flowers for me please? I like lavender
+----------------------------------------
+
+Sample ID : 1434
+GT        : Ideation
+Pred      : Indicator
+Text:
+I’m not sure what else to do Three days ago I got kicked from my mums house, this was over a small argument which my brother got involved in and said to her that she’s been an alcoholic for 20 years and she raised us like shit. Which is the truth and she refuses to accept that truth, today I went back there to pick up work clothes as I had work in an hour. It ended with my boyfriend getting verbally abused and my mum trying to hit him in the face but she sortve missed and fell down a few stairs. I did manage to get my work clothes, 
+The issue is, is that now I have no where to stay but my boyfriend’s grandparents with him but they aren’t very happy with me staying here for long.
+
+A few months ago I got kicked out of my grandparents because they are abusive and manipulative people.
+These past weeks I’ve dealt with work targeting me and giving me plenty of unnecessary meetings and I also got diagnosed with hypothyroidism, so I’ve been extremely stressed. I’m trying emergency housing but they take forever to assist with help, and I don’t make enough money to get my own accommodation. There seems to be nowhere out of this constant cycle of bullshit that’s thrown at me. My job isn’t promised in the next month so I don’t know if I can afford a place to live. 
+I’m not sure what kind of advice I’m looking for I just feel extremely alone and depressed currently, and I’m finding it difficult to process everything that’s gone on.
+----------------------------------------
+
+Sample ID : 1489
+GT        : Attempt
+Pred      : Behavior
+Text:
+Laying imy bathtub with blankets working my way through a hug e bottle of Klonopin. Wondering how much it will actually take to tranquilize my decimated brain. Saved up my Rxs for a night like this. I am a blight on this planet. I hope to God this takes me, and if not I've got alcohol to drown the thoughts. I'veocked myself in and I'm reay. Fuck all of this. I'm out. It doesn't get better.
+----------------------------------------
+
+Sample ID : 1553
+GT        : Behavior
+Pred      : Ideation
+Text:
+Going through the motions, I can’t remember a time where I was not numb. I see everyone talking about hating their lives and I wish I could be them, if only to feel something again. 
+
+Fifteen at the moment and my end date is twenty five but I’m not sure if I can even do it, I can’t even get out of bed most days how am I supposed to kill myself.
+
+Probably going to regret this post later but, oh well. Night guys.
+----------------------------------------
+
+Sample ID : 1921
+GT        : Indicator
+Pred      : Ideation
+Text:
+I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself
+----------------------------------------
+
+Sample ID : 1964
+GT        : Behavior
+Pred      : Ideation
+Text:
+there hasn’t been a single day that i haven’t thought about killing myself it wont leave my head. everything just keeps getting worse, my mum saw my self harm scars and got angry at me and told me i have nothing to be upset over and i’m dramatic and stuff lol
+----------------------------------------
+
+Sample ID : 2137
+GT        : Indicator
+Pred      : Unsupportive
+Text:
+:( :(
+----------------------------------------
+
+Sample ID : 2211
+GT        : Indicator
+Pred      : Ideation
+Text:
+Drunk and I feel like I can't take it anymore. But I'll probably just wake tomorriw like a coward to the same agony of the washing hours.
+----------------------------------------
+
+Sample ID : 2310
+GT        : Indicator
+Pred      : Ideation
+Text:
+I can't look myself in the mirror anymore
+----------------------------------------
+
+Sample ID : 2742
+GT        : Indicator
+Pred      : Ideation
+Text:
+It's agonizing to stay and it's too selfish to leave. What else is there to say? What can you even do when you are your own biggest obstacle, your own worst enemy? Every single day with this shit, for years. I'm so fucking tired.
+----------------------------------------
+
+Sample ID : 2856
+GT        : Behavior
+Pred      : Ideation
+Text:
+Confidence? I don’t know why I’m writing this but maybe as a diary who knows not like anyone will see it. I have found out that severing brachial artery will leave you dead in 90 seconds has given me no fear and a bit of confidence when the time eventually comes, this isn’t a cry for help so don’t waste your time writing anything. I guess I felt a bit happy knowing that I’ll suffer one last time and all the pain and suffering will finally come to an end
+----------------------------------------
+
+Sample ID : 3481
+GT        : Indicator
+Pred      : Unsupportive
+Text:
+Social anxiety is basically conspiracy theories about yourself.
+----------------------------------------
+
+Sample ID : 3680
+GT        : Ideation
+Pred      : Unsupportive
+Text:
+crisis text line update 🤡🤡🤡 theyre useless. this girl is just repeating what i say. im like yup thats what i said &amp; then shes like anything else on ur mind? like ma’am i just told u. strangers on reddit help me more smh
+----------------------------------------
+
+Sample ID : 3846
+GT        : Attempt
+Pred      : Behavior
+Text:
+How am i still here I took like 10 sleeping pills 2 hours ago but i feel absolutely nothing, i just want to die
+----------------------------------------
+
+Sample ID : 3938
+GT        : Attempt
+Pred      : Ideation
+Text:
+Things just keep getting worse My whole life has been difficult. My health, especially, is a problem. I have fibromyalgia, chronic severe migraines, arthritis and herniated discs in my back, arthritis in my knee, bipolar 2 disorder, anxiety, and ptsd. Now, my roommate and I have to move out by the end of this week and we don't have enough money to survive August (we are both substitute teachers, so we are out of work until mid-August. Our first paychecks for the new school year will be on August 28th). We are easily $500 short of surviving the month. We thought it was less, but the place we are moving into temporarily had a whole bunch of hidden fees I only just found out about. I've been crying non-stop. I'm always low-key suicidal and have had a couple half-ass attempts in the past. I also spent a week in a psych hospital in 2012. I have enough of a particular med to take me out easily. MLD is 20 tablets. I have over 200. Plus, my liver is already well damaged from managing chronic pain for 25 years. So, I could end it. Only thing keeping me going is that my son is in American Idiot, which opens September 5th. But I"m not sure I can last that long. I want to see him perform, but I may be homeless by mid-august. My panic and suicidal ideation are growing exponentially, day by day. I just want to stop existing. I want to go to bed and not wake up.
+----------------------------------------
+
+Sample ID : 4381
+GT        : Behavior
+Pred      : Attempt
+Text:
+I'm doing it on new year's. I don't even care anymore, this world has gone to complete hell. None of my family takes me seriously anymore, after my attempts. I'm going to tie the noose and leave this sick world. And I know exactly how to make it work.
+----------------------------------------
+
+Sample ID : 4607
+GT        : Behavior
+Pred      : Ideation
+Text:
+every bad thing that’s ever happened to me is burned into my brain idk what to write here I keep deleting everything but lol idk im killing myself this year im so done lol
+
+im gonna be 17 soon and I’m still fat and friendless and ugly. birthday is in 10 days and i think I’m going to kill myself before then. i have to die before im 18
+
+youth has been like. my only valuable trait for as long as I can really remember lol lol I’m falling the fuck apart 
+
+
+it’s whatever though. maybe I should wait until the day after my birthday and spend all the money I get and then kill myself. 10 more days of nightmares and misery uwu love my life
+
+----------------------------------------
+
+Sample ID : 4633
+GT        : Indicator
+Pred      : Ideation
+Text:
+Oh well I’m tired of this life, my life. It’s exhausting feeling like this. It’s just not worth it anymore.
+----------------------------------------
+
+Sample ID : 4927
+GT        : Attempt
+Pred      : Ideation
+Text:
+Suicide is SO tempting to me  Thing is, I've been depressed 9-10 years now. Im 21m. I've been unemployed for 1.5 years, typical living in parents basement. I can't even look for a job thats how depressed I am. I didn't even look for a job. I dropped out of college because i'm beyond useless. Literally I feel nothing, aside from pain or anger/anxiety all god damn day long. Im so bored of everything at this point. No one finds me attractive despite 'putting myself out there', lifted weights for years, did nofap/noporn, all that shit, meditated lots, did alot. Like I have no damn personality tho, depression killed ALL of me it fucking sucks. Thats why i just dont even try anymore for anything. No point of me doing ANYTHING when im depressed. Honestly, I just wanna kill myself. I went from being religious to non religious, and meh if there is a god its OBVIOUS it hates me. So if there is hell after this hell atleast this life prepared me. I mean i am sorry to my parents but like, the fuck can i do. I dont wanna live. I've heard ALL the fucking advice in the world, i've tried so much. I'm tired. Nothing works anymore. Pyschedelics fucked my head up so much that weed no longer works, alcohol doesn't. Nothing does. No one cares either and even if they do it changes nothing. Fuck suicide is SO tempting.
+----------------------------------------
+
+Sample ID : 5050
+GT        : Attempt
+Pred      : Behavior
+Text:
+Please help me I took 15 ibuprofen (6,000mg) and 10 prozac (200mg) will i be okay? what do i do?
+please help, thank you
+----------------------------------------
+
+Sample ID : 5064
+GT        : Behavior
+Pred      : Ideation
+Text:
+Just fucked up I just fucked up, I ordered something online to as an easy way to end my life. It's completely legal, but didn't realise it's on a list of 'reportable' substances in the UK, and if it's suspicious the police are told etc etc. Since looking it up apparently the police have actually done welfare checks on people for this. All I wanted was an easy way out for when I needed it - fuck. Do you think they would report me for buying it? Why sell it tho if you would report people for buying? damn I screwed up
+----------------------------------------
+
+Sample ID : 5124
+GT        : Behavior
+Pred      : Ideation
+Text:
+Covid makes it worse. I am in hell. I'm so alone, and that's true even when I'm amongst other people.  I have insane abandonment issues, but simultaneously this painful feeling of inability to connect when people are open.  When people aren't open, there is no learning experience, because ghosting doesn't tell you much about the situation unless you can figure it out on your own, and I mainly don't figure a thing out except to get more paranoid.
+
+Some people get ghosted looking for sex, and I'm not looking for that, and it makes me feel even sadder to not be looking for it.  I just want to have some human connection.  Honestly, most sex I've had was to try and have someone that felt they couldn't just leave me as easily.
+
+This is not a plea for attention, or at least not one that is a hope for salvation, just a warning.  All that comes from places like this subreddit is people that feel saying "don't kill yourself" does something in itself.  All that does is tell the person to wait for help that isn't coming.  Saying that a person is dealing with a temporary problem or that things get better is sadistic when things tend to get worse.
+
+I'm so bad at life that I'm terribly scared of how to accomplish death.  I don't want my head to explode via shotgun, because my father died without a funeral and I think for some people a closed casket is worse than an open one.  But for handguns I'm too stupid to understand if a small caliber or large caliber really makes a difference if shooting myself through my upper palate in my mouth.  I've looked into other options, but they're even scarier - I think of Mark Linkous overdosing, but waking up paralyzed from his leg oxygen being cut off.  A failed suicide that leaves you unable to attempt again is the worst fate.
+
+This is all while my body is continuously accompanied by death.  I'm nowhere close to dying, but the health issues I have make me so much lower than what I would consider a living person.  Every morning I wake in pain, and most of the day is depression and physical pain, until the night that I spend in high anxiety about what dreams would come if I fall asleep, or maybe I'm just afraid of the people who rape you when you're vulnerable.
+
+It doesn't get better.  If you are holding out for a miracle, no miracle is coming.  End it now, the world has evolved to be tooth and claw, never ending pain, and people self righteous in sociopathy.
+----------------------------------------
+
+Sample ID : 5350
+GT        : Attempt
+Pred      : Behavior
+Text:
+i took a few parcocetomals i didnt have enough only 7 i feel like such a pussy
+----------------------------------------
+
+Sample ID : 5730
+GT        : Behavior
+Pred      : Ideation
+Text:
+Would a break up be easier on him? Made up my mind to kill myself today but I can't decide if I should break up with my boyfriend beforehand. He's such a sweet dear and so I would like to make it as easy as possible for him to get over my death. Either way it's going to hurt but would it be easier if I break up with him? I don't want people to talk shit but I made up my mind to die today so not killing myself is not an option.
+
+Thanks for the opinions in advance!
+----------------------------------------
+
+Sample ID : 5766
+GT        : Attempt
+Pred      : Behavior
+Text:
+I’m trying again tonight If you look back on my history of posting you will see that just a few days ago I took 40 something pills. Yes well now life is worse again and I’m going to take even more tonight if I can find enough to do that with. My goal is to take around 100 pills of whatever I can find.
+----------------------------------------
+
+Sample ID : 5831
+GT        : Indicator
+Pred      : Ideation
+Text:
+so tired, i want to end it as soon as possible, no one shares my pain 
+----------------------------------------
+
+Sample ID : 6045
+GT        : Indicator
+Pred      : Ideation
+Text:
+I've had enough. I have just finished university. I have no job and just come out as transgender (I've known for many years). The waiting list for the gender dysphoria clinic in my area is 39 months so my life is on complete hold. I can't stand my facial hair and I hate having nothing on my chest. It makes me suicidal knowing I was born in the wrong body. I can't even go private since I have no money cos of covid which also means I can't buy woman things. I feel like my life is on hold and I can't leave the house in fear of being called a man when I'm not. I'm a freak and I'm done. Gonna end it all soon.
+----------------------------------------
+
+Sample ID : 6144
+GT        : Behavior
+Pred      : Indicator
+Text:
+Could a stun gun/taser kill me if it’s used over the heart? (For research purposes)
+----------------------------------------
+
+Sample ID : 6203
+GT        : Attempt
+Pred      : Ideation
+Text:
+i can't take it anymore i've attempted suicide 3 times and obviously failed. twice landed myself in the ICU then psych ward (overdose).    
+
+i have a really good life. but i can't handle the pain anymore. i'm a sex and love addict, codependent, addicted to pills, insecure, self loathing, eating disorder, depressed, borderline. i hate myself so fucking much. i hate my face. i hate my body. my tattoos. my hair. my thighs. my stomach.    
+
+i have really good friends but it's not enough anymore. it used to be enough. i have 2 good jobs. i'm dating people. it's not enough.   
+
+i wish i had the courage to really truly kill myself. i'm afraid of what comes after. i'm afraid i succeeded in my overdoses and this is hell. but i have no way of knowing.    
+
+i can't take it anymore. i'm so fucking miserable. i hate living in my body. all i do is eat, and take pills, sleep as much as i can. i self harm by looking at old photos and videos of people who used to love me, but don't anymore.    
+
+please make it stop. i'm so fucking miserable. i can't do it anymore. i truly have nothing to live for. any happiness i have, it goes away. i can't take it. please make it stop. please let me die and go somewhere better. please.
+----------------------------------------
+
+Sample ID : 6360
+GT        : Attempt
+Pred      : Indicator
+Text:
+Is it normal to dream about committing suicide? I’ve been having the same depressing dreams this past week, I would go to sleep just to wake up and remember that I had tried to commit suicide multiple times when sleeping.
+----------------------------------------
+
+Sample ID : 6832
+GT        : Indicator
+Pred      : Ideation
+Text:
+Even if I jump off an overpass and get run over by three cars which then smash into each other all I’ll be known as was an unidentifiable male
+----------------------------------------
+
+Sample ID : 6855
+GT        : Indicator
+Pred      : Ideation
+Text:
+It’s all I can think about Please someone talk to me. I don’t know what to do
+----------------------------------------
+
+Sample ID : 6911
+GT        : Indicator
+Pred      : Ideation
+Text:
+Well looks like I'm back It's been a year since I last posted here and I'm in the exact same situation. I'm sick and tired of this vicious cycle of highs and lows. I really can't handle it anymore.. I don't know what to do with myself. I feel like a robot at this point, its so weird cus its like I feel nothing and like I'm overloading at the same time. I just want someone to care about me or to listen to how I actually feel for once instead of relying on me for stability when I'm not fucking stable myself. I'm exhausted. I don't know why I can't just enjoy my life, I really don't. I should enjoy it yet my jackass of a brain doesn't want to allow it. I don't think anyone even realises how bad I am again, like when I tell someone I need them it just flies over their head. I'm really trying but it feels completely hopeless bc I know I should be fine... but I'm just not.
+----------------------------------------
+
+Sample ID : 7107
+GT        : Indicator
+Pred      : Ideation
+Text:
+Wake me up when it is over So wake me up when it's all over When I'm wiser and I'm older All this time I was finding myself And I didn't know﻿ I was lost.
+----------------------------------------
+
+Sample ID : 7274
+GT        : Behavior
+Pred      : Ideation
+Text:
+What should I do I'm 17(f) from Germany.
+Never had a boyfriend and I don't want to have one, I don't want to lose my innocence.
+I regret that i had my first kiss on MDMA, because I could'nt control myself and my friend didn't stop me (even though he has gf).
+My friends never take the time to talk to me and no i won't make new friends (i don't have to strenght to make new ones).
+I Accidentally met someone on Omegle who is 25 years old and I fell in love with him.
+And we talked so much, we would fall asleep during the phonecalls, we would tell each other just everything.
+I thought that was it. I finally felt something new.
+Yeah
+We met
+I got clingy
+I confessed 
+He doesn't want to talk to me anymore
+He knows that i'm suicidal 
+He said that i craved for his attention
+I'm gonna prove him wrong
+
+
+I don't care anymore what you people are gonna say
+I will kill myself and find my peace
+Question: Do you think that I should take MDMA to reduce the survival instinct?
+I choose the train suicide.
+----------------------------------------
+
+Sample ID : 7325
+GT        : Behavior
+Pred      : Ideation
+Text:
+Dying in a dream has made the decision to die easier I won't lie. I'm scared about fuckin it up but oh well I got executed in a dream, suddenly i couldn't feel anything physically, everything went black then this feeling of emptiness hit, the most horrible feeling I've ever experienced. I said "I'm dying, I'm dead" then I woke up thinking i was actually dead. Unlucky i guess. I'm still alive because I can't get a gun, I'm too broke and of course i didn't win the country lottery,wrong place, wrong time, wrong everything. I've been ready to die since 2018, I'm just so unlucky though, if I threw myself from a building I'd hit something break every bone and still survive so I can't do that. It's time to get a gun and do it, thought about suicide by cop but it's too slow and id appear on the news it's just not worth it.
+----------------------------------------
+
+Sample ID : 7362
+GT        : Behavior
+Pred      : Attempt
+Text:
+Im killing myself today I have to end this madness.. No money, homeless, no clean clothes, I smell, I cant go on like this, its been 3yrs of hell, not fire and brimstone.. More like every single person i have met has betrayed me, lied, drugged me, raped me, tried to coerce me into fucking men, sucking dick... I cannot go on like this.. I have to kill myself.. I must see this through
+----------------------------------------
+
+Sample ID : 7418
+GT        : Indicator
+Pred      : Ideation
+Text:
+There's only one way to end this. For context re: degrees etc, I'm in Australia.
+
+I got diagnosed with bipolar in 2016, and the meds I was put on meant I could no longer finish my degree (it was in music performance, I had really bad hand tremors). I also can't drive, so that basically sank all of my job prospects. Haven't been able to get a proper job since.
+
+Switched to some shiny new degree the uni had just made up, called Electronic Music. Didn't learn shit (also the degree itself was seriously mismanaged, but that's a story for another day). I graduate in about four weeks with a completely useless degree. 
+
+&amp;#x200B;
+
+&amp;#x200B;
+
+ Job-wise, I thought maybe I could get a retail job if I volunteered at a charity shop first, but that was a complete trap. I've been working at that shop for 2+ years and I still can't get an interview. 
+
+Working at the shop is boring at best, some days I get abused by paid staff, and there's no room to get promoted. I fucking hate it, so I probably shouldn't be trying to get into retail anyway.   
+
+
+&amp;#x200B;
+
+I graduate end of this year (no ceremony of course, thanks covid), and honestly? I hate m degree
+----------------------------------------
+
+Sample ID : 7446
+GT        : Behavior
+Pred      : Ideation
+Text:
+I'll probably kill myself tomorrow I'm done with my life. No one gives a fuck and the ones who used to care (or at least I think they cared) are far from me because I isolated myself.
+
+there's no reason for me to live anymore. I don't feel exactly ready to die but I don't want to wait
+
+I should be studying and thinking about which university I want to go, instead I'm researching about ways to die. I'm wasting my life but there's nothing else I want to do.
+
+I'm afraid I'll fail and be disabled or end up having an even worse life
+----------------------------------------
+
+Sample ID : 7732
+GT        : Attempt
+Pred      : Behavior
+Text:
+Im fucked There’s nothing I can do to get help besides almost die. So either I get better or I die so here I go im going to down as many pills as I can find. Im sorry I just can’t do this shit anymore
+----------------------------------------
+
+Sample ID : 7787
+GT        : Attempt
+Pred      : Ideation
+Text:
+big balls being crushed and tortured dude im fucking 22 years old and spent my birthday fucking crying in the darkness of my room in my stupid shared apartment. everything is fucking shitty and fucking awful. i want to fucking kill myself because my life has been nothing but fucking garbage since the time my mother fucking conceived me. i really dont think anything will ever get fucking better because no matter how much i fucking try nothing works out. and its all my fucking fault. i am a horrible and disgusting human being and i dont deserve to be alive. i have no friends. i am miserable. all my co workers seem hate me. people fucking hate me. im just going to fucking sit and rot alone and continue to fucking live out my life until i get grab a huge bag of fucking dope and OD. id be doing the world a fucking favor. also im fucking sick of this fucking planet thats another thing. i fucking hate this world. and i hate everything and im terrible ok thanks bye
+----------------------------------------
+
+Sample ID : 7880
+GT        : Attempt
+Pred      : Ideation
+Text:
+There must be a reason I survived the first time, right? Am I giving up my second chance? A while ago I attempted suicide by hanging. When I was discovered I had no heartbeat and they had to do CPR and shock me. I woke up a few days later in the ICU with a deep rope imprint on my neck and broken ribs. I was in the hospital for several months. I cannot fucking believe I survived that. If they had found me a minute later it may have been too late.
+
+I still want to die. I want to do it to make sure I would not be stopped. But there is this tiny part of me that says maybe there is a reason I survived, some purpose I haven't yet fulfilled. I don't know...
+
+In a way it makes me want death even more I felt the peace of death. I don't know why they couldn't just let me go.
+----------------------------------------
+
+Sample ID : 7884
+GT        : Behavior
+Pred      : Ideation
+Text:
+im at the end i want to hang myself i want to i want to i want to my head keeps telling me to do it i need fucking help it hurts too much please
+----------------------------------------
+
+Sample ID : 8536
+GT        : Indicator
+Pred      : Ideation
+Text:
+I just want to stay in bed my whole life
+----------------------------------------
+
+Sample ID : 8953
+GT        : Indicator
+Pred      : Ideation
+Text:
+Fog The past 12 years are a blur. I dropped out of high school at 16, dropped out of college twice and trade school once. Im 28, no career no friends, no family, no skills or talents. I've had so much free time in these years because I only work part time but I never did anything with that time. I've felt shitty everyday for so long and I can't even have genuine interactions with people anymore. my debt is stacking and I'm ready to tap out. I can only blame myself. Stay in school and get help while you can.
+----------------------------------------
+
+Sample ID : 9574
+GT        : Attempt
+Pred      : Behavior
+Text:
+Pills and Nausea Ever my overdose attempts I have serious problems swallowing tablets. Anyone got any suggestions of over coming these issues
+----------------------------------------
+
+Sample ID : 10639
+GT        : Attempt
+Pred      : Behavior
+Text:
+Suicide is not an choice, it's something that happens when you run out of resources to cope... I don't want to kms, but I feel like I have no other option and I want the pain to stop, I can't take it anymore. Next time I'll be home alone, I will hang myself. After my previous attempt and considering how fucked up my mental health is, it's probably my destiny anyway...
+----------------------------------------
+
+Sample ID : 11437
+GT        : Indicator
+Pred      : Unsupportive
+Text:
+The voicecracks I get after not talking for weeks. Gotta love this beautiful life, for real feel bad for everyone that is dead, they cant experience this beautiful life that only gets better and better.
+----------------------------------------
+
+Sample ID : 12015
+GT        : Attempt
+Pred      : Ideation
+Text:
+I’m so trapped My head literally hurts from mental pain and I’ve took pills for my headache. I can’t stand being black. I can’t. I can’t. I can’t. I  C A N T!!!
+
+I’m forced into this body and I have to live the consequences of something I didn’t choose. 
+
+Each day is getting worse and it’s getting to the point where I feel numb. Since I’ve been suicidal for 7 years, on and off, I’ve noticed whenever it’s on again it’s worse than the last time. 
+
+The last time it was on, which was in fall of 2019, it was just thoughts that were easy to overcome. Sometimes it would be hard, but it was easy to talk me out of it and get better. 
+
+The other last time, which was in 2017, it was brief thoughts but I then removed them and tried to better myself. 
+
+And the few other times, years ranging in 2013-2015, I would feel suicidal for a day or a moment and then boom! It would take a long while for another thought to come. 
+
+Now, as of 2020, it’s to the point where no one can convince me out of it, but you can still convince me to stay longer. I seriously fear if this becomes off again and then back on it will cause me to actually attempt it. 
+
+Sometimes I don’t want help because I’ll always be a black girl and never an attractive white girl/boy. 
+
+I feel so trapped because I don’t want to hurt others by committing suicide, but it mentally torturing to stay and I fear that the possible afterlife I’ll get punished for taking my own like. 
+
+I FEEL SO STUCK, I WANT TO SCREAM! I HOPE I GET COVID!!
+----------------------------------------
+
+Sample ID : 12116
+GT        : Attempt
+Pred      : Ideation
+Text:
+Bro I’m done. Ideas on ways to go? Been trying but still crying. 
+God I hate life.
+I hate God more than anyone in the world 
+Why did he create this shit reality 
+That sack of shit.
+
+Every time I try and commit suicide I can’t get myself to do it. How can I for sure die? What should I tell myself to convince me enough to die? Help! I don’t wanna be here anymore I fuckingggg hate this place!
+----------------------------------------
+
+Sample ID : 12374
+GT        : Behavior
+Pred      : Attempt
+Text:
+Might as well tell you guys thanks for the support, but I wasn't strong enough This is it. I'm gonna hang myself tonight. I've already got my note written and the noose tied. Just gotta wait for everyone to go to bed so I can do It uninterrupted. I appreciate all your support but I'm afraid this is goodbye.
+----------------------------------------
+
+Sample ID : 12620
+GT        : Attempt
+Pred      : Behavior
+Text:
+one of my best friends saw a few of my healing self harm scratches today at school and i got so nervous i had to say my cat made them. she said as a joke afterwards “oooh you did them yourself right”
+----------------------------------------
+
+Sample ID : 12835
+GT        : Behavior
+Pred      : Ideation
+Text:
+if you overdose sleeping pills will you die? if yes then how many do i need? filler filler filler filler filler filler filler filler filler fileer filler
+----------------------------------------
+
+Sample ID : 13108
+GT        : Behavior
+Pred      : Ideation
+Text:
+I missed my psychiatrist appointment. The one I’ve been waiting for for a month. And now I’m going to kill my self I can’t wait any longer. I can’t. I’m too tired of holding onto hope
+----------------------------------------
+
+Sample ID : 13114
+GT        : Indicator
+Pred      : Ideation
+Text:
+“I will Kill myself if you leave” Fuck off
+----------------------------------------
+
+Sample ID : 13285
+GT        : Attempt
+Pred      : Ideation
+Text:
+Suicidal Thoughts Are Calming to Me Ever since I was 13 I thought about it every damn day and I'm not overexaggerating in the slightest. Some days it ranges from a single passing thought that sails by but other days the emptiness and stress builds up to the point where I put a knife to my neck and dare myself to fall on it. I've attempted a couple times but they obviously didn't work and I guess I'm grateful I don't have any lasting injuries or internal damage. In a twisted way it's so calming to have that option in the air. Whenever I get stressed or angry instead of counting to ten or doing breathing exercises, I fantasize about putting a bullet through my head. I don't have a gun but if I did, I'd probably blow my brains out of impulse or on a really bad day. I know One thing that stops me from killing myself now was the fact that I formed somewhat of a parasocial relationship with someone I grew close to. He wasn't someone super famous so I was able to talk to him more, and he was funny and always stood up for what's right but he unfortunately made the tragic decision to end his life due to his past misdeeds and abuse. Even after he explained in his suicide note how he was a serial cheater and had emotionally manipulated people, I was still sad that he died. I sort of saw it coming since he did copious amounts of drugs and had a history of child abuse, but I think to myself (and excuse me if I sound selfish right now) that if I don't think he deserved to die then I don't think I deserve to die either. It's too bad the only things I have to remember of him now is his suicide note and the sound of his broken sweet voice.
+----------------------------------------
+
+Sample ID : 13687
+GT        : Behavior
+Pred      : Ideation
+Text:
+If anything kills me, it’s gonna be the constant rollercoaster of highs and lows. I can’t take it anymore. I’m tired of being dickteased thinking I wanna live and then being reminded I’m a fucking idiot. 
+----------------------------------------
+
+Sample ID : 13852
+GT        : Attempt
+Pred      : Ideation
+Text:
+Don’t know what to do Hey so basically I just got out of the mental hospital today. Anyways I still have some issues. I absolutely hate being lonely. I have like no friends. But I also hate being around people. I just get very socially anxious around others. Also this weird things happens with my mood where one minute I’m hyper and the next I have no motivation at all. I’m supposed to be getting out on new anxiety meds soon so hopefully that helps. School is stressing me out as well and I’m probably going to fail. I feel so bad for my mom because she is so supportive of me. Sometimes I want to kill myself for no reason(probably intrusive thoughts). Sometimes they don’t go away for a while though and it’s impossible to get my thoughts off of them. I don’t think my meds are working but I have to wait a few weeks to be able to talk to my psychiatrist about my meds. I’m insecure about my weight but I have a problem with binge eating. Everybody tells me I’m skinny but I still feel like insecure about myself. I feel like I annoy everyone and they don’t like me. I feel bad because my issues are so small compared to other peoples issues. Anyways I’m probably going to continue being lonely because I don’t know how to start conversations with people in public. It’s to the point where I miss being in the mental hospital because I got to socialize with others. Anyways I’m just ranting here because suicide is always still an option for me. I would probably try hanging myself next if I were to attempt to commit suicide. I’ve tried pills twice and that was extremely painful. Never want to go through that again.
+----------------------------------------
+
+Sample ID : 13860
+GT        : Behavior
+Pred      : Ideation
+Text:
+I’ll be dead by the end of this month I’m just saving up the pills since the pills are locked up. Waiting till I get 30 hydroxyzine to be exact. I get 3 hydroxyzine a day so I should be ready within the next 10 days. I don’t want to hear “trying to od is painful and probably won’t work”. I already fucking know that but I don’t care. I’m too mentally exhausted to do this anymore. I only have a few online friends and honestly they are the only reason I’m alive. I was going to drink bleach a few days ago but I started talking to them and it distracted me and calmed me down. I just want real life friends to talk to but I’m too socially anxious to talk to people irl. I hate my body and looks. I act confident but I’m just trying to hide the fact that I’m so fucking insecure. I force myself to throw up food I eat because I feel like I eat too much. I’m tired of the mood swings. I’m tired of being sad one minute and then happy again the next. I don’t want to get better because being depressed feels comfortable now. Should I leave a note? Please don’t try to stop me. I have already made up my mind and I just want to know if I should leave a note or not. You can’t save me because I don’t want to be saved.
+----------------------------------------
+
+Sample ID : 14294
+GT        : Indicator
+Pred      : Ideation
+Text:
+my life would be easier if i wasn’t different than the others it's not good to be different because the others are against you, people are against me because i'm different i haven't had any friends since i was born, i have never actually had contact with someone who is not my family and i also don't want to have friends online because they're not real friends, i am failing school, i don't go to therapy because i never have days off on weekdays, my weeks are very stressful, i have bad grades because of homeschooling, my parents will take everything away from me if i fail
+
+hopefully my life will soon end successfully as my last attempts have not gone well
+----------------------------------------
+
+Sample ID : 14391
+GT        : Behavior
+Pred      : Ideation
+Text:
+my life will end at the age of 16 i can't stand to be alone anymore i have no friends, i can't tell anyone that i'm going to kill myself i've always been a joke, even for my family i wish i wasn't born like this i have been crying for 5 hours people don't take me seriously everyone bullies me even my family i get beaten up sometimes i am a weak person and people always say weak people do not belong on earth i want so badly to harm myself now but i don't wanna end up in the hospital i'll write the suicide note at school and leave it behind and kill myself i wish i wasn't born sensitive i was probably born mentally handicapped, definitely autism that's why i'm like that and i'm ugly too because of that people hate me too i'll probably get kicked out of home because of my homosexuality
+----------------------------------------
+
+Sample ID : 15166
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+The simple act of breathing takes a toll on my mind and body every second of every day. I can sleep for a dozen hours the exhaustion never actually goes away and the cycle just repeats.
+----------------------------------------
+
+Sample ID : 16058
+GT        : Unsupportive
+Pred      : Indicator
+Text:
+This is my depression in a nutshell - so tired. All the time. Doesn't matter how much I sleep. Just have enough energy to wake up and eat some breakfast and then go right back to sleep again. Maybe spend some time wasting on Facebook or YouTube with all the brain dead things that makes up FB and YT. And on top of that - feeling guilty for wasting time on shit. Try to pretend that everything is ok, but it is exhausting.
+----------------------------------------
+
+Sample ID : 16443
+GT        : Unsupportive
+Pred      : Indicator
+Text:
+I know exactly what you're talking about. It feels like the apocalypse is happening all around you but you can't be bothered to do anything because you're exhausted just going through the day.
+----------------------------------------
+
+Sample ID : 16482
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+I often feel that I need a break. It's not even that 'stop living' is thr right word. It's more that I wwnt to be transported to some between realm with no distractions and nothing to worry about with just my thoughts until I'm ready to rejoin reality at the same point and time I left.
+----------------------------------------
+
+Sample ID : 16552
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+Paralyzing apathy. No desire to get up out of bed. Letting every intrusive thought run rampant in my mind. Forgetting to eat and hydrate.
+----------------------------------------
+
+Sample ID : 16580
+GT        : Unsupportive
+Pred      : Indicator
+Text:
+Why would I want to deactivate when I can browse super depressing subs and make myself feel WORSE!?
+----------------------------------------
+
+Sample ID : 16581
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+I told my therapist everytime I get the motivation to try, something knocks me down. Like a bird that keeps flying into a window.
+----------------------------------------
+
+Sample ID : 23007
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+Hey, I'm 43 and doing this for the last time. Prepare your mental hygene, self-care, meditation, and forgiveness strategies NOW. You matter. I wish I could go back and re-do my last 20 years, but I cant. What I can do is live the rest of my life the best way I can EVERYDAY.
+----------------------------------------
+
+Sample ID : 23226
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+shit that sounds exactly how i am feeling like for the last few years. thats not good
+----------------------------------------
+
+Sample ID : 23318
+GT        : Unsupportive
+Pred      : Indicator
+Text:
+It's such an unreal feeling. I've gotten mostly past my dp/Dr although it never really goes, I've just gotten better at not falling deep into it. At my peak, I remember looking at my own body and feeling like it didn't belong to me. My hands weren't mine, my skin wasn't mine, my voice wasn't mine. I wasn't even looking through my eyes, it felt like I was watching from behind my eyes. It was like I was watching TV from the backyard through the back window. The world around me didn't feel real. The bricks making my house looked like plastic. The lines inside my home were too sharp.
+----------------------------------------
+
+Sample ID : 23707
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+I don't know how to fix things when they get this bad. I feel so small and insignificant.
+----------------------------------------
+
+Sample ID : 23815
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+I'm so tired of feeling like a burden to my friends.
+----------------------------------------
+
+Sample ID : 23837
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+I feel like my feelings just don't matter to anyone.
+----------------------------------------
+
+Sample ID : 23839
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+I'm so frustrated by the lack of empathy in the world. I feel like I'm losing hope.
+----------------------------------------
+
+Sample ID : 23872
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+It physically hurts how lonely I feel right now. It feels like I'm drowning in my own emotions. I just don't know what to do anymore.
+----------------------------------------
+
+Sample ID : 23877
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+It’s like a heavy cloud is following me everywhere. It's like there's a barrier between me and the rest of humanity. I just want to be happy.
+----------------------------------------
+
+Sample ID : 24114
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+When I get overwhelmed, I just stare blankly at the wall feeling my heart race. I just want to feel normal for once.
+----------------------------------------
+
+Sample ID : 24483
+GT        : Unsupportive
+Pred      : Indicator
+Text:
+It breaks my heart to see us losing touch. The silence between us has grown incredibly deafening. It's depressing to think about.
+----------------------------------------
+
+Sample ID : 25175
+GT        : Unsupportive
+Pred      : Indicator
+Text:
+It hurts when you realize you're the backup friend. I see their pictures on social media and just feel a pit in my stomach. Friendship breakups are truly the hardest. So lonely.
+----------------------------------------
+
+Sample ID : 25415
+GT        : Unsupportive
+Pred      : Indicator
+Text:
+I wish I had a good answer for us both. Usually, I'd spend all my free weekends painting miniatures. However, the depression has been so heavy I haven't touched it in months. I am constantly exhausted, no matter how many hours of sleep I manage to get.
+----------------------------------------
+
+Sample ID : 25458
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+I feel seen reading this. Someone asked about hobbies... mine was definitely pottery. Every time I try to start, a wave of sadness just washes over me. Every small task feels like climbing a massive mountain.
+----------------------------------------
+
+Sample ID : 25579
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+I totally get that. I just want to sleep for a week straight.
+----------------------------------------
+
+Sample ID : 25607
+GT        : Unsupportive
+Pred      : Indicator
+Text:
+Honestly, I've always been extremely passionate about crocheting. But my motivation is completely gone. I just sleep instead. There's a deep, unexplainable sadness that lingers in the background of everything. Some days are mildly better, but the bad days drag me down so far. Sending love to anyone else feeling this heavy way.
+----------------------------------------
+
+Sample ID : 26002
+GT        : Unsupportive
+Pred      : Indicator
+Text:
+Man, I feel exactly the same way. I can't stop crying for no reason at all.
+----------------------------------------
+
+Sample ID : 26008
+GT        : Unsupportive
+Pred      : Indicator
+Text:
+It's like you read my mind with this post.Someone asked about hobbies...mine was definitely building PCs.Every time I try to start, a wave of sadness just washes over me.Every small task feels like climbing a massive mountain.The silence in my apartment is deafening but I can't bring myself to play music.It's frustrating because on paper, my life is fine, but inside I'm miserable.I feel completely disconnected from my friends, my family, and even myself.It's incredibly lonely feeling this way when everyone else seems totally fine.Everything just feels so gray, monotonous, and bleak.Even forming words to reply to a simple text message takes too much effort.
+----------------------------------------
+
+Sample ID : 30316
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+Well, I'm 17 and I don't know how I'm doing but I think it isn't good because I cried in dark before I saw this so I said fuck it and started writing this. I feel like being eaten from inside, I have a feeling on my throat that literally always makes me uncomfortable. I nearly have no one and I see no point in sharing this feelings with the ones I have because I don't feel close to them when I saw this post I thought if I share this I would feel better but I still feel like shit tbh. PS: I'm not a native English speaker so sorry about my grammatical mistakes.
+----------------------------------------
+
+Sample ID : 30774
+GT        : Unsupportive
+Pred      : Indicator
+Text:
+I was feeling a bit down, but looking at this thread made me feel like I wasn't the only one and that I'm being selfish.
+----------------------------------------
+
+Sample ID : 30821
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+depends on the day ive been better recently but still not feelin so good mr. stark
+----------------------------------------
+
+Sample ID : 30926
+GT        : Unsupportive
+Pred      : Ideation
+Text:
+Honestly I really don't know right now. Some days I'm perfectly content to be alone, others I'm absolutely distraught thinking about being alone the rest of my life. I suppose it's what happens when you have way to much time to over think everything...
+----------------------------------------
+

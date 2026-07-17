@@ -1,0 +1,37 @@
+================================================================================
+Running RSD_15K evaluation — sample limit: 200
+OPEN_ROUTER_KEY found. Using OpenAISuicideDetectionAgent (openai/gpt-4o-mini, mode=single-class, base=Unsupportive).
+Loading dataset from: C:\Users\Owner\Documents\UofT\LMP2392\old_repo\Suicide-Detection-Agent\src\example\suicide_detection\data\rsd_new_200_small_2.csv
+Total samples loaded: 200
+Samples limited to: 200
+
+Starting evaluation — workers=50, retries=3, seed=42 ...
+Scanning for cache candidates in C:\Users\Owner\Documents\UofT\LMP2392\old_repo\Suicide-Detection-Agent\src\example\suicide_detection\_EvalRing...
+Found 2 candidate cache directories.
+Loading cache for gpt-4o-mini:   0%|          | 0/2 [00:00<?, ?it/s]Loading cache for gpt-4o-mini: 100%|██████████| 2/2 [00:00<00:00, 128.34it/s]
+[Concurrency Plan] tasks=200, requested_max_workers=50, planned_parallelism=50, local_cpu_count=20
+[Concurrency Executor] executor_max_workers=50, submitted_tasks=200
+Evaluating:   0%|          | 0/200 [00:00<?, ?it/s]Evaluating:   0%|          | 1/200 [00:01<04:47,  1.45s/it]Evaluating:  11%|█         | 22/200 [00:01<00:09, 19.09it/s]Evaluating:  16%|█▌        | 32/200 [00:01<00:07, 21.62it/s]Evaluating:  21%|██        | 42/200 [00:02<00:05, 28.33it/s]Evaluating:  24%|██▍       | 49/200 [00:02<00:05, 27.73it/s]Evaluating:  28%|██▊       | 55/200 [00:02<00:04, 30.97it/s]Evaluating:  30%|███       | 61/200 [00:02<00:04, 34.12it/s]Evaluating:  33%|███▎      | 66/200 [00:02<00:04, 33.20it/s]Evaluating:  36%|███▌      | 71/200 [00:02<00:03, 33.51it/s]Evaluating:  40%|███▉      | 79/200 [00:03<00:02, 41.79it/s]Evaluating:  46%|████▌     | 91/200 [00:03<00:01, 55.58it/s]Evaluating:  51%|█████     | 102/200 [00:03<00:01, 65.24it/s]Evaluating:  55%|█████▌    | 110/200 [00:03<00:01, 46.80it/s]Evaluating:  58%|█████▊    | 116/200 [00:03<00:01, 48.42it/s]Evaluating:  61%|██████    | 122/200 [00:03<00:01, 47.59it/s]Evaluating:  64%|██████▍   | 128/200 [00:03<00:01, 44.81it/s]Evaluating:  66%|██████▋   | 133/200 [00:04<00:01, 45.02it/s]Evaluating:  70%|███████   | 141/200 [00:04<00:01, 52.04it/s]Evaluating:  74%|███████▎  | 147/200 [00:04<00:01, 47.83it/s]Evaluating:  78%|███████▊  | 156/200 [00:04<00:00, 57.12it/s]Evaluating:  82%|████████▏ | 164/200 [00:04<00:00, 53.19it/s]Evaluating:  88%|████████▊ | 175/200 [00:04<00:00, 64.83it/s]Evaluating:  91%|█████████ | 182/200 [00:04<00:00, 53.35it/s]Evaluating:  94%|█████████▍| 188/200 [00:05<00:00, 51.95it/s]Evaluating:  97%|█████████▋| 194/200 [00:05<00:00, 24.08it/s]Evaluating: 100%|█████████▉| 199/200 [00:06<00:00, 20.04it/s]Evaluating: 100%|██████████| 200/200 [00:09<00:00, 20.26it/s]
+
+Evaluation complete. Collecting results...
+
+Saving reports to: C:\Users\Owner\Documents\UofT\LMP2392\old_repo\Suicide-Detection-Agent\src\example\suicide_detection\_EvalRing\run_suite_20260716_223204_single-class\run_20260716_223211_gpt-4o-mini_single-class
+  ✓ result.md
+  ✓ all_cases.txt
+  ✓ all_cases.csv
+  ✓ error.csv
+  ✓ incorrect_cases.txt (65 cases)
+  ✓ Meta.json
+
+============================================================
+SUMMARY
+============================================================
+Agent:    gpt-4o-mini-suicide-detector  (model: openai/gpt-4o-mini)
+Mode:     single-class
+Base:     Unsupportive
+HostMax:  10
+Samples:  200  |  Incorrect: 65
+Accuracy: 0.6750  |  F1 (macro): 0.4575
+Duration: 9.90s  |  Est. Cost: $0.015501
+Output:   C:\Users\Owner\Documents\UofT\LMP2392\old_repo\Suicide-Detection-Agent\src\example\suicide_detection\_EvalRing\run_suite_20260716_223204_single-class\run_20260716_223211_gpt-4o-mini_single-class
+============================================================
