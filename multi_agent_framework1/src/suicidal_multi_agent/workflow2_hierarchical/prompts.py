@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ..core.labels import LABEL_DEFINITIONS, VALID_LABELS
+from ..core.labels import FINAL_LABELS, LABEL_DEFINITIONS, VALID_LABELS
 
 
 def _label_definitions_text() -> str:
@@ -19,18 +19,26 @@ Available task labels:
 {_label_definitions_text()}
 
 Decision options:
-- SELF_RISK: the author appears to describe their own suicidal thoughts, self-harm, preparation, behavior, or attempt.
-- INDICATOR: the post is about another person, general suicide discussion, concern for someone else, or denial of the author's own suicidal intent.
+- SELF_RISK: the author describes their own suicidal thoughts, self-harm,
+  preparation, behavior, or attempt.
+- INDICATOR: the text is suicide-related, but does not indicate the author's
+  own suicidal risk. This includes discussion of another person, general
+  suicide-related discussion, concern for someone else, or explicit denial
+  of the author's own suicidal intent.
+- UNSUPPORTIVE: the text does not meaningfully concern suicide, self-harm,
+  suicidal thinking, suicidal behavior, or suicide attempts.
 
 Return only valid JSON:
 {{
-  "decision": "SELF_RISK" | "INDICATOR",
+  "decision": "SELF_RISK" | "INDICATOR" | "UNSUPPORTIVE",
   "confidence": 0.0,
   "reasoning": "brief explanation"
 }}
 
 Rules:
-- Use INDICATOR when there is no evidence of the author's own suicide/self-harm risk.
+- Do not use INDICATOR merely because SELF_RISK is absent.
+- Use INDICATOR only when the text is still meaningfully suicide-related.
+- Use UNSUPPORTIVE when the text does not match the suicide-risk task.
 - Do not include markdown.
 - Do not include extra keys.
 """.strip()
@@ -94,7 +102,7 @@ Goal:
 Review the hierarchical path and final proposed label for consistency.
 
 Valid final labels:
-{", ".join(VALID_LABELS)}
+{", ".join(FINAL_LABELS)}
 
 Return only valid JSON:
 {{

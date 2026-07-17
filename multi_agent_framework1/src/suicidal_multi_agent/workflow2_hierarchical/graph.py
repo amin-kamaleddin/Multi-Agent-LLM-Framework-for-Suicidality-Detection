@@ -4,13 +4,20 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import Any, Protocol, TypedDict
+import operator
+from typing import Annotated, Any, Protocol, TypedDict
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from langgraph.graph import END, START, StateGraph
 
-from ..core.labels import VALID_LABELS
+from ..core.labels import (
+    FINAL_LABELS,
+    VALID_LABELS,
+    canonicalize_label,
+    label_to_suicidal_intent,
+)
+
 from ..core.schemas import extract_json_object
 from .prompts import (
     BEHAVIOR_ATTEMPT_SYSTEM_PROMPT,
@@ -20,6 +27,7 @@ from .prompts import (
     evaluator_user_prompt,
     user_prompt,
 )
+
 
 
 class InvokableModel(Protocol):
@@ -46,8 +54,8 @@ class EvaluatorDecision(BaseModel):
     @field_validator("label_name")
     @classmethod
     def validate_label(cls, value: str) -> str:
-        if value not in VALID_LABELS:
-            raise ValueError(f"Invalid label_name={value!r}. Expected one of {VALID_LABELS}.")
+        if value not in FINAL_LABELS:
+            raise ValueError(f"Invalid label_name={value!r}. Expected one of {FINAL_LABELS}.")
         return value
 
 
@@ -57,10 +65,11 @@ class WorkflowState(TypedDict):
     final_label: str
     proposed_label: str
     specialist_answers: dict[str, bool]
+    specialist_outputs: dict[str, Any]
     path: list[dict[str, Any]]
-    errors: list[dict[str, Any]]
-    traces: list[dict[str, Any]]
-    llm_calls: list[dict[str, Any]]
+    errors: Annotated[list[dict[str, Any]], operator.add]
+    traces: Annotated[list[dict[str, Any]], operator.add]
+    llm_calls: Annotated[list[dict[str, Any]], operator.add]
 
 
 @dataclass
@@ -68,7 +77,9 @@ class CaseResult:
     sample_id: str
     text: str
     final_label: str
-    specialist_answers: dict[str, bool]
+    suicidal_intent: bool
+    # specialist_answers: dict[str, bool]
+    # specialist_outputs: dict[str, dict[str, Any] | None]
     errors: list[dict[str, Any]]
     traces: list[dict[str, Any]]
     llm_calls: list[dict[str, Any]]
@@ -111,17 +122,23 @@ class MultiAgentWorkflow:
     """Hierarchical decision-tree multi-agent workflow."""
 
     def __init__(
-        self,
-        *,
-        model: InvokableModel,
-        model_name: str = "unknown",
-        max_retries: int = 2,
-        confidence_threshold: float = 0.65,
+    self,
+    *,
+    model: InvokableModel,
+    model_name: str = "unknown",
+    max_retries: int = 2,
+    confidence_threshold: float = 0.65,
+    mode: str = "bool",
+    models_by_role: dict[str, InvokableModel] | None = None,
+    model_names_by_role: dict[str, str] | None = None,
     ):
         self.model = model
         self.model_name = model_name
         self.max_retries = max_retries
         self.confidence_threshold = confidence_threshold
+        self.mode = mode
+        self.models_by_role = models_by_role or {}
+        self.model_names_by_role = model_names_by_role or {}
         self.graph = self._build_graph()
 
     def _build_graph(self):
@@ -246,9 +263,17 @@ class MultiAgentWorkflow:
         if decision == "SELF_RISK":
             proposed_label = ""
             specialist_answers = {}
-        else:
+
+        elif decision == "INDICATOR":
             proposed_label = "Indicator"
             specialist_answers = {"Indicator": True}
+
+        elif decision == "UNSUPPORTIVE":
+            proposed_label = "Unsupportive"
+            specialist_answers = {}
+
+        else:
+            raise ValueError(f"Unexpected perspective decision: {decision}")
 
         return {
             "proposed_label": proposed_label,
@@ -378,6 +403,7 @@ class MultiAgentWorkflow:
             "final_label": "",
             "proposed_label": "",
             "specialist_answers": {},
+            "specialist_outputs": {},
             "path": [],
             "errors": [],
             "traces": [],
@@ -386,15 +412,42 @@ class MultiAgentWorkflow:
 
         result = self.graph.invoke(initial_state)
         final_label = result.get("final_label") or "Error"
-        specialist_answers = {
-            label: final_label == label
-            for label in VALID_LABELS
-        }
+
+        # # Ming's evaluator expects one boolean answer for each canonical label.
+        # # These are compatibility fields, not claims that four independent
+        # # specialists were executed.
+        # specialist_answers = {
+        #     label: final_label == label
+        #     for label in VALID_LABELS
+        # }
+
+        # # Find the evaluator's final reasoning, when available.
+        # final_reasoning: str | None = None
+        # for trace in reversed(result.get("traces", [])):
+        #     if trace.get("event") == "evaluator_complete":
+        #         final_reasoning = trace.get("reasoning")
+        #         break
+
+        # # Ming's evaluator also expects an output dictionary for each label.
+        # specialist_outputs = {
+        #     label: {
+        #         "answer": specialist_answers[label],
+        #         "reasoning": final_reasoning if specialist_answers[label] else None,
+        #     }
+        #     for label in VALID_LABELS
+        # }
+
+        suicidal_intent = (
+            label_to_suicidal_intent(final_label)
+            if final_label in FINAL_LABELS
+            else False
+        )
+
         return CaseResult(
             sample_id=sample_id,
             text=text,
             final_label=final_label,
-            specialist_answers=specialist_answers,
+            suicidal_intent=suicidal_intent,
             errors=result.get("errors", []),
             traces=result.get("traces", []),
             llm_calls=result.get("llm_calls", []),
