@@ -33,7 +33,7 @@ Evidence collector output schema (`framework2`, fixed `evidence` mode):
 {
   "evidence": [
     {
-      "quote": "verbatim input span",
+      "quote": "relevant excerpt or concise paraphrase",
       "type": "collector-specific evidence type",
       "subject": "author",
       "time": "current",
@@ -43,7 +43,7 @@ Evidence collector output schema (`framework2`, fixed `evidence` mode):
 }
 ```
 
-Each collector returns zero to three items. Quotes and observations are each limited to 100 words, and quotes must be exact input substrings. Each collector has only three allowed evidence types, defined with their interpretations in `workflow/prompts.py` and repeated in the final judge prompt.
+Each collector returns zero to three items. Quotes and observations are each limited to 100 words; quotes may be normalized or paraphrased and are not checked as exact input substrings. Each collector has only three allowed evidence types, defined with their interpretations in `workflow/prompts.py` and repeated in the final judge prompt.
 
 Default specialist output schema (`--mode bool`):
 

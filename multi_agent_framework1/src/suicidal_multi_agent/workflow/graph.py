@@ -456,7 +456,7 @@ class MultiAgentWorkflow:
     ) -> tuple[Any, list[dict[str, Any]], list[dict[str, Any]]]:
         model = self.models_by_role.get(role, self.model)
         model_name = self.model_names_by_role.get(role, self.model_name)
-        if self._can_use_create_agent(model):
+        if self._can_use_create_agent(model) and not self.mode_config.evidence_mode:
             return self._call_with_create_agent(
                 role=role,
                 messages=messages,
@@ -669,7 +669,6 @@ class MultiAgentWorkflow:
                 allowed_types = set(EVIDENCE_TYPE_DEFINITIONS[prompt_config.label_name])
                 validator = lambda answer: validate_evidence_answer(
                     answer,
-                    text=state["text"],
                     allowed_types=allowed_types,
                 )
             node_started_at_s = time.perf_counter()

@@ -184,7 +184,7 @@ The Pydantic contracts live in `core/schemas.py`; prompts that request these sha
 }
 ```
 
-The top-level object has only `evidence`. It contains zero to three items with exactly five fields. `quote` is a verbatim input substring of at most 100 words; `observation` is at most 100 words. `subject` and `time` use the enums enforced in `core/schemas.py`. Each collector accepts only its three evidence types from `workflow/prompts.py`. Schema, type, and quote-grounding failures are retried. Collectors do not return decisions, scores, confidence, citations, or review status.
+The top-level object has only `evidence`. It contains zero to three items with exactly five fields. `quote` is a relevant excerpt or concise paraphrase of at most 100 words and is not required to be an exact input substring; `observation` is at most 100 words. `subject` and `time` use the enums enforced in `core/schemas.py`. Each collector accepts only its three evidence types from `workflow/prompts.py`. Schema and collector-specific type failures are retried. Collectors do not return decisions, scores, confidence, citations, or review status.
 
 ### Final judge
 

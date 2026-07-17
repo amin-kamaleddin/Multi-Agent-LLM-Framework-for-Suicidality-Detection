@@ -122,11 +122,11 @@ Text to classify:
 
 Output format:
 Return only valid JSON with exactly this shape:
-{{"evidence":[{{"quote":"verbatim input span","type":"{allowed_types}","subject":"author | other | general | unclear","time":"past | current | future | unclear | na","observation":"what the quote factually shows"}}]}}
+{{"evidence":[{{"quote":"relevant excerpt or concise paraphrase","type":"{allowed_types}","subject":"author | other | general | unclear","time":"past | current | future | unclear | na","observation":"what the quote factually shows"}}]}}
 
 Rules:
 - Return zero to three evidence items. If none is supported, return {{"evidence":[]}}.
-- Each quote must be a contiguous, case-sensitive substring copied from the input and contain at most 100 words.
+- Each quote must be a relevant excerpt or concise paraphrase of at most 100 words; exact substring matching is not required.
 - Use only the three evidence types defined for this collector.
 - subject must be author, other, general, or unclear.
 - time must be past, current, future, unclear, or na.

@@ -82,13 +82,12 @@ def test_evidence_collector_answer_accepts_compact_five_field_items():
 
     validate_evidence_answer(
         parsed,
-        text="Yesterday I wrote a note before leaving.",
         allowed_types={"suicide_plan", "preparation", "self_harm"},
     )
     assert parsed.model_dump()["evidence"][0]["type"] == "preparation"
 
 
-def test_evidence_collector_answer_rejects_extra_fields_limits_and_bad_grounding():
+def test_evidence_collector_answer_rejects_extra_fields_limits_and_bad_type():
     valid_item = {
         "quote": "I wrote a note",
         "type": "preparation",
@@ -109,14 +108,7 @@ def test_evidence_collector_answer_rejects_extra_fields_limits_and_bad_grounding
     with pytest.raises(ValueError, match="not allowed"):
         validate_evidence_answer(
             parsed,
-            text="I wrote a note",
             allowed_types={"attempt_report"},
-        )
-    with pytest.raises(ValueError, match="exact substring"):
-        validate_evidence_answer(
-            parsed,
-            text="No matching quote here.",
-            allowed_types={"preparation"},
         )
 
 
@@ -160,3 +152,4 @@ def test_judge_answer_requires_known_label_only():
 def test_extract_json_object_accepts_wrapped_json():
     parsed = extract_json_object('Here is JSON: {"label_name": "Indicator"}')
     assert parsed == {"label_name": "Indicator"}
+    assert extract_json_object('{"evidence":[]}}') == {"evidence": []}

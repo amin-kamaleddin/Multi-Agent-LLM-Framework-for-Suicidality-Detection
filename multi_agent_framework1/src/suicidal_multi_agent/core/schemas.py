@@ -62,7 +62,10 @@ class EvidenceItem(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    quote: StrictStr = Field(min_length=1, description="Verbatim input span of at most 100 words.")
+    quote: StrictStr = Field(
+        min_length=1,
+        description="Relevant excerpt or concise paraphrase of at most 100 words.",
+    )
     type: EvidenceType = Field(description="Collector-specific evidence type.")
     subject: Literal["author", "other", "general", "unclear"]
     time: Literal["past", "current", "future", "unclear", "na"]
@@ -106,18 +109,15 @@ class EvidenceCollectorAnswer(BaseModel):
 def validate_evidence_answer(
     answer: EvidenceCollectorAnswer,
     *,
-    text: str,
     allowed_types: set[str],
 ) -> None:
-    """Validate collector-specific types and verbatim grounding against the input."""
+    """Validate that each item uses a type assigned to this collector."""
     for item in answer.evidence:
         if item.type not in allowed_types:
             raise ValueError(
                 f"Evidence type {item.type!r} is not allowed for this collector; "
                 f"expected one of {sorted(allowed_types)}"
             )
-        if item.quote not in text:
-            raise ValueError(f"Evidence quote is not an exact substring of the input: {item.quote!r}")
 
 
 class JudgeAnswer(BaseModel):
@@ -155,10 +155,9 @@ def extract_json_object(raw: str) -> dict[str, Any]:
         parsed = json.loads(text)
     except json.JSONDecodeError:
         start = text.find("{")
-        end = text.rfind("}")
-        if start < 0 or end <= start:
+        if start < 0:
             raise
-        parsed = json.loads(text[start : end + 1])
+        parsed, _end = json.JSONDecoder().raw_decode(text[start:])
     if not isinstance(parsed, dict):
         raise ValueError("Expected a JSON object")
     return parsed
