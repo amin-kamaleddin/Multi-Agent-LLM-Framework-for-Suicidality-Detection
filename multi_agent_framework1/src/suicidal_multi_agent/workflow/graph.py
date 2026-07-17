@@ -383,12 +383,14 @@ class MultiAgentWorkflow:
         mode: str | WorkflowModeConfig = "bool",
         models_by_role: dict[str, InvokableModel] | None = None,
         model_names_by_role: dict[str, str] | None = None,
+        use_create_agent: bool = True,
     ):
         self.model = model
         self.model_name = model_name
         self.models_by_role = models_by_role or {}
         self.model_names_by_role = model_names_by_role or {}
         self.max_retries = max(0, int(max_json_retries if max_json_retries is not None else max_retries))
+        self.use_create_agent = use_create_agent
         self.mode_config = get_workflow_mode(mode)
         self.mode_name = self.mode_config.name
         self._structured_agent_cache: dict[tuple[int, str, str], Any] = {}
@@ -456,7 +458,11 @@ class MultiAgentWorkflow:
     ) -> tuple[Any, list[dict[str, Any]], list[dict[str, Any]]]:
         model = self.models_by_role.get(role, self.model)
         model_name = self.model_names_by_role.get(role, self.model_name)
-        if self._can_use_create_agent(model) and not self.mode_config.evidence_mode:
+        if (
+            self.use_create_agent
+            and self._can_use_create_agent(model)
+            and not self.mode_config.evidence_mode
+        ):
             return self._call_with_create_agent(
                 role=role,
                 messages=messages,

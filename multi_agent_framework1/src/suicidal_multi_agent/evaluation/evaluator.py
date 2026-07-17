@@ -252,6 +252,7 @@ def run_workflow_evaluation(
         mode=config.mode,
         models_by_role=agent_models,
         model_names_by_role=model_names_by_role,
+        use_create_agent=False,
     )
     resolved_config = EvaluationConfig(
         **{
