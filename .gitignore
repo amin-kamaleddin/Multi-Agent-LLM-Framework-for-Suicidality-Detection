@@ -113,6 +113,10 @@ _EvalRing/
 !multi_agent_framework1/dataset/positive-negative-final-datasets/dataset1_positive_balanced_100_seed42.csv
 !multi_agent_framework1/dataset/positive-negative-final-datasets/negative_real_synthetic_balanced_100_seed42.csv
 
+# Keep curated evaluation artifacts while runtime logs remain ignored.
+!multi_agent_framework1/test-results/
+!multi_agent_framework1/test-results/**
+
 # CounselBench is its own separate repo
 CounselBench/
 

@@ -1,0 +1,4 @@
+{
+  "evaluation_sample_path": "dataset/positive-negative-final-datasets/negative_real_synthetic_balanced_100_seed42.csv",
+  "audit_available": false
+}

@@ -1,0 +1,27 @@
+flowchart TD
+    A["Single Text Input"] --> B["Input Preprocessor"]
+    B --> C{"Optional Context Available?"}
+    C -->|Yes| D["Context Builder<br/>non-PII user traits, prior message summary, trend"]
+    C -->|No| E["No Extra Context"]
+    D --> F["Optional Scenario Reconstructor<br/>step-back summary"]
+    E --> F
+    F --> G["Parallel Specialist Agents"]
+
+    G --> H["Indicator Agent"]
+    G --> I["Ideation Agent"]
+    G --> J["Behavior Agent"]
+    G --> K["Attempt Agent"]
+
+    H --> L["Evidence + Score/Bool JSON"]
+    I --> L
+    J --> L
+    K --> L
+
+    L --> M["Aggregation Layer<br/>validate JSON, normalize scores, compute disagreement"]
+    M --> N["Final Judge Agent"]
+    A --> N
+    F --> N
+    N --> O{"Output Mode"}
+    O -->|Four-class| P["Final Label<br/>Indicator / Ideation / Behavior / Attempt"]
+    O -->|Binary| Q["suicidal_intent<br/>true / false"]
+    O -->|Low Confidence| R["Abstain / Escalate"]
