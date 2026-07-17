@@ -1,11 +1,11 @@
-"""Evaluation runner for the full four-specialist-plus-judge workflow."""
+"""Shared evaluation runner plus framework1's specialist compatibility layer."""
 
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Protocol
 
 import pandas as pd
 
@@ -23,7 +23,32 @@ SPECIALIST_ANSWER_COLUMNS = {
     label: f"{label.lower()}_answer"
     for label in VALID_LABELS
 }
-AGENT_ROLES = tuple(f"{label}_specialist" for label in VALID_LABELS) + ("judge",)
+FRAMEWORK1_AGENT_ROLES = tuple(f"{label}_specialist" for label in VALID_LABELS) + ("judge",)
+
+
+class EvaluationCaseResult(Protocol):
+    """Architecture-neutral result required from one evaluated workflow case."""
+
+    sample_id: str
+    final_label: str
+    suicidal_intent: bool | None
+    errors: list[dict[str, Any]]
+    traces: list[dict[str, Any]]
+    llm_calls: list[dict[str, Any]]
+
+
+class EvaluationWorkflow(Protocol):
+    """Minimal workflow interface consumed by the shared evaluator."""
+
+    def run_case(self, *, sample_id: str, text: str) -> EvaluationCaseResult:
+        """Evaluate one sample and return the shared result fields."""
+
+
+PredictionEnricher = Callable[[dict[str, Any], EvaluationCaseResult], dict[str, Any]]
+AgentMetricsProvider = Callable[
+    [list[dict[str, Any]], "EvaluationConfig", dict[str, Any], dict[str, Any]],
+    dict[str, Any],
+]
 
 
 @dataclass(frozen=True)
@@ -40,8 +65,7 @@ class EvaluationConfig:
     total_records: int
     limit: int | None = None
     mode: str = "bool"
-    agent_model_names: dict[str, str] | None = None
-    agent_temperatures: dict[str, float] | None = None
+    agent_configuration: dict[str, dict[str, Any]] | None = None
     error_stop_failed_llm_attempts: int = 10
     error_stop_failed_records: int = 3
     error_stop_rate: float = 0.5
@@ -65,11 +89,18 @@ def load_evaluation_sample(sample_path: str | Path, *, limit: int | None = None)
     """Load and validate the frozen sampled dataset used for evaluation."""
     path = Path(sample_path)
     df = pd.read_csv(path, encoding="utf-8-sig")
-    required_columns = ["source_row", "text", "sentiment"]
-    allowed_columns = [required_columns, [*required_columns, "real"]]
+    canonical_columns = ["ID", "users", "text", "sentiment", "time"]
+    legacy_columns = ["source_row", "text", "sentiment"]
+    allowed_columns = [
+        canonical_columns,
+        [*canonical_columns, "real"],
+        legacy_columns,
+        [*legacy_columns, "real"],
+    ]
     if list(df.columns) not in allowed_columns:
         raise ValueError(
-            f"Expected columns {required_columns} with optional trailing 'real', "
+            f"Expected canonical columns {canonical_columns} or legacy columns {legacy_columns}, "
+            "each with optional trailing 'real'; "
             f"got {list(df.columns)} from {path}"
         )
 
@@ -77,8 +108,9 @@ def load_evaluation_sample(sample_path: str | Path, *, limit: int | None = None)
     if invalid_labels:
         raise ValueError(f"Invalid sentiment labels in {path}: {invalid_labels}")
 
-    if df["source_row"].duplicated().any():
-        raise ValueError(f"source_row must be unique in {path}")
+    id_column = _sample_id_column(df.columns)
+    if df[id_column].duplicated().any():
+        raise ValueError(f"{id_column} must be unique in {path}")
 
     if "real" in df.columns and not df["real"].isin([True, False]).all():
         raise ValueError(f"real must contain only boolean values in {path}")
@@ -88,39 +120,46 @@ def load_evaluation_sample(sample_path: str | Path, *, limit: int | None = None)
     return df.reset_index(drop=True)
 
 
-def run_workflow_evaluation(
+def run_evaluation(
     *,
     sample_df: pd.DataFrame,
-    model: InvokableModel,
+    workflow: EvaluationWorkflow,
     config: EvaluationConfig,
     run_id: str | None = None,
     artifact_base_dir: str | Path = "logs/runs",
-    agent_models: dict[str, InvokableModel] | None = None,
+    dataset_audit: dict[str, Any] | None = None,
+    prediction_enricher: PredictionEnricher | None = None,
+    agent_metrics_provider: AgentMetricsProvider | None = None,
 ) -> EvaluationResult:
-    """Run the workflow over a prepared sample and continuously write artifacts."""
+    """Evaluate any workflow that implements the shared per-case result contract."""
     writer = ArtifactWriter(base_dir=artifact_base_dir, run_id=run_id)
-    _validate_agent_overrides(config, agent_models)
-    workflow = MultiAgentWorkflow(
-        model=model,
-        model_name=config.model_name,
-        max_retries=config.max_retries,
-        mode=config.mode,
-        models_by_role=agent_models,
-        model_names_by_role=config.agent_model_names,
-    )
 
     run_config = asdict(config)
-    run_config["agent_configuration"] = _agent_configuration(config)
+    run_config["agent_configuration"] = config.agent_configuration or {}
     writer.write_json("run_config.json", run_config)
-    writer.write_json("dataset_audit.json", _load_dataset_audit(config.dataset_audit_path, config.sample_path))
+    writer.write_json(
+        "dataset_audit.json",
+        (
+            dataset_audit
+            if dataset_audit is not None
+            else _load_dataset_audit(config.dataset_audit_path, config.sample_path)
+        ),
+    )
     writer.write_dataframe("sampled_dataset.csv", sample_df)
 
     rows: list[dict[str, Any]] = []
     all_calls: list[dict[str, Any]] = []
     stop_reason: str | None = None
 
+    id_column = _sample_id_column(sample_df.columns)
     for position, record in enumerate(sample_df.to_dict(orient="records"), start=1):
-        result = workflow.run_case(sample_id=str(record["source_row"]), text=record["text"])
+        expected_sample_id = str(record[id_column])
+        result = workflow.run_case(sample_id=expected_sample_id, text=record["text"])
+        if str(result.sample_id) != expected_sample_id:
+            raise ValueError(
+                "Workflow result sample_id does not match the evaluated record: "
+                f"expected {expected_sample_id!r}, got {result.sample_id!r}"
+            )
 
         for call in result.llm_calls:
             call_record = {"sample_id": result.sample_id, **call}
@@ -132,7 +171,7 @@ def run_workflow_evaluation(
             writer.append_jsonl("errors.jsonl", {"sample_id": result.sample_id, **error})
 
         rows.append(
-            build_prediction_row(record=record, result=result)
+            build_prediction_row(record=record, result=result, prediction_enricher=prediction_enricher)
         )
 
         stop_reason = _stop_reason(rows, all_calls, config)
@@ -144,6 +183,7 @@ def run_workflow_evaluation(
             config=config,
             status=status,
             stop_reason=stop_reason,
+            agent_metrics_provider=agent_metrics_provider,
         )
         print(
             json.dumps(
@@ -170,6 +210,7 @@ def run_workflow_evaluation(
         config=config,
         status=final_status,
         stop_reason=stop_reason,
+        agent_metrics_provider=agent_metrics_provider,
     )
 
     return EvaluationResult(
@@ -182,6 +223,49 @@ def run_workflow_evaluation(
     )
 
 
+def run_workflow_evaluation(
+    *,
+    sample_df: pd.DataFrame,
+    model: InvokableModel,
+    config: EvaluationConfig,
+    run_id: str | None = None,
+    artifact_base_dir: str | Path = "logs/runs",
+    agent_models: dict[str, InvokableModel] | None = None,
+    dataset_audit: dict[str, Any] | None = None,
+) -> EvaluationResult:
+    """Compatibility wrapper for the four-specialist framework1 workflow."""
+    agent_configuration = _framework1_agent_configuration(config)
+    _validate_framework1_agent_overrides(config, agent_models, agent_configuration)
+    model_names_by_role = {
+        role: str(details.get("model_name") or config.model_name)
+        for role, details in agent_configuration.items()
+    }
+    workflow = MultiAgentWorkflow(
+        model=model,
+        model_name=config.model_name,
+        max_retries=config.max_retries,
+        mode=config.mode,
+        models_by_role=agent_models,
+        model_names_by_role=model_names_by_role,
+    )
+    resolved_config = EvaluationConfig(
+        **{
+            **asdict(config),
+            "agent_configuration": agent_configuration,
+        }
+    )
+    return run_evaluation(
+        sample_df=sample_df,
+        workflow=workflow,
+        config=resolved_config,
+        run_id=run_id,
+        artifact_base_dir=artifact_base_dir,
+        dataset_audit=dataset_audit,
+        prediction_enricher=_specialist_prediction_fields,
+        agent_metrics_provider=_specialist_agent_metric_payload,
+    )
+
+
 def finalize_evaluation_artifacts(
     *,
     writer: ArtifactWriter,
@@ -190,6 +274,7 @@ def finalize_evaluation_artifacts(
     config: EvaluationConfig,
     status: str,
     stop_reason: str | None,
+    agent_metrics_provider: AgentMetricsProvider | None = None,
 ) -> dict[str, Any]:
     """Write the final evaluator artifacts and compile the review reports."""
     metrics = _write_evaluation_artifacts(
@@ -199,38 +284,65 @@ def finalize_evaluation_artifacts(
         config=config,
         status=status,
         stop_reason=stop_reason,
+        agent_metrics_provider=agent_metrics_provider,
     )
     metrics["compiled_reports"] = compile_run_results(writer.run_dir)
     metrics["artifact_status"] = writer.required_artifact_status()
+    metrics["optional_artifact_status"] = writer.optional_artifact_status()
     writer.write_json("metrics.json", metrics)
     writer.write_json("results.json", _complete_results_payload(rows, metrics))
     return metrics
 
 
-def build_prediction_row(*, record: dict[str, Any], result: Any) -> dict[str, Any]:
-    """Return the stable per-sample result row written to predictions.csv."""
+def build_prediction_row(
+    *,
+    record: dict[str, Any],
+    result: EvaluationCaseResult,
+    prediction_enricher: PredictionEnricher | None = None,
+) -> dict[str, Any]:
+    """Return mandatory result fields plus optional workflow-specific fields."""
+    id_column = _sample_id_column(record)
+    ground_truth_suicidal_intent = label_to_suicidal_intent(record["sentiment"])
+    row = {
+        **record,
+        "sample_id": record[id_column],
+        "ground_truth": record["sentiment"],
+        "ground_truth_suicidal_intent": ground_truth_suicidal_intent,
+        "prediction": result.final_label,
+        "suicidal_intent": result.suicidal_intent,
+        "correct": int(record["sentiment"] == result.final_label),
+        "suicidal_intent_correct": int(ground_truth_suicidal_intent == result.suicidal_intent),
+        "error": "; ".join(err.get("error_message", "") for err in result.errors),
+    }
+    agent_outputs = getattr(result, "agent_outputs", None)
+    if agent_outputs is not None:
+        row["agent_outputs"] = json.dumps(agent_outputs, ensure_ascii=False)
+    if prediction_enricher is not None:
+        enrichment = prediction_enricher(record, result)
+        conflicting_fields = sorted(set(row) & set(enrichment))
+        if conflicting_fields:
+            raise ValueError(f"Prediction enrichment cannot overwrite shared fields: {conflicting_fields}")
+        row.update(enrichment)
+    return row
+
+
+def _specialist_prediction_fields(
+    _record: dict[str, Any],
+    result: EvaluationCaseResult,
+) -> dict[str, Any]:
+    """Return framework1-only specialist columns for its compatibility wrapper."""
     specialist_answers = {
-        label: result.specialist_answers.get(label)
+        label: getattr(result, "specialist_answers", {}).get(label)
         for label in VALID_LABELS
     }
     specialist_outputs = {}
     for label in VALID_LABELS:
-        output = result.specialist_outputs.get(label)
+        output = getattr(result, "specialist_outputs", {}).get(label)
         if output is None and specialist_answers[label] is not None:
             output = {"answer": specialist_answers[label]}
         specialist_outputs[label] = output
 
     row = {
-        "source_row": record["source_row"],
-        "ground_truth": record["sentiment"],
-        "ground_truth_suicidal_intent": label_to_suicidal_intent(record["sentiment"]),
-        "prediction": result.final_label,
-        "suicidal_intent": result.suicidal_intent,
-        "correct": int(record["sentiment"] == result.final_label),
-        "suicidal_intent_correct": int(
-            label_to_suicidal_intent(record["sentiment"]) is result.suicidal_intent
-        ),
-        "error": "; ".join(err.get("error_message", "") for err in result.errors),
         "specialist_answers": json.dumps(specialist_answers, ensure_ascii=False),
         "specialist_outputs": json.dumps(specialist_outputs, ensure_ascii=False),
     }
@@ -238,10 +350,16 @@ def build_prediction_row(*, record: dict[str, Any], result: Any) -> dict[str, An
         row[column] = specialist_answers[label]
         output = specialist_outputs[label] if isinstance(specialist_outputs[label], dict) else {}
         row[f"{label.lower()}_reasoning"] = output.get("reasoning")
-    if "real" in record:
-        row["real"] = record["real"]
-    row["text"] = record["text"]
     return row
+
+
+def _sample_id_column(columns: Any) -> str:
+    """Prefer canonical RSD15K IDs while accepting legacy source-row fixtures."""
+    if "ID" in columns:
+        return "ID"
+    if "source_row" in columns:
+        return "source_row"
+    raise ValueError("Evaluation data must include either canonical 'ID' or legacy 'source_row'.")
 
 
 def _load_dataset_audit(dataset_audit_path: str | None, sample_path: str) -> dict[str, Any]:
@@ -263,11 +381,11 @@ def _write_evaluation_artifacts(
     config: EvaluationConfig,
     status: str,
     stop_reason: str | None,
+    agent_metrics_provider: AgentMetricsProvider | None = None,
 ) -> dict[str, Any]:
     predictions = pd.DataFrame(rows)
     writer.write_dataframe("predictions.csv", predictions)
-    agent_model_names = config.agent_model_names or {}
-    judge_model_name = agent_model_names.get("judge", config.model_name)
+    judge_model_name = _configured_model_name(config, "judge")
     classification = compute_classification_metrics(
         predictions["ground_truth"].tolist() if not predictions.empty else [],
         predictions["prediction"].tolist() if not predictions.empty else [],
@@ -278,8 +396,12 @@ def _write_evaluation_artifacts(
         [row["suicidal_intent"] for row in rows],
         model_name=judge_model_name,
     )
-    specialist_metrics = _compute_specialist_metrics(rows, config)
-    agent_metrics = _agent_metric_rows(classification, suicidal_intent, specialist_metrics)
+    agent_metric_payload = (
+        agent_metrics_provider(rows, config, classification, suicidal_intent)
+        if agent_metrics_provider is not None
+        else {"agent_metrics": []}
+    )
+    agent_metrics = list(agent_metric_payload.get("agent_metrics") or [])
     runtime = summarize_runtime(all_calls)
     metrics = {
         "model_name": config.model_name,
@@ -291,23 +413,29 @@ def _write_evaluation_artifacts(
         "total_records": config.total_records,
         "classification": classification,
         "suicidal_intent": suicidal_intent,
-        "specialist_metrics": specialist_metrics,
         "agent_metrics": agent_metrics,
         "runtime": runtime,
     }
+    for key, value in agent_metric_payload.items():
+        if key == "agent_metrics":
+            continue
+        if key in metrics:
+            raise ValueError(f"Agent metric provider cannot overwrite shared metric field {key!r}")
+        metrics[key] = value
     writer.write_dataframe("model_metrics.csv", pd.DataFrame([classification["model_summary"]]))
     writer.write_dataframe("label_metrics.csv", pd.DataFrame(classification["per_label"]))
-    writer.write_dataframe("agent_metrics.csv", pd.DataFrame(agent_metrics))
+    if agent_metrics:
+        writer.write_dataframe("agent_metrics.csv", pd.DataFrame(agent_metrics))
     writer.write_dataframe("suicidal_intent_metrics.csv", pd.DataFrame(suicidal_intent["per_class"]))
     writer.write_json("metrics.json", metrics)
     writer.write_json("results.json", _complete_results_payload(rows, metrics))
     writer.write_text(
         "misclassified_ids.txt",
-        "".join(f'{row["source_row"]}\n' for row in rows if not row["correct"]),
+        "".join(f'{row["sample_id"]}\n' for row in rows if not row["correct"]),
     )
     writer.write_text(
         "suicidal_intent_misclassified_ids.txt",
-        "".join(f'{row["source_row"]}\n' for row in rows if not row["suicidal_intent_correct"]),
+        "".join(f'{row["sample_id"]}\n' for row in rows if not row["suicidal_intent_correct"]),
     )
     writer.write_metrics_md(metrics)
     writer.write_visualizations(metrics)
@@ -336,14 +464,27 @@ def _compute_specialist_metrics(
     rows: list[dict[str, Any]],
     config: EvaluationConfig,
 ) -> dict[str, dict[str, Any]]:
-    agent_model_names = config.agent_model_names or {}
     return {
         label: compute_binary_classification_metrics(
             [row["ground_truth"] == label for row in rows],
             [row[SPECIALIST_ANSWER_COLUMNS[label]] for row in rows],
-            model_name=agent_model_names.get(f"{label}_specialist", config.model_name),
+            model_name=_configured_model_name(config, f"{label}_specialist"),
         )
         for label in VALID_LABELS
+    }
+
+
+def _specialist_agent_metric_payload(
+    rows: list[dict[str, Any]],
+    config: EvaluationConfig,
+    classification: dict[str, Any],
+    suicidal_intent: dict[str, Any],
+) -> dict[str, Any]:
+    """Compute the optional framework1 one-vs-rest agent metrics."""
+    specialist_metrics = _compute_specialist_metrics(rows, config)
+    return {
+        "specialist_metrics": specialist_metrics,
+        "agent_metrics": _agent_metric_rows(classification, suicidal_intent, specialist_metrics),
     }
 
 
@@ -395,8 +536,9 @@ def _complete_results_payload(rows: list[dict[str, Any]], metrics: dict[str, Any
     results = []
     for row in rows:
         result = dict(row)
-        result["specialist_answers"] = json.loads(result["specialist_answers"])
-        result["specialist_outputs"] = json.loads(result["specialist_outputs"])
+        for field in ("agent_outputs", "specialist_answers", "specialist_outputs"):
+            if isinstance(result.get(field), str):
+                result[field] = json.loads(result[field])
         result["ground_truth_output"] = {
             "label_name": result["ground_truth"],
             "suicidal_intent": result["ground_truth_suicidal_intent"],
@@ -406,41 +548,56 @@ def _complete_results_payload(rows: list[dict[str, Any]], metrics: dict[str, Any
             "suicidal_intent": result["suicidal_intent"],
         }
         results.append(result)
-    return {"schema_version": "1.0", "results": results, "metrics": metrics}
+    return {"schema_version": "1.1", "results": results, "metrics": metrics}
 
 
-def _agent_configuration(config: EvaluationConfig) -> dict[str, dict[str, Any]]:
-    model_names = config.agent_model_names or {}
-    temperatures = config.agent_temperatures or {}
+def _framework1_agent_configuration(config: EvaluationConfig) -> dict[str, dict[str, Any]]:
     configuration = {
-        f"{label} Agent": {
-            "role": f"{label}_specialist",
-            "model_name": model_names.get(f"{label}_specialist", config.model_name),
-            "temperature": temperatures.get(f"{label}_specialist", config.temperature),
+        f"{label}_specialist": {
+            "agent_name": f"{label} Agent",
+            "model_name": config.model_name,
+            "temperature": config.temperature,
         }
         for label in VALID_LABELS
     }
-    configuration["Final Judge"] = {
-        "role": "judge",
-        "model_name": model_names.get("judge", config.model_name),
-        "temperature": temperatures.get("judge", config.temperature),
+    configuration["judge"] = {
+        "agent_name": "Final Judge",
+        "model_name": config.model_name,
+        "temperature": config.temperature,
     }
+    for role, details in (config.agent_configuration or {}).items():
+        configuration[role] = {**configuration.get(role, {}), **details}
     return configuration
 
 
-def _validate_agent_overrides(
+def _configured_model_name(config: EvaluationConfig, role: str) -> str:
+    details = (config.agent_configuration or {}).get(role, {})
+    return str(details.get("model_name") or config.model_name)
+
+
+def _validate_framework1_agent_overrides(
     config: EvaluationConfig,
     agent_models: dict[str, InvokableModel] | None,
+    agent_configuration: dict[str, dict[str, Any]],
 ) -> None:
     supplied_roles = set(agent_models or {})
-    configured_roles = set(config.agent_model_names or {}) | set(config.agent_temperatures or {})
-    unknown_roles = sorted((supplied_roles | configured_roles) - set(AGENT_ROLES))
+    configured_roles = set(agent_configuration)
+    unknown_roles = sorted((supplied_roles | configured_roles) - set(FRAMEWORK1_AGENT_ROLES))
     if unknown_roles:
-        raise ValueError(f"Unknown agent role overrides: {unknown_roles}. Expected roles: {list(AGENT_ROLES)}")
-    missing_models = sorted(configured_roles - supplied_roles)
+        raise ValueError(
+            f"Unknown framework1 role overrides: {unknown_roles}. "
+            f"Expected roles: {list(FRAMEWORK1_AGENT_ROLES)}"
+        )
+    override_roles = {
+        role
+        for role, details in agent_configuration.items()
+        if details.get("model_name", config.model_name) != config.model_name
+        or float(details.get("temperature", config.temperature)) != config.temperature
+    }
+    missing_models = sorted(override_roles - supplied_roles)
     if missing_models:
         raise ValueError(
-            "Per-agent model names/temperatures require matching model objects in agent_models for roles: "
+            "Framework1 per-agent model/temperature overrides require matching model objects for roles: "
             f"{missing_models}"
         )
 

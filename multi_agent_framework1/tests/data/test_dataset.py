@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pandas as pd
+
 from suicidal_multi_agent.data.dataset import (
     audit_dataset,
     duplicate_normalized_text_count,
@@ -9,6 +11,8 @@ from suicidal_multi_agent.data.dataset import (
 
 
 DATASET_PATH = Path(__file__).resolve().parents[2] / "dataset" / "anonymizing_suicidal_dataset.csv"
+COHORT_DIR = DATASET_PATH.parent / "positive-negative-final-datasets"
+CANONICAL_COLUMNS = ["ID", "users", "text", "sentiment", "time"]
 
 
 def test_dataset_audit_reproduces_expected_counts():
@@ -39,9 +43,44 @@ def test_balanced_sample_has_equal_label_counts():
         "Behavior": 125,
         "Attempt": 125,
     }
-    assert sampled["source_row"].is_unique
-    assert list(sampled.columns) == ["source_row", "text", "sentiment"]
+    assert sampled["ID"].is_unique
+    assert list(sampled.columns) == CANONICAL_COLUMNS
     assert duplicate_normalized_text_count(sampled) == 0
+
+
+def test_seeded_cohorts_preserve_canonical_rsd15k_fields_and_balances():
+    positive = pd.read_csv(COHORT_DIR / "dataset1_positive_balanced_100_seed42.csv", encoding="utf-8-sig")
+    negative = pd.read_csv(
+        COHORT_DIR / "negative_real_synthetic_balanced_100_seed42.csv",
+        encoding="utf-8-sig",
+    )
+
+    assert list(positive.columns) == [*CANONICAL_COLUMNS, "real"]
+    assert list(negative.columns) == [*CANONICAL_COLUMNS, "real"]
+    assert positive["sentiment"].value_counts().to_dict() == {
+        "Indicator": 25,
+        "Ideation": 25,
+        "Behavior": 25,
+        "Attempt": 25,
+    }
+    assert positive["real"].value_counts().to_dict() == {True: 100}
+    assert negative["sentiment"].value_counts().to_dict() == {"Unsupportive": 100}
+    assert negative["real"].value_counts().to_dict() == {True: 50, False: 50}
+    assert positive["ID"].is_unique
+    assert negative["ID"].is_unique
+    assert set(positive["ID"]).isdisjoint(set(negative["ID"]))
+    assert positive[["users", "time"]].notna().all().all()
+    assert negative[["users", "time"]].notna().all().all()
+
+    raw = pd.read_csv(DATASET_PATH, encoding="utf-8-sig")
+    expected_positive_metadata = raw.iloc[positive["ID"].tolist()][
+        ["users", "text", "sentiment", "time"]
+    ].reset_index(drop=True)
+    pd.testing.assert_frame_equal(
+        positive[["users", "text", "sentiment", "time"]].reset_index(drop=True),
+        expected_positive_metadata,
+        check_dtype=False,
+    )
 
 
 def test_prepare_dataset_files_writes_cleaned_and_sample(tmp_path):
@@ -60,17 +99,15 @@ def test_prepare_dataset_files_writes_cleaned_and_sample(tmp_path):
     assert (tmp_path / "dataset1_balanced_500_seed42.csv").exists()
     assert (tmp_path / "dataset1_audit.json").exists()
 
-    import pandas as pd
-
     cleaned = pd.read_csv(tmp_path / "dataset1_cleaned.csv", encoding="utf-8-sig")
     sampled = pd.read_csv(tmp_path / "dataset1_balanced_500_seed42.csv", encoding="utf-8-sig")
-    assert list(cleaned.columns) == ["source_row", "text", "sentiment"]
-    assert list(sampled.columns) == ["source_row", "text", "sentiment"]
-    assert cleaned["source_row"].min() == 2
-    assert cleaned["source_row"].is_unique
+    assert list(cleaned.columns) == CANONICAL_COLUMNS
+    assert list(sampled.columns) == CANONICAL_COLUMNS
+    assert cleaned["ID"].min() == 0
+    assert cleaned["ID"].is_unique
     assert (tmp_path / "dataset1_cleaned.csv").read_bytes().startswith(b"\xef\xbb\xbf")
     assert (tmp_path / "dataset1_balanced_500_seed42.csv").read_bytes().startswith(b"\xef\xbb\xbf")
 
-    row = cleaned[cleaned["source_row"].eq(14470)].iloc[0]
+    row = cleaned[cleaned["ID"].eq(14468)].iloc[0]
     assert row["text"].startswith("I’m sitting here with my Glock in my hand")
     assert "?€?" not in row["text"]

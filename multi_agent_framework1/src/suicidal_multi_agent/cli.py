@@ -19,14 +19,11 @@ from .evaluation.evaluator import (
     DEFAULT_EVALUATION_AUDIT_PATH,
     DEFAULT_EVALUATION_SAMPLE_PATH,
     EvaluationConfig,
-    build_prediction_row,
-    finalize_evaluation_artifacts,
     load_evaluation_sample,
     run_workflow_evaluation,
 )
 from .evaluation.metrics import compute_classification_metrics, summarize_runtime
 from .evaluation.reporting import compile_run_results
-from .workflow.graph import MultiAgentWorkflow
 from .workflow.prompts import WORKFLOW_MODE_NAMES
 
 
@@ -157,7 +154,8 @@ def cmd_prepare_data(args: argparse.Namespace) -> int:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    writer, _, sampled = _write_setup_artifacts(args, "run")
+    _, dataset1, audit = audit_dataset(args.data_path)
+    sampled = sample_balanced(dataset1, sample_size=args.sample_size, seed=args.seed)
     requested_model_name = "deterministic-fake-llm" if args.fake_llm else args.model
     model_name = (
         "deterministic-fake-llm"
@@ -169,30 +167,6 @@ def cmd_run(args: argparse.Namespace) -> int:
         if args.fake_llm
         else build_real_model(args.model, args.temperature, args.max_completion_tokens)
     )
-    workflow = MultiAgentWorkflow(
-        model=model,
-        model_name=model_name,
-        max_retries=args.max_retries,
-        mode=args.mode,
-    )
-
-    rows: list[dict[str, Any]] = []
-    all_calls: list[dict[str, Any]] = []
-    for record in sampled.to_dict(orient="records"):
-        result = workflow.run_case(sample_id=str(record["source_row"]), text=record["text"])
-        for call in result.llm_calls:
-            call = {"sample_id": result.sample_id, **call}
-            all_calls.append(call)
-            writer.append_jsonl("llm_calls.jsonl", call)
-        for trace in result.traces:
-            writer.append_jsonl("traces.jsonl", {"sample_id": result.sample_id, **trace})
-        for error in result.errors:
-            writer.append_jsonl("errors.jsonl", {"sample_id": result.sample_id, **error})
-
-        rows.append(
-            build_prediction_row(record=record, result=result)
-        )
-
     config = EvaluationConfig(
         model_name=model_name,
         requested_model_name=requested_model_name,
@@ -205,34 +179,14 @@ def cmd_run(args: argparse.Namespace) -> int:
         mode=args.mode,
         command="run",
     )
-    run_config = _args_config(args, "run")
-    run_config["resolved_model_name"] = model_name
-    run_config["agent_configuration"] = {
-        **{
-            f"{label} Agent": {
-                "role": f"{label}_specialist",
-                "model_name": model_name,
-                "temperature": args.temperature,
-            }
-            for label in VALID_LABELS
-        },
-        "Final Judge": {
-            "role": "judge",
-            "model_name": model_name,
-            "temperature": args.temperature,
-        },
-    }
-    writer.write_json("run_config.json", run_config)
-    metrics = finalize_evaluation_artifacts(
-        writer=writer,
-        rows=rows,
-        all_calls=all_calls,
+    result = run_workflow_evaluation(
+        sample_df=sampled,
+        model=model,
         config=config,
-        status="completed",
-        stop_reason=None,
+        dataset_audit={**audit, "evaluation_sample_path": args.data_path},
     )
-    print(json.dumps({"run_dir": str(writer.run_dir), "metrics": metrics}, indent=2))
-    return 0
+    print(json.dumps(result.__dict__, indent=2))
+    return 2 if result.status == "stopped_early" else 0
 
 
 def cmd_evaluate(args: argparse.Namespace) -> int:

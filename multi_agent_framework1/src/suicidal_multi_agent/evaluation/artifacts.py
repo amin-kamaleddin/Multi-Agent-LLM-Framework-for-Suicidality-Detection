@@ -20,7 +20,6 @@ RUN_ARTIFACTS = (
     "predictions.csv",
     "model_metrics.csv",
     "label_metrics.csv",
-    "agent_metrics.csv",
     "suicidal_intent_metrics.csv",
     "metrics.json",
     "results.json",
@@ -34,6 +33,7 @@ RUN_ARTIFACTS = (
     "compiled_results.csv",
     "compiled_results.md",
 )
+OPTIONAL_RUN_ARTIFACTS = ("agent_metrics.csv",)
 
 
 class ArtifactWriter:
@@ -107,9 +107,9 @@ class ArtifactWriter:
         if suicidal_intent:
             lines.extend(
                 [
-                    f"- Suicidal-intent accuracy: {suicidal_intent['accuracy']:.6f}",
-                    f"- Suicidal-intent macro F1: {suicidal_intent['f1_score']:.6f}",
-                    f"- Suicidal-intent positive-class F1: {suicidal_intent['positive_f1']:.6f}",
+                    f"- Suicidal-intent grouping accuracy: {suicidal_intent['accuracy']:.6f}",
+                    f"- Suicidal-intent grouping macro F1: {suicidal_intent['f1_score']:.6f}",
+                    f"- Suicidal-intent grouping positive-class F1: {suicidal_intent['positive_f1']:.6f}",
                 ]
             )
         if agent_metrics:
@@ -143,7 +143,7 @@ class ArtifactWriter:
             lines.extend(
                 [
                     "",
-                    "## Suicidal-Intent Per-Class Metrics",
+                    "## Suicidal-Intent Positive-Class Grouping Metrics",
                     "",
                     "| Value | Accuracy | F1 | Precision | Recall | Support |",
                     "|---|---:|---:|---:|---:|---:|",
@@ -161,6 +161,9 @@ class ArtifactWriter:
 
     def required_artifact_status(self) -> dict[str, bool]:
         return {name: (self.run_dir / name).exists() for name in RUN_ARTIFACTS}
+
+    def optional_artifact_status(self) -> dict[str, bool]:
+        return {name: (self.run_dir / name).exists() for name in OPTIONAL_RUN_ARTIFACTS}
 
 
 def _runtime_stat(metrics: dict[str, Any], metric_name: str, field: str) -> str:
@@ -186,10 +189,10 @@ def _classification_metrics_svg(metrics: dict[str, Any]) -> str:
         ("Final label macro precision", classification["precision"]),
         ("Final label macro recall", classification["recall"]),
         ("Final label macro F1", classification["f1_score"]),
-        ("Intent accuracy", suicidal_intent["accuracy"]),
-        ("Intent macro precision", suicidal_intent["precision"]),
-        ("Intent macro recall", suicidal_intent["recall"]),
-        ("Intent macro F1", suicidal_intent["f1_score"]),
+        ("Positive grouping accuracy", suicidal_intent["accuracy"]),
+        ("Positive grouping macro precision", suicidal_intent["precision"]),
+        ("Positive grouping macro recall", suicidal_intent["recall"]),
+        ("Positive grouping macro F1", suicidal_intent["f1_score"]),
     ]
     width = 900
     height = 70 + len(values) * 42

@@ -47,6 +47,7 @@ class CaseResult:
     errors: list[dict[str, Any]]
     traces: list[dict[str, Any]]
     llm_calls: list[dict[str, Any]]
+    agent_outputs: dict[str, Any]
 
 
 def _response_text(response: Any) -> str:
@@ -753,6 +754,15 @@ class MultiAgentWorkflow:
             for label in VALID_LABELS
             if label in result.get("specialist_outputs", {})
         }
+        agent_outputs = {
+            f"{label}_specialist": output
+            for label, output in specialist_outputs.items()
+        }
+        if result.get("final_label"):
+            agent_outputs["judge"] = {
+                "label_name": result.get("final_label") or "Error",
+                "suicidal_intent": result.get("suicidal_intent"),
+            }
         return CaseResult(
             sample_id=sample_id,
             text=text,
@@ -763,4 +773,5 @@ class MultiAgentWorkflow:
             errors=result.get("errors", []),
             traces=result.get("traces", []),
             llm_calls=result.get("llm_calls", []),
+            agent_outputs=agent_outputs,
         )

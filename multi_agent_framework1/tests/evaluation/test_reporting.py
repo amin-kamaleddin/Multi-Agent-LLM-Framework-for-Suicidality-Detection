@@ -72,6 +72,6 @@ def test_compile_run_results_writes_csv_and_markdown_tables(tmp_path):
     assert "## Model Metrics" in markdown
     assert "## Confusion Matrix" in markdown
     assert "## Per-Agent Metrics" in markdown
-    assert "## Suicidal-Intent Metrics" in markdown
+    assert "## Suicidal-Intent Positive-Class Grouping Metrics" in markdown
     assert "Average end-to-end completion TPS" in markdown
     assert "reporting-model" in markdown

@@ -162,7 +162,8 @@ def judge_system_prompt() -> str:
         "Return only valid JSON with exactly this shape:\n"
         '{"label_name": "<label_name>", "suicidal_intent": true}\n'
         "Set suicidal_intent to true for Indicator, Ideation, Behavior, or Attempt, "
-        "and false for Unsupportive."
+        "and false for Unsupportive. Treat this boolean as membership in the dataset's four-label "
+        "positive class, not as a separate clinical inference about the author's intent."
     )
 
 
@@ -195,7 +196,8 @@ def reasoned_judge_system_prompt() -> str:
         "Return only valid JSON with exactly this shape:\n"
         '{"label_name": "<label_name>", "suicidal_intent": true}\n'
         "Set suicidal_intent to true for Indicator, Ideation, Behavior, or Attempt, "
-        "and false for Unsupportive."
+        "and false for Unsupportive. Treat this boolean as membership in the dataset's four-label "
+        "positive class, not as a separate clinical inference about the author's intent."
     )
 
 

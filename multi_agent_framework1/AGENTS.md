@@ -107,7 +107,7 @@ uv run python -m suicidal_multi_agent.cli compile-results --run-dir logs/runs/<r
 ## Notes
 
 - Use `--max-completion-tokens 256` for `gpt-4o`; the previous 500,000-token default exceeds the model/provider limit.
-- `predictions.csv` always contains `specialist_answers` for metrics and `specialist_outputs` for the full per-label JSON. In `reasoned` mode it also includes per-label `*_reasoning` columns.
+- Framework1 compatibility runs contain `specialist_answers` for metrics and `specialist_outputs` for the full per-label JSON in `predictions.csv`. In `reasoned` mode they also include per-label `*_reasoning` columns. Architecture-neutral evaluator runs omit those framework-specific fields unless an adapter supplies them.
 - `run` and `evaluate` automatically write `compiled_results.csv` and `compiled_results.md` after final artifacts are complete. Use `compile-results` only to regenerate reports for an older run.
 - Real runs write artifacts under `logs/runs/`; those are local generated evidence and are not committed in this folder.
 - This is research evaluation code, not clinical deployment software.

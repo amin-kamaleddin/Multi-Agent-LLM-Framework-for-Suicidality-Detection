@@ -45,7 +45,10 @@ class JudgeAnswer(BaseModel):
 
     label_name: str = Field(description="One of Indicator, Ideation, Behavior, Attempt, Unsupportive.")
     suicidal_intent: StrictBool = Field(
-        description="True for Indicator, Ideation, Behavior, or Attempt; false for Unsupportive."
+        description=(
+            "Dataset positive-class membership: true for Indicator, Ideation, Behavior, or Attempt; "
+            "false for Unsupportive. This is not by itself a clinical claim that the author expresses intent."
+        )
     )
 
     @field_validator("label_name")

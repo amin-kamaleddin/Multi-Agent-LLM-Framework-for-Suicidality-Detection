@@ -1,10 +1,17 @@
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pandas as pd
+import pytest
 
 from suicidal_multi_agent.core.labels import VALID_LABELS
-from suicidal_multi_agent.evaluation.evaluator import EvaluationConfig, load_evaluation_sample, run_workflow_evaluation
+from suicidal_multi_agent.evaluation.evaluator import (
+    EvaluationConfig,
+    load_evaluation_sample,
+    run_evaluation,
+    run_workflow_evaluation,
+)
 
 
 class EvaluatorFakeModel:
@@ -54,6 +61,53 @@ class EvaluatorUnsupportiveFakeModel:
         raise AssertionError("Unexpected evaluator prompt")
 
 
+class GenericWorkflow:
+    """Variable-role workflow with no comparable agent-level outputs."""
+
+    def run_case(self, *, sample_id, text):
+        is_negative = "neutral" in text
+        llm_calls = [
+            {
+                "role": "router",
+                "attempt": 1,
+                "model_name": "router-model",
+                "latency_s": 0.01,
+                "prompt_tokens": 3,
+                "completion_tokens": 1,
+                "total_tokens": 4,
+                "cost": 0.001,
+            }
+        ]
+        if is_negative:
+            llm_calls.append(
+                {
+                    "role": "critic",
+                    "attempt": 1,
+                    "model_name": "critic-model",
+                    "latency_s": 0.02,
+                    "prompt_tokens": 5,
+                    "completion_tokens": 2,
+                    "total_tokens": 7,
+                    "cost": 0.002,
+                }
+            )
+        return SimpleNamespace(
+            sample_id=sample_id,
+            final_label="Unsupportive" if is_negative else "Indicator",
+            suicidal_intent=not is_negative,
+            errors=[],
+            traces=[{"event": "route_complete", "role": "router"}],
+            llm_calls=llm_calls,
+        )
+
+
+class GenericWorkflowWithAgentOutputs(GenericWorkflow):
+    def run_case(self, *, sample_id, text):
+        result = super().run_case(sample_id=sample_id, text=text)
+        result.agent_outputs = {"router": {"decision": result.final_label}}
+        return result
+
+
 def _sample_df() -> pd.DataFrame:
     return pd.DataFrame(
         [
@@ -71,6 +125,7 @@ def _config(
     model_name: str = "test-model",
     total_records: int = 4,
     mode: str = "bool",
+    agent_configuration=None,
 ) -> EvaluationConfig:
     return EvaluationConfig(
         model_name=model_name,
@@ -82,6 +137,7 @@ def _config(
         temperature=0.0,
         total_records=total_records,
         mode=mode,
+        agent_configuration=agent_configuration,
         error_stop_failed_llm_attempts=4,
         error_stop_failed_records=1,
         error_stop_rate=0.5,
@@ -110,6 +166,146 @@ def test_load_evaluation_sample_accepts_optional_real_provenance(tmp_path):
 
     assert list(loaded.columns) == ["source_row", "text", "sentiment", "real"]
     assert loaded["real"].tolist() == [True, True, False, False]
+
+
+def test_load_evaluation_sample_accepts_canonical_rsd15k_fields(tmp_path):
+    sample_path = tmp_path / "canonical.csv"
+    sample = pd.DataFrame(
+        [
+            {"ID": 10, "users": 2, "text": "indicator", "sentiment": "Indicator", "time": 100, "real": True},
+            {"ID": 20, "users": 3, "text": "neutral", "sentiment": "Unsupportive", "time": 200, "real": False},
+        ]
+    )
+    sample.to_csv(sample_path, index=False, encoding="utf-8-sig")
+
+    loaded = load_evaluation_sample(sample_path)
+
+    assert list(loaded.columns) == ["ID", "users", "text", "sentiment", "time", "real"]
+    assert loaded["ID"].tolist() == [10, 20]
+    assert loaded["users"].tolist() == [2, 3]
+
+
+def test_load_evaluation_sample_rejects_duplicate_canonical_ids(tmp_path):
+    sample_path = tmp_path / "duplicate-ids.csv"
+    sample = pd.DataFrame(
+        [
+            {"ID": 10, "users": 2, "text": "indicator", "sentiment": "Indicator", "time": 100},
+            {"ID": 10, "users": 3, "text": "neutral", "sentiment": "Unsupportive", "time": 200},
+        ]
+    )
+    sample.to_csv(sample_path, index=False, encoding="utf-8-sig")
+
+    with pytest.raises(ValueError, match="ID must be unique"):
+        load_evaluation_sample(sample_path)
+
+
+def test_generic_evaluator_keeps_agent_outputs_and_metrics_optional(tmp_path):
+    sample = pd.DataFrame(
+        [
+            {"ID": 10, "users": 2, "text": "indicator", "sentiment": "Indicator", "time": 100},
+            {"ID": 20, "users": 3, "text": "neutral", "sentiment": "Unsupportive", "time": 200},
+        ]
+    )
+    config = _config(
+        tmp_path,
+        total_records=2,
+        agent_configuration={
+            "router": {"model_name": "router-model", "temperature": 0.0},
+            "critic": {"model_name": "critic-model", "temperature": 0.0},
+        },
+    )
+
+    result = run_evaluation(
+        sample_df=sample,
+        workflow=GenericWorkflow(),
+        config=config,
+        run_id="generic-no-agent-metrics",
+        artifact_base_dir=tmp_path / "runs",
+    )
+
+    run_dir = Path(result.run_dir)
+    predictions = pd.read_csv(run_dir / "predictions.csv", encoding="utf-8-sig")
+    assert result.metrics["classification"]["accuracy"] == 1.0
+    assert result.metrics["suicidal_intent"]["accuracy"] == 1.0
+    assert result.metrics["runtime"]["call_count"] == 3
+    assert result.metrics["runtime"]["tokens"]["total"] == 15
+    assert result.metrics["agent_metrics"] == []
+    assert "specialist_metrics" not in result.metrics
+    assert "specialist_answers" not in predictions.columns
+    assert "agent_outputs" not in predictions.columns
+    assert predictions["ID"].tolist() == [10, 20]
+    assert predictions["users"].tolist() == [2, 3]
+    assert predictions["sample_id"].tolist() == [10, 20]
+    assert not (run_dir / "agent_metrics.csv").exists()
+    assert result.metrics["optional_artifact_status"]["agent_metrics.csv"] is False
+    assert all(result.metrics["artifact_status"].values())
+    compiled_markdown = (run_dir / "compiled_results.md").read_text(encoding="utf-8")
+    assert "## Per-Agent Metrics" not in compiled_markdown
+
+    run_config = json.loads((run_dir / "run_config.json").read_text(encoding="utf-8"))
+    assert set(run_config["agent_configuration"]) == {"router", "critic"}
+
+
+def test_generic_evaluator_propagates_canonical_id_to_results_and_wrong_id_file(tmp_path):
+    sample = pd.DataFrame(
+        [{"ID": 99, "users": 7, "text": "indicator", "sentiment": "Ideation", "time": 300}]
+    )
+    result = run_evaluation(
+        sample_df=sample,
+        workflow=GenericWorkflow(),
+        config=_config(tmp_path, total_records=1),
+        run_id="generic-canonical-id",
+        artifact_base_dir=tmp_path / "runs",
+    )
+
+    run_dir = Path(result.run_dir)
+    assert (run_dir / "misclassified_ids.txt").read_text(encoding="utf-8") == "99\n"
+    complete_results = json.loads((run_dir / "results.json").read_text(encoding="utf-8"))
+    assert complete_results["results"][0]["ID"] == 99
+    assert complete_results["results"][0]["sample_id"] == 99
+    assert complete_results["results"][0]["users"] == 7
+    assert complete_results["results"][0]["time"] == 300
+
+
+def test_generic_evaluator_accepts_dynamic_agent_outputs_and_metrics(tmp_path):
+    sample = pd.DataFrame(
+        [{"ID": 10, "users": 2, "text": "indicator", "sentiment": "Indicator", "time": 100}]
+    )
+    config = _config(tmp_path, total_records=1)
+
+    def agent_metrics(rows, config, classification, suicidal_intent):
+        return {
+            "router_metrics": {"observed_routes": len(rows)},
+            "agent_metrics": [
+                {
+                    "agent_name": "Router",
+                    "model_name": "router-model",
+                    "task": "route selection",
+                    "accuracy": 1.0,
+                    "f1_score": 1.0,
+                    "precision": 1.0,
+                    "recall": 1.0,
+                }
+            ],
+        }
+
+    result = run_evaluation(
+        sample_df=sample,
+        workflow=GenericWorkflowWithAgentOutputs(),
+        config=config,
+        run_id="generic-agent-metrics",
+        artifact_base_dir=tmp_path / "runs",
+        agent_metrics_provider=agent_metrics,
+    )
+
+    run_dir = Path(result.run_dir)
+    predictions = pd.read_csv(run_dir / "predictions.csv", encoding="utf-8-sig")
+    assert json.loads(predictions.loc[0, "agent_outputs"]) == {
+        "router": {"decision": "Indicator"}
+    }
+    assert "specialist_answers" not in predictions.columns
+    assert result.metrics["router_metrics"] == {"observed_routes": 1}
+    assert result.metrics["optional_artifact_status"]["agent_metrics.csv"] is True
 
 
 def test_evaluator_writes_complete_artifacts_for_fake_model(tmp_path):
@@ -183,17 +379,61 @@ def test_evaluator_writes_complete_artifacts_for_fake_model(tmp_path):
     assert predictions["suicidal_intent"].tolist() == [True, True, True, True]
 
     complete_results = json.loads((run_dir / "results.json").read_text(encoding="utf-8"))
-    assert complete_results["schema_version"] == "1.0"
+    assert complete_results["schema_version"] == "1.1"
     assert complete_results["results"][0]["final_output"] == {
         "label_name": "Indicator",
         "suicidal_intent": True,
     }
     run_config = json.loads((run_dir / "run_config.json").read_text(encoding="utf-8"))
-    assert run_config["agent_configuration"]["Final Judge"] == {
-        "role": "judge",
+    assert run_config["agent_configuration"]["judge"] == {
+        "agent_name": "Final Judge",
         "model_name": "test-model",
         "temperature": 0.0,
     }
+
+
+def test_framework1_wrapper_routes_valid_role_overrides(tmp_path):
+    sample_df = pd.DataFrame(
+        [{"source_row": 10, "text": "indicator text", "sentiment": "Indicator"}]
+    )
+    config = _config(
+        tmp_path,
+        total_records=1,
+        agent_configuration={
+            "Indicator_specialist": {
+                "agent_name": "Indicator Agent",
+                "model_name": "indicator-override",
+                "temperature": 0.0,
+            }
+        },
+    )
+
+    result = run_workflow_evaluation(
+        sample_df=sample_df,
+        model=EvaluatorFakeModel(),
+        agent_models={"Indicator_specialist": EvaluatorFakeModel()},
+        config=config,
+        run_id="test-valid-framework1-override",
+        artifact_base_dir=tmp_path / "runs",
+    )
+
+    assert result.metrics["specialist_metrics"]["Indicator"]["model_name"] == "indicator-override"
+
+
+def test_framework1_wrapper_rejects_unknown_roles(tmp_path):
+    config = _config(
+        tmp_path,
+        total_records=1,
+        agent_configuration={"router": {"model_name": "router-model", "temperature": 0.0}},
+    )
+
+    with pytest.raises(ValueError, match="Unknown framework1 role overrides"):
+        run_workflow_evaluation(
+            sample_df=_sample_df().head(1),
+            model=EvaluatorFakeModel(),
+            config=config,
+            artifact_base_dir=tmp_path / "runs",
+        )
 
 
 def test_evaluator_writes_reasoned_specialist_outputs(tmp_path):

@@ -216,6 +216,19 @@ def _compiled_markdown(
     provider_timing = runtime.get("provider_timing", {})
     failed_calls = [call for call in llm_calls if call.get("error")]
     error_summary = Counter(call["error"].get("error_type", "Unknown") for call in failed_calls)
+    agent_metrics = metrics.get("agent_metrics", [])
+    agent_metric_lines = []
+    if agent_metrics:
+        agent_metric_lines = [
+            "## Per-Agent Metrics",
+            "",
+            _markdown_table(
+                pd.DataFrame(agent_metrics),
+                ["agent_name", "model_name", "task", "accuracy", "f1_score", "precision", "recall"],
+                {"agent_name": "Agent", "model_name": "Model", "f1_score": "F1 Score"},
+            ),
+            "",
+        ]
 
     lines = [
         "# Compiled Evaluation Results",
@@ -256,19 +269,12 @@ def _compiled_markdown(
             {"label_name": "Label", "f1_score": "F1 Score", "tp": "TP", "fp": "FP", "tn": "TN", "fn": "FN"},
         ),
         "",
-        "## Per-Agent Metrics",
-        "",
-        _markdown_table(
-            pd.DataFrame(metrics.get("agent_metrics", [])),
-            ["agent_name", "model_name", "task", "accuracy", "f1_score", "precision", "recall"],
-            {"agent_name": "Agent", "model_name": "Model", "f1_score": "F1 Score"},
-        ),
-        "",
+        *agent_metric_lines,
         "## Confusion Matrix",
         "",
         _confusion_matrix_table(classification["confusion_matrix"]),
         "",
-        "## Suicidal-Intent Metrics",
+        "## Suicidal-Intent Positive-Class Grouping Metrics",
         "",
         _markdown_table(
             pd.DataFrame(suicidal_intent.get("per_class", [])),
@@ -276,7 +282,7 @@ def _compiled_markdown(
             {"class_name": "Value", "f1_score": "F1 Score", "tp": "TP", "fp": "FP", "tn": "TN", "fn": "FN"},
         ) if suicidal_intent else "Not available for this legacy run.",
         "",
-        "### Suicidal-Intent Confusion Matrix",
+        "### Suicidal-Intent Positive-Class Grouping Confusion Matrix",
         "",
         _confusion_matrix_table(suicidal_intent["confusion_matrix"])
         if suicidal_intent.get("confusion_matrix")
@@ -331,7 +337,7 @@ def _compiled_markdown(
 
     limitation = suicidal_intent.get("metric_limitation")
     if limitation:
-        lines.extend(["", "## Suicidal-Intent Metric Limitation", "", f"> {limitation}"])
+        lines.extend(["", "## Suicidal-Intent Grouping Metric Limitation", "", f"> {limitation}"])
 
     if failed_calls:
         lines.extend(
@@ -366,19 +372,19 @@ def _compiled_markdown(
             "",
             "| Artifact | Purpose |",
             "|---|---|",
-            "| `predictions.csv` | Per-record ground truth, prediction, correctness, errors, label-keyed specialist answers, full specialist outputs, and flat specialist answer/reasoning columns. |",
+            "| `predictions.csv` | Per-record source fields, shared outputs, correctness, errors, and optional workflow-supplied agent outputs. |",
             "| `model_metrics.csv` | Aggregate model-level Accuracy, F1, Precision, Recall. |",
             "| `label_metrics.csv` | Per-label one-vs-rest metrics. |",
-            "| `agent_metrics.csv` | Final-judge and specialist-agent metric summary. |",
+            "| `agent_metrics.csv` | Optional workflow-supplied per-agent metric summary; absent when agent tasks are not comparable to ground truth. |",
             "| `suicidal_intent_metrics.csv` | Binary false/true per-class metrics. |",
             "| `metrics.json` | Complete metrics payload. |",
             "| `results.json` | Complete per-record outputs and metrics payload. |",
             "| `misclassified_ids.txt` | IDs with an incorrect final-label evaluation. |",
             "| `suicidal_intent_misclassified_ids.txt` | IDs with an incorrect binary evaluation. |",
-            "| `classification_metrics.svg` | Final-label and suicidal-intent score visualization. |",
+            "| `classification_metrics.svg` | Final-label and suicidal-intent positive-class grouping visualization. |",
             "| `runtime_metrics.svg` | Cost, token, latency, call, failure, and parse-error visualization. |",
             "| `llm_calls.jsonl` | Every LLM request attempt and retry. |",
-            "| `traces.jsonl` | Graph specialist/judge events. |",
+            "| `traces.jsonl` | Workflow-supplied execution events. |",
             "| `trace_summary.json` | Runtime, token, and failure summary. |",
         ]
     )
