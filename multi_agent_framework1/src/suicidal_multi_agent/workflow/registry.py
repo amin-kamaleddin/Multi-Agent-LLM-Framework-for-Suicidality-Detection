@@ -183,6 +183,15 @@ def _run_workflow2_hierarchical(
         )
     )
 
+
+    return run_workflow2_hierarchical_evaluation(
+        sample_df=request.sample_df,
+        model=model,
+        config=request.config,
+        run_id=request.run_id,
+        artifact_base_dir=request.artifact_base_dir,
+    )
+
     
 def _run_workflow3_hierarchical_reviewer(
     request: WorkflowRunRequest,
@@ -213,6 +222,7 @@ def _run_workflow3_hierarchical_reviewer(
         )
     )
 
+     
     return run_workflow3_hierarchical_reviewer_evaluation(
         sample_df=request.sample_df,
         model=model,
@@ -222,13 +232,7 @@ def _run_workflow3_hierarchical_reviewer(
     )
 
 
-    return run_workflow2_hierarchical_evaluation(
-        sample_df=request.sample_df,
-        model=model,
-        config=request.config,
-        run_id=request.run_id,
-        artifact_base_dir=request.artifact_base_dir,
-    )
+
 
 def _framework1_agent_overrides(
     request: WorkflowRunRequest,
