@@ -29,12 +29,28 @@ Available task labels:
 Decision options:
 - SELF_RISK: the author describes their own suicidal thoughts, self-harm,
   preparation, behavior, or attempt.
-- INDICATOR: the text is meaningfully suicide-related, but does not indicate
-  the author's own suicidal risk. This includes discussion of another person,
-  general suicide-related discussion, concern for someone else, or explicit
-  denial of the author's own suicidal intent.
+- INDICATOR: the text is suicide-related, but does not indicate the author's
+  own suicidal risk. This includes discussion of another person, general
+  suicide-related discussion, concern for someone else, or explicit denial
+  of the author's own suicidal intent.
 - UNSUPPORTIVE: the text does not meaningfully concern suicide, self-harm,
   suicidal thinking, suicidal behavior, or suicide attempts.
+
+IMPORTANT:
+This agent performs ONLY the FIRST decision in the hierarchy.
+
+The value of "decision" MUST be EXACTLY one of:
+- SELF_RISK
+- INDICATOR
+- UNSUPPORTIVE
+
+Never output:
+- IDEATION
+- ACTION_PATHWAY
+- BEHAVIOR
+- ATTEMPT
+
+Those labels belong to later agents and are INVALID for this agent.
 
 Return only valid JSON:
 {{
@@ -44,7 +60,6 @@ Return only valid JSON:
 }}
 
 Rules:
-- Confidence must be between 0.0 and 1.0.
 - Do not use INDICATOR merely because SELF_RISK is absent.
 - Use INDICATOR only when the text is still meaningfully suicide-related.
 - Use UNSUPPORTIVE when the text does not match the suicide-risk task.

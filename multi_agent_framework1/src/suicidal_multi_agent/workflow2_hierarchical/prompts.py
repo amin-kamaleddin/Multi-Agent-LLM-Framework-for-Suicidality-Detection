@@ -28,6 +28,22 @@ Decision options:
 - UNSUPPORTIVE: the text does not meaningfully concern suicide, self-harm,
   suicidal thinking, suicidal behavior, or suicide attempts.
 
+IMPORTANT:
+This agent performs ONLY the FIRST decision in the hierarchy.
+
+The value of "decision" MUST be EXACTLY one of:
+- SELF_RISK
+- INDICATOR
+- UNSUPPORTIVE
+
+Never output:
+- IDEATION
+- ACTION_PATHWAY
+- BEHAVIOR
+- ATTEMPT
+
+Those labels belong to later agents and are INVALID for this agent.
+
 Return only valid JSON:
 {{
   "decision": "SELF_RISK" | "INDICATOR" | "UNSUPPORTIVE",

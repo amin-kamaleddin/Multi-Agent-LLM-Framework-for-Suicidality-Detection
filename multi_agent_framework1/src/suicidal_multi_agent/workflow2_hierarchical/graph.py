@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 import operator
-from typing import Annotated, Any, Protocol, TypedDict
+from typing import Annotated, Any, Literal, Protocol, TypedDict
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -35,10 +35,26 @@ class InvokableModel(Protocol):
         ...
 
 
-class NodeDecision(BaseModel):
+class PerspectiveDecision(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    decision: str
+    decision: Literal["SELF_RISK", "INDICATOR", "UNSUPPORTIVE"]
+    confidence: float = Field(ge=0.0, le=1.0)
+    reasoning: str
+
+
+class IdeationActionDecision(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    decision: Literal["IDEATION", "ACTION_PATHWAY"]
+    confidence: float = Field(ge=0.0, le=1.0)
+    reasoning: str
+
+
+class BehaviorAttemptDecision(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    decision: Literal["BEHAVIOR", "ATTEMPT"]
     confidence: float = Field(ge=0.0, le=1.0)
     reasoning: str
 
@@ -192,6 +208,15 @@ class MultiAgentWorkflow:
 
         for attempt in range(1, self.max_retries + 2):
             started = time.perf_counter()
+
+            raw = ""
+            usage = {
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+                "cost": None,
+            }
+
             try:
                 response = self.model.invoke(messages)
                 latency_s = time.perf_counter() - started
@@ -227,11 +252,8 @@ class MultiAgentWorkflow:
                         "attempt": attempt,
                         "model_name": self.model_name,
                         "latency_s": latency_s,
-                        "prompt_tokens": 0,
-                        "completion_tokens": 0,
-                        "total_tokens": 0,
-                        "cost": None,
-                        "raw_output": "",
+                        "raw_output": raw,
+                        **usage,
                         "error": error,
                     }
                 )
@@ -246,7 +268,7 @@ class MultiAgentWorkflow:
             role="perspective_agent",
             system_prompt=PERSPECTIVE_SYSTEM_PROMPT,
             user_prompt_text=user_prompt(state["text"]),
-            schema=NodeDecision,
+            schema=PerspectiveDecision,
         )
 
         if parsed is None:
@@ -292,7 +314,7 @@ class MultiAgentWorkflow:
             role="ideation_action_agent",
             system_prompt=IDEATION_ACTION_SYSTEM_PROMPT,
             user_prompt_text=user_prompt(state["text"]),
-            schema=NodeDecision,
+            schema=IdeationActionDecision,
         )
 
         if parsed is None:
@@ -330,7 +352,7 @@ class MultiAgentWorkflow:
             role="behavior_attempt_agent",
             system_prompt=BEHAVIOR_ATTEMPT_SYSTEM_PROMPT,
             user_prompt_text=user_prompt(state["text"]),
-            schema=NodeDecision,
+            schema=BehaviorAttemptDecision,
         )
 
         if parsed is None:
