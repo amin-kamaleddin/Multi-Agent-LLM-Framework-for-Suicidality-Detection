@@ -11,7 +11,16 @@ import pandas as pd
 
 from ..core.labels import FINAL_LABELS, VALID_LABELS, label_to_suicidal_intent
 from ..data.dataset import DEFAULT_PROCESSED_DIR
-from ..workflow.graph import InvokableModel, MultiAgentWorkflow
+from ..workflow.graph import (
+    InvokableModel,
+    MultiAgentWorkflow as Framework1Workflow,
+)
+from ..workflow2_hierarchical.graph import (
+    MultiAgentWorkflow as HierarchicalWorkflow,
+)
+from ..workflow3_hierarchical_with_review_agent.graph import (
+    MultiAgentWorkflow as HierarchicalReviewerWorkflow,
+)
 from .artifacts import ArtifactWriter
 from .metrics import compute_binary_classification_metrics, compute_classification_metrics, summarize_runtime
 from .reporting import compile_run_results
@@ -228,6 +237,78 @@ def run_evaluation(
     )
 
 
+def run_workflow2_hierarchical_evaluation(
+    *,
+    sample_df: pd.DataFrame,
+    model: InvokableModel,
+    config: EvaluationConfig,
+    run_id: str | None = None,
+    artifact_base_dir: str | Path = "logs/runs",
+    dataset_audit: dict[str, Any] | None = None,
+) -> EvaluationResult:
+    """Run the hierarchical workflow through the shared evaluator."""
+
+    workflow = HierarchicalWorkflow(
+        model=model,
+        model_name=config.model_name,
+        max_retries=config.max_retries,
+        mode=config.mode,
+    )
+
+    resolved_config = EvaluationConfig(
+        **{
+            **asdict(config),
+            "workflow_name": "workflow2_hierarchical",
+            "agent_configuration": config.agent_configuration or {},
+        }
+    )
+
+    return run_evaluation(
+        sample_df=sample_df,
+        workflow=workflow,
+        config=resolved_config,
+        run_id=run_id,
+        artifact_base_dir=artifact_base_dir,
+        dataset_audit=dataset_audit,
+    )
+
+
+def run_workflow3_hierarchical_reviewer_evaluation(
+    *,
+    sample_df: pd.DataFrame,
+    model: InvokableModel,
+    config: EvaluationConfig,
+    run_id: str | None = None,
+    artifact_base_dir: str | Path = "logs/runs",
+    dataset_audit: dict[str, Any] | None = None,
+) -> EvaluationResult:
+    """Run the hierarchical workflow through the shared evaluator."""
+
+    workflow = HierarchicalReviewerWorkflow(
+        model=model,
+        model_name=config.model_name,
+        max_retries=config.max_retries,
+        mode=config.mode,
+    )
+
+    resolved_config = EvaluationConfig(
+        **{
+            **asdict(config),
+            "workflow_name": "workflow3_hierarchical_reviewer",
+            "agent_configuration": config.agent_configuration or {},
+        }
+    )
+
+    return run_evaluation(
+        sample_df=sample_df,
+        workflow=workflow,
+        config=resolved_config,
+        run_id=run_id,
+        artifact_base_dir=artifact_base_dir,
+        dataset_audit=dataset_audit,
+    )
+
+
 def run_workflow_evaluation(
     *,
     sample_df: pd.DataFrame,
@@ -245,7 +326,7 @@ def run_workflow_evaluation(
         role: str(details.get("model_name") or config.model_name)
         for role, details in agent_configuration.items()
     }
-    workflow = MultiAgentWorkflow(
+    workflow = Framework1Workflow(
         model=model,
         model_name=config.model_name,
         max_retries=config.max_retries,

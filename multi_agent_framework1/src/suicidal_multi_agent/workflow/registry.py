@@ -14,7 +14,10 @@ from ..evaluation.evaluator import (
     EvaluationConfig,
     EvaluationResult,
     run_workflow_evaluation,
+    run_workflow2_hierarchical_evaluation,
+    run_workflow3_hierarchical_reviewer_evaluation,
 )
+
 from .models import (
     DeterministicFakeModel,
     build_real_model,
@@ -102,6 +105,24 @@ FRAMEWORK1_AGENT_CONFIG_KEYS = (
     "max_completion_tokens",
 )
 
+WORKFLOW2_HIERARCHICAL_CONFIG_KEYS = (
+    "model",
+    "temperature",
+    "max_completion_tokens",
+    "max_retries",
+    "mode",
+    "fake_llm",
+)
+
+WORKFLOW3_HIERARCHICAL_REVIEWER_CONFIG_KEYS = (
+    "model",
+    "temperature",
+    "max_completion_tokens",
+    "max_retries",
+    "mode",
+    "fake_llm",
+)
+
 
 def _run_framework1(request: WorkflowRunRequest) -> EvaluationResult:
     unknown_keys = sorted(set(request.workflow_config) - set(FRAMEWORK1_CONFIG_KEYS))
@@ -141,7 +162,79 @@ def _run_framework1(request: WorkflowRunRequest) -> EvaluationResult:
         agent_models=agent_models or None,
     )
 
+def _run_workflow2_hierarchical(
+    request: WorkflowRunRequest,
+) -> EvaluationResult:
+    unknown_keys = sorted(
+        set(request.workflow_config)
+        - set(WORKFLOW2_HIERARCHICAL_CONFIG_KEYS)
+    )
+    if unknown_keys:
+        raise ValueError(
+            "Unknown workflow2_hierarchical workflow-config keys: "
+            f"{unknown_keys}"
+        )
 
+    if request.config.mode not in FRAMEWORK1_MODE_NAMES:
+        raise ValueError(
+            f"workflow2_hierarchical mode must be one of "
+            f"{list(FRAMEWORK1_MODE_NAMES)}; got {request.config.mode!r}"
+        )
+
+    model = (
+        DeterministicFakeModel()
+        if request.fake_llm
+        else build_real_model(
+            request.config.requested_model_name,
+            request.config.temperature,
+            request.config.max_completion_tokens,
+        )
+    )
+    return run_workflow2_hierarchical_evaluation(
+        sample_df=request.sample_df,
+        model=model,
+        config=request.config,
+        run_id=request.run_id,
+        artifact_base_dir=request.artifact_base_dir,
+    )
+
+
+
+def _run_workflow3_hierarchical_reviewer(
+    request: WorkflowRunRequest,
+) -> EvaluationResult:
+    unknown_keys = sorted(
+        set(request.workflow_config)
+        - set(WORKFLOW3_HIERARCHICAL_REVIEWER_CONFIG_KEYS)
+    )
+    if unknown_keys:
+        raise ValueError(
+            "Unknown workflow3_hierarchical_reviewer workflow-config keys: "
+            f"{unknown_keys}"
+        )
+
+    if request.config.mode not in FRAMEWORK1_MODE_NAMES:
+        raise ValueError(
+            f"workflow3_hierarchical_reviewer mode must be one of "
+            f"{list(FRAMEWORK1_MODE_NAMES)}; got {request.config.mode!r}"
+        )
+
+    model = (
+        DeterministicFakeModel()
+        if request.fake_llm
+        else build_real_model(
+            request.config.requested_model_name,
+            request.config.temperature,
+            request.config.max_completion_tokens,
+        )
+    )
+    return run_workflow3_hierarchical_reviewer_evaluation(
+        sample_df=request.sample_df,
+        model=model,
+        config=request.config,
+        run_id=request.run_id,
+        artifact_base_dir=request.artifact_base_dir,
+    )
 def _run_framework2(request: WorkflowRunRequest) -> EvaluationResult:
     unknown_keys = sorted(set(request.workflow_config) - set(FRAMEWORK2_CONFIG_KEYS))
     if unknown_keys:
@@ -253,5 +346,29 @@ WORKFLOW_REGISTRY.register(
         runner=_run_framework2,
         config_keys=FRAMEWORK2_CONFIG_KEYS,
         default_mode="evidence",
+    )
+)
+
+WORKFLOW_REGISTRY.register(
+    WorkflowRegistration(
+        name="workflow2_hierarchical",
+        description=(
+            "Hierarchical suicide-risk workflow with coordinated "
+            "specialist analysis and final decision."
+        ),
+        runner=_run_workflow2_hierarchical,
+        config_keys=WORKFLOW2_HIERARCHICAL_CONFIG_KEYS,
+    )
+)
+
+WORKFLOW_REGISTRY.register(
+    WorkflowRegistration(
+        name="workflow3_hierarchical_reviewer",
+        description=(
+            "Hierarchical suicide-risk workflow with confidence-gated "
+            "secondary reviewer."
+        ),
+        runner=_run_workflow3_hierarchical_reviewer,
+        config_keys=WORKFLOW3_HIERARCHICAL_REVIEWER_CONFIG_KEYS,
     )
 )

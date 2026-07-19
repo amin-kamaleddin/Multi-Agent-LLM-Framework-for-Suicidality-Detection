@@ -7,8 +7,13 @@ from suicidal_multi_agent.workflow.registry import (
 )
 
 
-def test_builtin_registry_exposes_framework1_metadata():
-    assert WORKFLOW_REGISTRY.names() == ("framework1", "framework2")
+def test_builtin_registry_exposes_workflow_metadata():
+    assert WORKFLOW_REGISTRY.names() == (
+        "framework1",
+        "framework2",
+        "workflow2_hierarchical",
+        "workflow3_hierarchical_reviewer",
+    )
     assert WORKFLOW_REGISTRY.get("framework1").name == "framework1"
     assert WORKFLOW_REGISTRY.describe()[0]["config_keys"] == [
         "model",
@@ -20,6 +25,8 @@ def test_builtin_registry_exposes_framework1_metadata():
         "agents",
     ]
     assert WORKFLOW_REGISTRY.get("framework2").default_mode == "evidence"
+    assert WORKFLOW_REGISTRY.get("workflow2_hierarchical").default_mode == "bool"
+    assert WORKFLOW_REGISTRY.get("workflow3_hierarchical_reviewer").default_mode == "bool"
 
 
 def test_registry_accepts_new_named_runner_and_rejects_invalid_names():

@@ -55,7 +55,56 @@ def test_list_workflows_reports_valid_cli_names(capsys):
     assert [workflow["name"] for workflow in payload["workflows"]] == [
         "framework1",
         "framework2",
+        "workflow2_hierarchical",
+        "workflow3_hierarchical_reviewer",
     ]
+
+
+@pytest.mark.parametrize(
+    "workflow_name",
+    ["workflow2_hierarchical", "workflow3_hierarchical_reviewer"],
+)
+def test_hierarchical_workflow_fake_llm_smoke(tmp_path, workflow_name):
+    sample_path = tmp_path / "sample.csv"
+    pd.DataFrame(
+        [
+            {
+                "ID": 17,
+                "users": 4,
+                "text": "A suicide-related discussion about another person.",
+                "sentiment": "Indicator",
+                "time": 123,
+            }
+        ]
+    ).to_csv(sample_path, index=False, encoding="utf-8-sig")
+    artifact_dir = tmp_path / "runs"
+
+    assert (
+        cli.main(
+            [
+                "evaluate",
+                "--workflow",
+                workflow_name,
+                "--fake-llm",
+                "--mode",
+                "bool",
+                "--sample-path",
+                str(sample_path),
+                "--artifact-base-dir",
+                str(artifact_dir),
+                "--run-id",
+                "smoke",
+            ]
+        )
+        == 0
+    )
+    run_dirs = list(artifact_dir.iterdir())
+    assert len(run_dirs) == 1
+    metrics = json.loads((run_dirs[0] / "metrics.json").read_text(encoding="utf-8"))
+    assert metrics["evaluation_status"] == "completed"
+    assert metrics["processed_records"] == 1
+    assert metrics["classification"]["failed_records"] == 0
+    assert metrics["runtime"]["failed_llm_attempts"] == 0
 
 
 def test_shared_cli_uses_registered_workflow_config_dataset_and_output_dir(tmp_path):
