@@ -80,7 +80,7 @@ While the original CounselBench focuses on response generation quality, it lacks
     - `ID`: Per-row question/message ID (0-based index). **Unique.**
     - `users`: Author identifier. **Not unique** (a user can post multiple times).
     - `text`: User post content.
-    - `sentiment`: Risk classification label (Ideation, Behavior, Indicator, Attempt).
+    - `sentiment`: Risk classification label (Unsupportive, Ideation, Behavior, Indicator, Attempt).
     - `time`: Unix timestamp.
 - **Purpose**: Provides a labeled ground truth for training/evaluating risk detection models, complementing the generation-focused CounselChat dataset.
 

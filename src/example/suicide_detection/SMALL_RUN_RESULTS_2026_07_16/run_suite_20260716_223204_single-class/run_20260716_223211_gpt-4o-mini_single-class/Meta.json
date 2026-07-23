@@ -1,0 +1,156 @@
+{
+    "cache_mode": "both",
+    "task_name": "suicide_risk_classification",
+    "version": "v1.0",
+    "max_workers": 50,
+    "max_retries": 3,
+    "agent_info": {
+        "name": "gpt-4o-mini-suicide-detector",
+        "version": "1.0",
+        "description": "Agent: gpt-4o-mini-suicide-detector",
+        "type": "OpenAISuicideDetectionAgent",
+        "metadata": {},
+        "is_initialized": true
+    },
+    "dataset_info": {
+        "total_samples": 200,
+        "name": "rsd_15k_sample",
+        "version": "1.0",
+        "description": "Dataset: rsd_15k_sample",
+        "avg_input_length": 373.8,
+        "min_input_length": 5,
+        "max_input_length": 2422
+    },
+    "execution_failures": [],
+    "kwargs": {
+        "n_samples": 200,
+        "agent_mode": "single-class",
+        "base_class": "Unsupportive"
+    },
+    "run_config": {
+        "n_samples": 200,
+        "max_workers": 50,
+        "max_retries": 3,
+        "seed": 42,
+        "timestamp": "2026-07-16T22:32:21.589509",
+        "python_version": "3.12.0",
+        "platform": "Windows-10-10.0.19045-SP0"
+    },
+    "model_config": {
+        "model_name": "openai/gpt-4o-mini",
+        "agent_mode": "single-class",
+        "base_class": "Unsupportive",
+        "host_model": null,
+        "role_models_json": null,
+        "max_host_iterations": 10,
+        "temperature": 0.0,
+        "max_completion_tokens": 500,
+        "system_prompt": "Classify the post into exactly ONE class: Indicator, Ideation, Behavior, or Attempt.\n\nUse these class definitions:\n\n**Unsupportive**\n- The post does NOT indicate the author's own suicidal risk or any connection to suicidal ideation.\n- Includes: discussion of topics unrelated to suicidal ideation or self harm, such as hobbies, nature, and any other topic.\n- However, also includes discussions about different emotions, including negative ones such as anger, sadness and even depression, \n- as long as the author does not indicate at all to be thinking or discussing suicide or self-harm.\n\n**Indicator**\n- The post does NOT indicate the author's own suicidal risk, but might be a window into their inner thoughts related to suicide.\n- Includes: discussion of another person's suicidality, general discussion/news, or explicit denial of own suicidal intent.\n- Person does not seem at any risk, but suicide was mentioned or discussed, even if in an explicit denial, so it should be \n- flagged accordingly.\n- Also includes concern for someone else at risk.\n\n**Ideation**\n- The author expresses suicidal thoughts, wishes, or desire to die/end life.\n- Includes passive or active suicidal thinking, including hypothetical or unrealistic methods.\n- No concrete self-harm/suicide action has been taken in the post.\n\n**Behavior**\n- The author describes preparatory or self-harm behavior beyond verbal thoughts.\n- Includes planning/preparation actions (for example, gathering means, writing notes, preparing for death).\n- Includes non-suicidal self-harm when self-inflicted harm is described, even without explicit intent to die.\n\n**Attempt**\n- The post mentions a suicide attempt (current or past).\n- A past attempt should still be labeled Attempt, even if the current post does not express ongoing suicidal thoughts.\n\nDecision rules:\n- If the post contains mixed signals, choose the class supported by the clearest explicit evidence.\n\nOutput format:\n- Return ONLY one word: Unsupportive, Indicator, Ideation, Behavior, or Attempt."
+    },
+    "dataset_config": {
+        "source": "C:\\Users\\Owner\\Documents\\UofT\\LMP2392\\old_repo\\Suicide-Detection-Agent\\src\\example\\suicide_detection\\data\\rsd_new_200_small_2.csv",
+        "text_field": "text",
+        "label_field": "sentiment",
+        "id_field": "ID",
+        "label_distribution": {
+            "Ideation": 25,
+            "Attempt": 25,
+            "Indicator": 25,
+            "Behavior": 25,
+            "Unsupportive": 100
+        }
+    },
+    "aggregate_metrics": {
+        "accuracy": 0.675,
+        "precision": 0.4963077984817115,
+        "recall": 0.504,
+        "f1_score": 0.45746803780948475,
+        "avg_ttft": 1.1914689123630524,
+        "avg_tps": 74.26156713965405,
+        "avg_generation_time": 0.05828081250190735,
+        "avg_total_time": 1.2497497248649596,
+        "total_prompt_tokens": 101169,
+        "total_completion_tokens": 542,
+        "total_tokens": 101711,
+        "avg_prompt_tokens": 505.845,
+        "avg_completion_tokens": 2.71,
+        "total_cost_usd": 0.015500549999999998
+    },
+    "error": {},
+    "per_class_metrics": [
+        {
+            "class": "Unsupportive",
+            "precision": 0.8888888888888888,
+            "recall": 0.96,
+            "f1": 0.923076923076923,
+            "support": 100
+        },
+        {
+            "class": "Ideation",
+            "precision": 0.35714285714285715,
+            "recall": 0.8,
+            "f1": 0.4938271604938272,
+            "support": 25
+        },
+        {
+            "class": "Behavior",
+            "precision": 0.25,
+            "recall": 0.04,
+            "f1": 0.06896551724137932,
+            "support": 25
+        },
+        {
+            "class": "Indicator",
+            "precision": 0.3333333333333333,
+            "recall": 0.12,
+            "f1": 0.1764705882352941,
+            "support": 25
+        },
+        {
+            "class": "Attempt",
+            "precision": 0.6521739130434783,
+            "recall": 0.6,
+            "f1": 0.6250000000000001,
+            "support": 25
+        }
+    ],
+    "confusion_matrix": {
+        "Unsupportive": {
+            "Unsupportive": 96,
+            "Ideation": 1,
+            "Behavior": 0,
+            "Indicator": 3,
+            "Attempt": 0
+        },
+        "Ideation": {
+            "Unsupportive": 3,
+            "Ideation": 20,
+            "Behavior": 0,
+            "Indicator": 2,
+            "Attempt": 0
+        },
+        "Behavior": {
+            "Unsupportive": 0,
+            "Ideation": 15,
+            "Behavior": 1,
+            "Indicator": 1,
+            "Attempt": 8
+        },
+        "Indicator": {
+            "Unsupportive": 9,
+            "Ideation": 13,
+            "Behavior": 0,
+            "Indicator": 3,
+            "Attempt": 0
+        },
+        "Attempt": {
+            "Unsupportive": 0,
+            "Ideation": 7,
+            "Behavior": 3,
+            "Indicator": 0,
+            "Attempt": 15
+        }
+    },
+    "total_cost_usd_estimate": 0.015500549999999998,
+    "retry_history": []
+}
