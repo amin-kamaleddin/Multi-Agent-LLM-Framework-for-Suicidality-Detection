@@ -1,0 +1,2 @@
+﻿model_name,accuracy,f1_score,precision,recall
+openai/gpt-4o-mini,0.46,0.12602739726027398,0.2,0.092

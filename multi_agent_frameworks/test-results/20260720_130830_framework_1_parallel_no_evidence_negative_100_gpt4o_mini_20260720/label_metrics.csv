@@ -1,0 +1,6 @@
+﻿model_name,label_name,accuracy,precision,recall,f1,f1_score,support,tp,fp,tn,fn
+openai/gpt-4o-mini,Indicator,0.57,0.0,0.0,0.0,0.0,0,0,43,57,0
+openai/gpt-4o-mini,Ideation,0.89,0.0,0.0,0.0,0.0,0,0,11,89,0
+openai/gpt-4o-mini,Behavior,1.0,0.0,0.0,0.0,0.0,0,0,0,100,0
+openai/gpt-4o-mini,Attempt,1.0,0.0,0.0,0.0,0.0,0,0,0,100,0
+openai/gpt-4o-mini,Unsupportive,0.46,1.0,0.46,0.6301369863013699,0.6301369863013699,100,46,0,0,54

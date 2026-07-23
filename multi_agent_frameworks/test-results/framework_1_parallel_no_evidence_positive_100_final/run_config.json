@@ -1,0 +1,46 @@
+{
+  "model_name": "openai/gpt-4o-mini",
+  "requested_model_name": "gpt-4o-mini",
+  "sample_path": "dataset/positive-negative-final-datasets/dataset1_positive_balanced_100_seed42.csv",
+  "dataset_audit_path": null,
+  "max_retries": 3,
+  "max_completion_tokens": 1024,
+  "temperature": 0.0,
+  "total_records": 100,
+  "limit": null,
+  "mode": "bool",
+  "workflow_name": "framework_1_parallel_no_evidence",
+  "workflow_config": {},
+  "agent_configuration": {
+    "Indicator_specialist": {
+      "agent_name": "Indicator Agent",
+      "model_name": "openai/gpt-4o-mini",
+      "temperature": 0.0
+    },
+    "Ideation_specialist": {
+      "agent_name": "Ideation Agent",
+      "model_name": "openai/gpt-4o-mini",
+      "temperature": 0.0
+    },
+    "Behavior_specialist": {
+      "agent_name": "Behavior Agent",
+      "model_name": "openai/gpt-4o-mini",
+      "temperature": 0.0
+    },
+    "Attempt_specialist": {
+      "agent_name": "Attempt Agent",
+      "model_name": "openai/gpt-4o-mini",
+      "temperature": 0.0
+    },
+    "judge": {
+      "agent_name": "Final Judge",
+      "model_name": "openai/gpt-4o-mini",
+      "temperature": 0.0
+    }
+  },
+  "error_stop_failed_llm_attempts": 100,
+  "error_stop_failed_records": 10,
+  "error_stop_rate": 0.5,
+  "error_stop_min_records": 10,
+  "command": "evaluate"
+}

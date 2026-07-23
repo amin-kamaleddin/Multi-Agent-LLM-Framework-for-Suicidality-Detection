@@ -1,0 +1,42 @@
+{
+  "source_path": "dataset\\anonymizing_suicidal_dataset.csv",
+  "normalized_columns": [
+    "ID",
+    "users",
+    "text",
+    "sentiment",
+    "time",
+    "_normalized_text"
+  ],
+  "bom_header_normalized": true,
+  "raw_count": 14613,
+  "raw_label_counts": {
+    "Indicator": 4615,
+    "Ideation": 7133,
+    "Behavior": 2056,
+    "Attempt": 809
+  },
+  "missing_text": 0,
+  "duplicate_normalized_texts": 217,
+  "dataset1_policy": "Exact normalized text dedupe, then remove users with 50 or more posts after deduplication. This reproduces the old 9,800-row Dataset1 behavior.",
+  "dataset1_count": 9800,
+  "dataset1_label_counts": {
+    "Indicator": 2917,
+    "Ideation": 4803,
+    "Behavior": 1461,
+    "Attempt": 619
+  },
+  "cleaned_dataset_path": "dataset\\processed\\dataset1_cleaned.csv",
+  "sampled_dataset_path": "dataset\\processed\\dataset1_balanced_500_seed42.csv",
+  "sample_size": 500,
+  "sample_seed": 42,
+  "sample_label_counts": {
+    "Indicator": 125,
+    "Ideation": 125,
+    "Behavior": 125,
+    "Attempt": 125
+  },
+  "sample_duplicate_normalized_texts": 0,
+  "sample_balanced": true,
+  "audit_path": "dataset\\processed\\dataset1_audit.json"
+}

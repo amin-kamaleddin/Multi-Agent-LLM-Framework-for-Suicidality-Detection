@@ -1,0 +1,665 @@
+{
+  "workflow_name": "framework_1_parallel_no_evidence",
+  "model_name": "openai/gpt-4o-mini",
+  "requested_model_name": "gpt-4o-mini",
+  "mode": "bool",
+  "evaluation_status": "completed",
+  "stop_reason": null,
+  "processed_records": 100,
+  "total_records": 100,
+  "classification": {
+    "model_name": "openai/gpt-4o-mini",
+    "accuracy": 0.46,
+    "precision": 0.2,
+    "recall": 0.092,
+    "f1_score": 0.12602739726027398,
+    "macro_f1": 0.12602739726027398,
+    "model_summary": {
+      "model_name": "openai/gpt-4o-mini",
+      "accuracy": 0.46,
+      "f1_score": 0.12602739726027398,
+      "precision": 0.2,
+      "recall": 0.092
+    },
+    "per_class": [
+      {
+        "model_name": "openai/gpt-4o-mini",
+        "label_name": "Indicator",
+        "accuracy": 0.57,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "f1_score": 0.0,
+        "support": 0,
+        "tp": 0,
+        "fp": 43,
+        "tn": 57,
+        "fn": 0
+      },
+      {
+        "model_name": "openai/gpt-4o-mini",
+        "label_name": "Ideation",
+        "accuracy": 0.89,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "f1_score": 0.0,
+        "support": 0,
+        "tp": 0,
+        "fp": 11,
+        "tn": 89,
+        "fn": 0
+      },
+      {
+        "model_name": "openai/gpt-4o-mini",
+        "label_name": "Behavior",
+        "accuracy": 1.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "f1_score": 0.0,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "tn": 100,
+        "fn": 0
+      },
+      {
+        "model_name": "openai/gpt-4o-mini",
+        "label_name": "Attempt",
+        "accuracy": 1.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "f1_score": 0.0,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "tn": 100,
+        "fn": 0
+      },
+      {
+        "model_name": "openai/gpt-4o-mini",
+        "label_name": "Unsupportive",
+        "accuracy": 0.46,
+        "precision": 1.0,
+        "recall": 0.46,
+        "f1": 0.6301369863013699,
+        "f1_score": 0.6301369863013699,
+        "support": 100,
+        "tp": 46,
+        "fp": 0,
+        "tn": 0,
+        "fn": 54
+      }
+    ],
+    "per_label": [
+      {
+        "model_name": "openai/gpt-4o-mini",
+        "label_name": "Indicator",
+        "accuracy": 0.57,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "f1_score": 0.0,
+        "support": 0,
+        "tp": 0,
+        "fp": 43,
+        "tn": 57,
+        "fn": 0
+      },
+      {
+        "model_name": "openai/gpt-4o-mini",
+        "label_name": "Ideation",
+        "accuracy": 0.89,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "f1_score": 0.0,
+        "support": 0,
+        "tp": 0,
+        "fp": 11,
+        "tn": 89,
+        "fn": 0
+      },
+      {
+        "model_name": "openai/gpt-4o-mini",
+        "label_name": "Behavior",
+        "accuracy": 1.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "f1_score": 0.0,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "tn": 100,
+        "fn": 0
+      },
+      {
+        "model_name": "openai/gpt-4o-mini",
+        "label_name": "Attempt",
+        "accuracy": 1.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "f1_score": 0.0,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "tn": 100,
+        "fn": 0
+      },
+      {
+        "model_name": "openai/gpt-4o-mini",
+        "label_name": "Unsupportive",
+        "accuracy": 0.46,
+        "precision": 1.0,
+        "recall": 0.46,
+        "f1": 0.6301369863013699,
+        "f1_score": 0.6301369863013699,
+        "support": 100,
+        "tp": 46,
+        "fp": 0,
+        "tn": 0,
+        "fn": 54
+      }
+    ],
+    "confusion_matrix": {
+      "Indicator": {
+        "Indicator": 0,
+        "Ideation": 0,
+        "Behavior": 0,
+        "Attempt": 0,
+        "Unsupportive": 0,
+        "Error": 0
+      },
+      "Ideation": {
+        "Indicator": 0,
+        "Ideation": 0,
+        "Behavior": 0,
+        "Attempt": 0,
+        "Unsupportive": 0,
+        "Error": 0
+      },
+      "Behavior": {
+        "Indicator": 0,
+        "Ideation": 0,
+        "Behavior": 0,
+        "Attempt": 0,
+        "Unsupportive": 0,
+        "Error": 0
+      },
+      "Attempt": {
+        "Indicator": 0,
+        "Ideation": 0,
+        "Behavior": 0,
+        "Attempt": 0,
+        "Unsupportive": 0,
+        "Error": 0
+      },
+      "Unsupportive": {
+        "Indicator": 43,
+        "Ideation": 11,
+        "Behavior": 0,
+        "Attempt": 0,
+        "Unsupportive": 46,
+        "Error": 0
+      }
+    },
+    "total": 100,
+    "correct": 46,
+    "failed_records": 0,
+    "failure_rate": 0.0
+  },
+  "suicidal_intent": {
+    "model_name": "openai/gpt-4o-mini",
+    "accuracy": 0.46,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1_score": 0.0,
+    "positive_precision": 0.0,
+    "positive_recall": 0.0,
+    "positive_f1": 0.0,
+    "tp": 0,
+    "fp": 54,
+    "tn": 46,
+    "fn": 0,
+    "positive_class_counts": {
+      "tp": 0,
+      "tn": 46,
+      "fp": 54,
+      "fn": 0
+    },
+    "binary_summary": {
+      "model_name": "openai/gpt-4o-mini",
+      "accuracy": 0.46,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "f1_score": 0.0,
+      "support": 0,
+      "positive_support": 0,
+      "negative_support": 100,
+      "tp": 0,
+      "fp": 54,
+      "tn": 46,
+      "fn": 0
+    },
+    "confusion_matrix": {
+      "false": {
+        "false": 46,
+        "true": 54,
+        "Error": 0
+      },
+      "true": {
+        "false": 0,
+        "true": 0,
+        "Error": 0
+      }
+    },
+    "total": 100,
+    "correct": 46,
+    "failed_records": 0,
+    "failure_rate": 0.0,
+    "ground_truth_counts": {
+      "false": 100,
+      "true": 0
+    },
+    "has_both_ground_truth_classes": false,
+    "metric_limitation": "Only one suicidal_intent ground-truth class is present; the confusion matrix is valid, but metrics for the missing ground-truth class cannot be estimated.",
+    "class_mapping": {
+      "positive": [
+        "Indicator",
+        "Ideation",
+        "Behavior",
+        "Attempt"
+      ],
+      "negative": [
+        "Unsupportive"
+      ]
+    }
+  },
+  "agent_metrics": [
+    {
+      "agent_name": "Indicator Agent",
+      "model_name": "openai/gpt-4o-mini",
+      "task": "Indicator one-vs-rest",
+      "accuracy": 0.57,
+      "f1_score": 0.0,
+      "precision": 0.0,
+      "recall": 0.0
+    },
+    {
+      "agent_name": "Ideation Agent",
+      "model_name": "openai/gpt-4o-mini",
+      "task": "Ideation one-vs-rest",
+      "accuracy": 0.89,
+      "f1_score": 0.0,
+      "precision": 0.0,
+      "recall": 0.0
+    },
+    {
+      "agent_name": "Behavior Agent",
+      "model_name": "openai/gpt-4o-mini",
+      "task": "Behavior one-vs-rest",
+      "accuracy": 1.0,
+      "f1_score": 0.0,
+      "precision": 0.0,
+      "recall": 0.0
+    },
+    {
+      "agent_name": "Attempt Agent",
+      "model_name": "openai/gpt-4o-mini",
+      "task": "Attempt one-vs-rest",
+      "accuracy": 1.0,
+      "f1_score": 0.0,
+      "precision": 0.0,
+      "recall": 0.0
+    },
+    {
+      "agent_name": "Final Judge",
+      "model_name": "openai/gpt-4o-mini",
+      "task": "final label",
+      "accuracy": 0.46,
+      "f1_score": 0.12602739726027398,
+      "precision": 0.2,
+      "recall": 0.092
+    },
+    {
+      "agent_name": "Final Judge",
+      "model_name": "openai/gpt-4o-mini",
+      "task": "suicidal_intent",
+      "accuracy": 0.46,
+      "f1_score": 0.0,
+      "precision": 0.0,
+      "recall": 0.0
+    }
+  ],
+  "runtime": {
+    "call_count": 500,
+    "llm_request_count": 500,
+    "failed_llm_attempts": 0,
+    "json_parsing_errors": 0,
+    "errors_by_type": {},
+    "latency_s": {
+      "min": 0.3887710999988485,
+      "max": 4.166608500003349,
+      "avg": 0.9408973394000059,
+      "total": 470.44866970000294
+    },
+    "tokens": {
+      "prompt_total": 122027,
+      "completion_total": 3949,
+      "total": 125976,
+      "cached_total": 0,
+      "cache_write_total": 0,
+      "avg_prompt_per_request": 244.054,
+      "avg_completion_per_request": 7.898,
+      "avg_total_per_request": 251.952,
+      "avg_cached_per_request": 0.0,
+      "avg_cache_write_per_request": 0.0
+    },
+    "cost_usd": {
+      "total": 0.02067345,
+      "avg_per_call": 4.13469e-05
+    },
+    "provider_timing": {
+      "ttft_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "generation_time_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "provider_latency_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "moderation_latency_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "completion_tps": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "e2e_completion_tps": {
+        "count": 500,
+        "min": 1.2000167522328966,
+        "max": 25.753884611256872,
+        "avg": 9.10124193429807
+      }
+    }
+  },
+  "specialist_metrics": {
+    "Indicator": {
+      "model_name": "openai/gpt-4o-mini",
+      "accuracy": 0.57,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "positive_precision": 0.0,
+      "positive_recall": 0.0,
+      "positive_f1": 0.0,
+      "tp": 0,
+      "fp": 43,
+      "tn": 57,
+      "fn": 0,
+      "positive_class_counts": {
+        "tp": 0,
+        "tn": 57,
+        "fp": 43,
+        "fn": 0
+      },
+      "binary_summary": {
+        "model_name": "openai/gpt-4o-mini",
+        "accuracy": 0.57,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "f1_score": 0.0,
+        "support": 0,
+        "positive_support": 0,
+        "negative_support": 100,
+        "tp": 0,
+        "fp": 43,
+        "tn": 57,
+        "fn": 0
+      },
+      "confusion_matrix": {
+        "false": {
+          "false": 57,
+          "true": 43,
+          "Error": 0
+        },
+        "true": {
+          "false": 0,
+          "true": 0,
+          "Error": 0
+        }
+      },
+      "total": 100,
+      "correct": 57,
+      "failed_records": 0,
+      "failure_rate": 0.0,
+      "ground_truth_counts": {
+        "false": 100,
+        "true": 0
+      },
+      "has_both_ground_truth_classes": false,
+      "metric_limitation": "Only one suicidal_intent ground-truth class is present; the confusion matrix is valid, but metrics for the missing ground-truth class cannot be estimated."
+    },
+    "Ideation": {
+      "model_name": "openai/gpt-4o-mini",
+      "accuracy": 0.89,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "positive_precision": 0.0,
+      "positive_recall": 0.0,
+      "positive_f1": 0.0,
+      "tp": 0,
+      "fp": 11,
+      "tn": 89,
+      "fn": 0,
+      "positive_class_counts": {
+        "tp": 0,
+        "tn": 89,
+        "fp": 11,
+        "fn": 0
+      },
+      "binary_summary": {
+        "model_name": "openai/gpt-4o-mini",
+        "accuracy": 0.89,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "f1_score": 0.0,
+        "support": 0,
+        "positive_support": 0,
+        "negative_support": 100,
+        "tp": 0,
+        "fp": 11,
+        "tn": 89,
+        "fn": 0
+      },
+      "confusion_matrix": {
+        "false": {
+          "false": 89,
+          "true": 11,
+          "Error": 0
+        },
+        "true": {
+          "false": 0,
+          "true": 0,
+          "Error": 0
+        }
+      },
+      "total": 100,
+      "correct": 89,
+      "failed_records": 0,
+      "failure_rate": 0.0,
+      "ground_truth_counts": {
+        "false": 100,
+        "true": 0
+      },
+      "has_both_ground_truth_classes": false,
+      "metric_limitation": "Only one suicidal_intent ground-truth class is present; the confusion matrix is valid, but metrics for the missing ground-truth class cannot be estimated."
+    },
+    "Behavior": {
+      "model_name": "openai/gpt-4o-mini",
+      "accuracy": 1.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "positive_precision": 0.0,
+      "positive_recall": 0.0,
+      "positive_f1": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "tn": 100,
+      "fn": 0,
+      "positive_class_counts": {
+        "tp": 0,
+        "tn": 100,
+        "fp": 0,
+        "fn": 0
+      },
+      "binary_summary": {
+        "model_name": "openai/gpt-4o-mini",
+        "accuracy": 1.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "f1_score": 0.0,
+        "support": 0,
+        "positive_support": 0,
+        "negative_support": 100,
+        "tp": 0,
+        "fp": 0,
+        "tn": 100,
+        "fn": 0
+      },
+      "confusion_matrix": {
+        "false": {
+          "false": 100,
+          "true": 0,
+          "Error": 0
+        },
+        "true": {
+          "false": 0,
+          "true": 0,
+          "Error": 0
+        }
+      },
+      "total": 100,
+      "correct": 100,
+      "failed_records": 0,
+      "failure_rate": 0.0,
+      "ground_truth_counts": {
+        "false": 100,
+        "true": 0
+      },
+      "has_both_ground_truth_classes": false,
+      "metric_limitation": "Only one suicidal_intent ground-truth class is present; the confusion matrix is valid, but metrics for the missing ground-truth class cannot be estimated."
+    },
+    "Attempt": {
+      "model_name": "openai/gpt-4o-mini",
+      "accuracy": 1.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "positive_precision": 0.0,
+      "positive_recall": 0.0,
+      "positive_f1": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "tn": 100,
+      "fn": 0,
+      "positive_class_counts": {
+        "tp": 0,
+        "tn": 100,
+        "fp": 0,
+        "fn": 0
+      },
+      "binary_summary": {
+        "model_name": "openai/gpt-4o-mini",
+        "accuracy": 1.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "f1_score": 0.0,
+        "support": 0,
+        "positive_support": 0,
+        "negative_support": 100,
+        "tp": 0,
+        "fp": 0,
+        "tn": 100,
+        "fn": 0
+      },
+      "confusion_matrix": {
+        "false": {
+          "false": 100,
+          "true": 0,
+          "Error": 0
+        },
+        "true": {
+          "false": 0,
+          "true": 0,
+          "Error": 0
+        }
+      },
+      "total": 100,
+      "correct": 100,
+      "failed_records": 0,
+      "failure_rate": 0.0,
+      "ground_truth_counts": {
+        "false": 100,
+        "true": 0
+      },
+      "has_both_ground_truth_classes": false,
+      "metric_limitation": "Only one suicidal_intent ground-truth class is present; the confusion matrix is valid, but metrics for the missing ground-truth class cannot be estimated."
+    }
+  },
+  "compiled_reports": {
+    "compiled_csv": "D:\\suicidal_detection_paper\\Suicide-Detection-Agent\\multi_agent_frameworks\\test-results\\20260720_130830_framework_1_parallel_no_evidence_negative_100_gpt4o_mini_20260720\\compiled_results.csv",
+    "compiled_markdown": "D:\\suicidal_detection_paper\\Suicide-Detection-Agent\\multi_agent_frameworks\\test-results\\20260720_130830_framework_1_parallel_no_evidence_negative_100_gpt4o_mini_20260720\\compiled_results.md"
+  },
+  "artifact_status": {
+    "run_config.json": true,
+    "dataset_audit.json": true,
+    "sampled_dataset.csv": true,
+    "llm_calls.jsonl": true,
+    "traces.jsonl": true,
+    "predictions.csv": true,
+    "model_metrics.csv": true,
+    "label_metrics.csv": true,
+    "suicidal_intent_metrics.csv": true,
+    "metrics.json": true,
+    "results.json": true,
+    "metrics.md": true,
+    "misclassified_ids.txt": true,
+    "suicidal_intent_misclassified_ids.txt": true,
+    "classification_metrics.svg": true,
+    "runtime_metrics.svg": true,
+    "trace_summary.json": true,
+    "errors.jsonl": true,
+    "compiled_results.csv": true,
+    "compiled_results.md": true
+  },
+  "optional_artifact_status": {
+    "agent_metrics.csv": true
+  }
+}
