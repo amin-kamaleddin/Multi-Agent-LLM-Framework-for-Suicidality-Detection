@@ -30,7 +30,7 @@ try:
     from EvalRing.dataset import CSVDataset, DataFrameDataset
     from EvalRing.agent import MockAgent
     from EvalRing.evaluator import ClassificationEvaluator
-    from EvalRing.utils.global_cache import load_cached_cases as _load_cached_cases
+    from EvalRing.utils.global_cache import _load_cached_cases as _load_cached_cases
     from llm_agent import OpenAISuicideDetectionAgent
 except ImportError as e:
     print(f"Error importing EvalRing: {e}")
@@ -172,7 +172,7 @@ def _make_error_event_writer(error_csv_path: Path, write_lock):
 
 def _build_agent(
     agent_mode: str = "single-class",
-    base_class: str = "Indicator",
+    base_class: str = "Unsupportive",
     host_model: Optional[str] = None,
     role_models_json: Optional[str] = None,
     max_host_iterations: int = 10,
@@ -205,7 +205,7 @@ def _build_agent(
         return agent
 
     print("No OPEN_ROUTER_KEY / OPENAI_API_KEY found in environment. Falling back to MockAgent.")
-    possible_outputs = ["Ideation", "Behavior", "Indicator", "Attempt"]
+    possible_outputs = ["Unsupportive", "Ideation", "Behavior", "Indicator", "Attempt"]
     agent = MockAgent(name="MockSuicideDetectionAgent", possible_outputs=possible_outputs)
     agent.initialize()
     return agent
@@ -269,7 +269,7 @@ def _write_reports(
         key = f"{err}\n{content}"
         error_counts[key] = error_counts.get(key, 0) + 1
 
-    LABELS = ["Ideation", "Behavior", "Indicator", "Attempt"]
+    LABELS = ["Unsupportive","Ideation", "Behavior", "Indicator", "Attempt"]
     observed_labels = sorted(set(y_true_all) | set(y_pred_all))
     all_labels = [label for label in LABELS if label in observed_labels] + [label for label in observed_labels if label not in LABELS]
 
@@ -329,7 +329,7 @@ def _write_reports(
         f.write(f"**Agent:** {result.agent_name}\n")
         f.write(f"**Model:** {getattr(agent, 'model_name', 'N/A')}\n")
         f.write(f"**Task:** {result.task_name}\n")
-        f.write(f"**Dataset:** rsd_15k.csv (n={len(all_cases)})\n")
+        f.write(f"**Dataset:** rsd_new_200_small_2.csv (n={len(all_cases)})\n")
         f.write(f"**Duration:** {result.duration:.4f} s\n")
         f.write(f"**Agent Mode:** {agent_mode}\n")
         f.write(f"**Base Class:** {base_class}\n")
@@ -528,7 +528,7 @@ def _run_retry_failed(meta_path: Path):
     run_dir = meta_path.parent
     
     # Try to load cases using unified loader (tries JSONL > TXT > CSV)
-    all_cases = _load_cached_cases(run_dir)
+    all_cases = None
     
     if not all_cases:
         print(f"No case data found in {run_dir}")
@@ -539,7 +539,7 @@ def _run_retry_failed(meta_path: Path):
     ds_cfg = meta.get("dataset_config", {})
     
     agent_mode = model_cfg.get("agent_mode", "single-class")
-    base_class = model_cfg.get("base_class", "Indicator")
+    base_class = model_cfg.get("base_class", "Unsupportive")
     host_model = model_cfg.get("host_model", None)
     role_models_json = model_cfg.get("role_models_json", None)
     max_host_iterations = model_cfg.get("max_host_iterations", 10)
@@ -696,7 +696,7 @@ def run_main_eval(
         max_host_iterations=max_host_iterations,
     )
 
-    resolved_data_path = Path(data_path) if data_path else (current_file.parent / "data" / "rsd_15k.csv")
+    resolved_data_path = Path(data_path) if data_path else (current_file.parent / "data" / "rsd_new_200_small_2.csv")
 
     if not resolved_data_path.exists():
         print(f"Dataset file not found at: {resolved_data_path}")
@@ -925,7 +925,7 @@ if __name__ == "__main__":
         "--base-class",
         type=str,
         default="Indicator",
-        choices=["Indicator", "Ideation", "Behavior", "Attempt"],
+        choices=["Unsupportive","Indicator", "Ideation", "Behavior", "Attempt"],
         help="Base class used by base-vs-rest-binary mode.",
     )
     parser.add_argument(

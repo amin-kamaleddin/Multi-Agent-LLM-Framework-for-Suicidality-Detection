@@ -1,0 +1,2186 @@
+All Cases Log — Agent: gpt-4o-mini-suicide-detector | Task: suicide_risk_classification
+================================================================================
+
+Sample ID : 150 [FAIL]
+GT        : Ideation
+Pred      : Indicator
+Timing    : TTFT=0.8222s | Gen=0.0156s | TPS=63.99 | Total=0.8378s
+Tokens    : Prompt=617 | Completion=1 | Total=618
+Confidence: 1.000000
+Text:
+My theory on why some people “feel so bad” after a family member commits suicide. It’s the epitome of narcissistic abuse. Your dysfunctional family will scapegoat you and leach of of you spiritually, mentally, physically, emotionally, basically in every sense of the word until you’re dead. But even then they don’t stop. Even then they suck on supply from people around who comfort them at your expense. Painting themselves to be victims and you either selfish or unstable. Selfish for not tolerating their abuse anymore and leaving them behind looking bad. Without giving them the last word, another chance to manipulate and gaslight you, which normally allows them to absolve themselves of all fault leaving you feeling inherently defective. It’s the sad reality for many in our world. Maybe this isn’t everyone’s experience, people are suicidal for different reasons but I think it’s the case for many. It’s parasitic. It’s tragic. It’a heartbreaking.
+----------------------------------------
+
+Sample ID : 491 [FAIL]
+GT        : Ideation
+Pred      : Unsupportive
+Timing    : TTFT=0.5976s | Gen=0.0469s | TPS=85.34 | Total=0.6445s
+Tokens    : Prompt=440 | Completion=4 | Total=444
+Confidence: 1.000000
+Text:
+You can do everything correctly; but if God just throws his hate upon you nothing means anything
+----------------------------------------
+
+Sample ID : 511 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=0.6326s | Gen=0.0312s | TPS=64.01 | Total=0.6638s
+Tokens    : Prompt=601 | Completion=2 | Total=603
+Confidence: 1.000000
+Text:
+Give me a reason There is no good in this world. I’ve been hurt by all the people I trusted. 
+
+This world is selfish and horrible. Every waking moment is like breathing in knives. I’ve stopped eating as much. I can’t sleep anymore. I’ve lost 20 pounds this month. My muscle that I worked hard for is gone. I can’t do anything anymore. I haven’t touched my drum set in months. I haven’t been able to draw in a year. I can’t even read research papers anymore. I haven’t talked to any of my friends in a week. I am turning into nothing. 
+
+I cannot do any of the things I loved anymore. 
+
+If I died now no one would notice. Isn’t it a shame I don’t have everything ready yet? 
+
+Give me a reason why I shouldn’t run the blade into my ribs.
+----------------------------------------
+
+Sample ID : 545 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=0.5562s | Gen=0.1250s | TPS=23.99 | Total=0.6813s
+Tokens    : Prompt=547 | Completion=3 | Total=550
+Confidence: 1.000000
+Text:
+It's insane how lonely people make me feel I'm again on that loop that if I don't say a fucking word, nobody wants to do a shit with me. Not even a single activity that normal friends will do together. They don't even have kids¿? I understand that someone can be busy but this is too much. I'm tired of wasted years waiting for a good party, a good meal, go to a bar ... Today I give up. Being in a tiny room it's hell and this fuckers can't even do an effort.  I'm fighting against the thoughts of killing myself right now and all because of this. Fuck off.
+----------------------------------------
+
+Sample ID : 561 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=1.1108s | Gen=0.0312s | TPS=64.01 | Total=1.1420s
+Tokens    : Prompt=554 | Completion=2 | Total=556
+Confidence: 1.000000
+Text:
+japan i want to jump off a building in japan. ive wanted to move there to get away from my parents. but im 12 and i cant fucking go there lmao?? unless i walk or some shit and die of starvation or something doing so. its funny. my mom just screamed at me and my dad at the top of her lungs and earlier she called me emo for saying they never listened. when they dont. my parents... they take photos of me when im uncomfortable. they forcefully grab me to hug me, guilt tripping me. asking if i remember the time i liked photos and hugs. never did. i just tolerated it.
+----------------------------------------
+
+Sample ID : 821 [FAIL]
+GT        : Attempt
+Pred      : Ideation
+Timing    : TTFT=1.3887s | Gen=0.0469s | TPS=64.03 | Total=1.4355s
+Tokens    : Prompt=988 | Completion=3 | Total=991
+Confidence: 1.000000
+Text:
+I don’t really wanna live past my next birthday My birthday is coming up in a few months and I’ll be turning 20.  Every birthday for me is just depressing, as I was supposed to die years ago, and nobody even cares that I’m still here anyways.  In fact, my birthday has literally been ignored throughout my whole life.  I’ve only had one decent birthday, and now it’s just a bittersweet memory because it was all lies. 
+
+Anyways, so I’ve basically given up on life.  I don’t really see a future for me, as the future I had envisioned for years all came crashing down and destroyed my sense of reality.  
+
+I’m also stuck right now.  My parents are basically holding me hostage, and I feel like a loser and a failure.  I lie to people who question why I ride the bus, or don’t have a job, or still live with my parents.  It’s not like I’m “lazy” or “stupid.”  I don’t even know why that would be the first thing to come to mind about these things, as cars are expensive and housing in my state is horrendously high.  I actually have problems, and my parents are psychotic.  It’s easier to explain that I ride the bus to save money on gas, or say that I’m just living with them until I get enough money for an apartment.  In fact, I had a job once.  I had a car once.  I had an apartment once too.  But I lost all those things because of mental illness and being a fucking stupid idiot.  Now I’m stuck here with my parents, who won’t let me get a job, a car, or mental help.  I rather stay here and suffer than be homeless again, ik, I’m weak.  I rather just die at this point.
+
+Plus, I’ve been winging it for awhile.  I planned on dying years ago, and ever since I failed the first time.  The only future I planned out was with my bf, who I now refer to as an abusive ex, because he severely damaged me.  A lot of people severely damaged me.  Where’s their punishment?  Where’s their damage?  I’ve tried to not think about it, but I feel so fucking angry about it.  I guess me caring is just me being stupid again. 
+
+I also feel like my reason for killing myself this time is stupid.  Last time I killed myself, it was because my ex abused the shit out of me and felt worthless.  Now it’s just because I’m scared of life, which people do everyday just fine.  Why can’t I just be fucking normal.  I’m pathetic.
+----------------------------------------
+
+Sample ID : 1160 [FAIL]
+GT        : Indicator
+Pred      : Unsupportive
+Timing    : TTFT=1.2877s | Gen=0.0227s | TPS=132.02 | Total=1.3105s
+Tokens    : Prompt=661 | Completion=3 | Total=664
+Confidence: 1.000000
+Text:
+I am afraid I am so afraid to lose you. We've gone through so much lately, and life's been so hard on us too, and us finally getting back feels like a dream. But it's a bit scary, I know we've just begun our restoration process and we're still getting back into it, but the wait for us to go back to how we were is really scary. I want to be more affectionate, and more open like I used to, but I'm afraid. I want everything to go back to how it was so fast, I feel so selfish. I want to know how you've really been and know what's on your mind. I'm so sorry for being so emotionally high maintenance. There are a million things I want to tell you but I'm so afraid. While you make me really happy, I feel so overwhelmed by all these thoughts that have built up and I keep having so many anxiety attacks. I don't know why I'm writing this here really anymore, I guess it's my way of letting things out, like a diary, but faster and easier. I just want you to know that I really, really love you and you make me happy, and I'm really sorry for being so selfish sometimes.
+----------------------------------------
+
+Sample ID : 1265 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=5.9784s | Gen=0.0312s | TPS=64.01 | Total=6.0096s
+Tokens    : Prompt=931 | Completion=2 | Total=933
+Confidence: 1.000000
+Text:
+So I told my mom don't be surprised when I kill myself one-day And she said, you're just trying to hurt me like your sister( BTW my sister is fine, just doesn't speak to our mother,  totally our moms fault) anyways I was like are you fucking serious? I'm in so much emotional pain that I'm telling you dont be shocked when I kill myself and all you can say is you're doing it to hurt me? Wow, fuck her. Not like she was the best mom anyways. A narcissistic bitch who cheated on our dad several times throughout their marriage ( some with his own good friends) and can't even admit her fault 25-30 years later. 
+
+My mother is a huge Bible banger and believes that if you just have a relationship with God he will fix everything in your life. Well I'm a 35 year old who has no direction in life career  wise( although I do work and help out financially)still lives at home with father bc he is a registered sex offender who just got caught up in one of those online stings with no actual victim at the age of 26.  I've always been extremely bad with women my whole life and although not a Virgin, I doubt I've had sex even 75 times, which is pathetic at 35. But the reason I'm so inexperienced is bc at 21 I injured my genitals causing ED. Well just now over 14 years later I found out its not a urology issue at all, but a chronic pelvic pain syndrome condition issue that not many doctors recognize called hard flaccid. Anyways its so bad over 14 years ill basically never be able to have a romantic love life, bc itll never work properly again. And yes I going to multiple doctors  , and seeing a pelvic floor specialist physical therapist,  so while the pain has gone away, my ED has n just worsened. 
+
+
+Life is crap. If you can't have what you want most, something most people have but take for granted, than I say whats the point of living? Yeah I've made some mistakes in my 35 years, and I've fucked myself up in multiple ways, but I'm a good guy who is nice and treats women right, so why don't I deserve a loving girlfriend? Is that too much to ask God for? Bc if it is he can just kill me now, before I do it myself sooner rather than later
+
+
+
+Fuck life yall , and I'm so very sorry every single one of yall is going thru depression and suicidal thoughts.
+----------------------------------------
+
+Sample ID : 1334 [PASS]
+GT        : Attempt
+Pred      : Attempt
+Timing    : TTFT=0.7830s | Gen=0.0313s | TPS=31.95 | Total=0.8143s
+Tokens    : Prompt=540 | Completion=1 | Total=541
+Confidence: 1.000000
+Text:
+I can’t take it anymore. I’m a lonely 23 year old loser who will never do anything with his life besides fuck things up and be useless. I can’t even do friendships or relationships without always saying the wrong things or just generally fucking things up all the time. Today especially has been a continuous agonising hell with no escape.
+
+
+My last 2 attempts failed (probably because I’m a failure at everything) I can’t even kill myself :( . I’m gonna try again tonight, and hopefully the old saying “third times the charm” is true. 
+
+Goodbye...
+----------------------------------------
+
+Sample ID : 1342 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=0.8455s | Gen=0.0469s | TPS=64.01 | Total=0.8924s
+Tokens    : Prompt=805 | Completion=3 | Total=808
+Confidence: 1.000000
+Text:
+I've just watched my life pass by I've moved around a lot in my life, and that has resulted in leaving a lot of friendships behind at first. Now, I haven't had any solid friends in 8 years and I'm 21, how depressing is that? Spent high school with fake friends (except for 1 person who I like but we are drafting apart), spent college with no friends and I'll be graduating soon. It has been utterly gutwrenching watching the people I went to elementary and middle school with still being in each others lives on social media, while they have certainly forgotten that I exist. I wish I'd lived in the same place my whole life because I had amazing friends before moving and even after my family's first move, but not since then. Some of this lack of friends could be due to us getting older and people becoming clique-y, but I am so depressed by it. Been in a psych ward 3 years ago. Been on antidepressants since then too. Life is still shitty and if there was to be a car accident, I would accept death with open arms. I have even thought about driving off the road, but can't harm anyone else or leave my parents with a shitty insurance/cleanup scenario. Oh yeah, did I mention I'm an only child who came after SEVEN failed IVF cycles??? Like fuck, killing myself now would just be cruel to my parents, but why must I suffer???
+
+That was a long rant, and I am sorry, but I am seriously just numb at this point, I wish I could cry but I am just gone for. Waste of a life. Ready to die. I'm so shitty that I'm even posting this in the hopes of getting some final attention. What a jerk. 
+
+Well, I'll be here for the next 20-30 years, depending on how long before both my parents pass and I can leave this world without guilt.
+----------------------------------------
+
+Sample ID : 1366 [PASS]
+GT        : Attempt
+Pred      : Attempt
+Timing    : TTFT=1.7868s | Gen=0.0156s | TPS=64.01 | Total=1.8024s
+Tokens    : Prompt=695 | Completion=1 | Total=696
+Confidence: 1.000000
+Text:
+It’s been 10 yrs of the worst of this hell, 8 yrs of constant attempts but obv I wasn’t trying hard enough... enough is enough This Friday, May 14, 2021 is my suicide date either that day or before it (doubt ill make it that long)... currently waiting to see my psychiatrist who I don’t trust anymore as I TRuST NOT 1 SINGLE soul in this entire world anymore because of long history of trauma/ptsd and shit but then bc of trauma from a few days ago that literally I told all the “professionals” about and they didn’t care btw it was them fucking me over (cops physically and verbally abused me, and I told the hospital staff and they didn’t care and just watched them continue to do it and took part in some stuff too) I’m fucking done.. only reason I didn’t die last night was bc I actually wanna live if I could get the help I need right now but bc of my city and it’s healthcare system and workers and how they view me bc of how much I struggle with sh/suicidality they just treat me like shit or are done with me... I just hoped I could get some comfort if there was any left with my psych before I end thing v v soon... save some flowers for me please? I like lavender
+----------------------------------------
+
+Sample ID : 1434 [FAIL]
+GT        : Ideation
+Pred      : Unsupportive
+Timing    : TTFT=0.5399s | Gen=0.0319s | TPS=93.99 | Total=0.5718s
+Tokens    : Prompt=735 | Completion=3 | Total=738
+Confidence: 1.000000
+Text:
+I’m not sure what else to do Three days ago I got kicked from my mums house, this was over a small argument which my brother got involved in and said to her that she’s been an alcoholic for 20 years and she raised us like shit. Which is the truth and she refuses to accept that truth, today I went back there to pick up work clothes as I had work in an hour. It ended with my boyfriend getting verbally abused and my mum trying to hit him in the face but she sortve missed and fell down a few stairs. I did manage to get my work clothes, 
+The issue is, is that now I have no where to stay but my boyfriend’s grandparents with him but they aren’t very happy with me staying here for long.
+
+A few months ago I got kicked out of my grandparents because they are abusive and manipulative people.
+These past weeks I’ve dealt with work targeting me and giving me plenty of unnecessary meetings and I also got diagnosed with hypothyroidism, so I’ve been extremely stressed. I’m trying emergency housing but they take forever to assist with help, and I don’t make enough money to get my own accommodation. There seems to be nowhere out of this constant cycle of bullshit that’s thrown at me. My job isn’t promised in the next month so I don’t know if I can afford a place to live. 
+I’m not sure what kind of advice I’m looking for I just feel extremely alone and depressed currently, and I’m finding it difficult to process everything that’s gone on.
+----------------------------------------
+
+Sample ID : 1489 [PASS]
+GT        : Attempt
+Pred      : Attempt
+Timing    : TTFT=0.7855s | Gen=0.0156s | TPS=64.00 | Total=0.8011s
+Tokens    : Prompt=518 | Completion=1 | Total=519
+Confidence: 1.000000
+Text:
+Laying imy bathtub with blankets working my way through a hug e bottle of Klonopin. Wondering how much it will actually take to tranquilize my decimated brain. Saved up my Rxs for a night like this. I am a blight on this planet. I hope to God this takes me, and if not I've got alcohol to drown the thoughts. I'veocked myself in and I'm reay. Fuck all of this. I'm out. It doesn't get better.
+----------------------------------------
+
+Sample ID : 1553 [FAIL]
+GT        : Behavior
+Pred      : Ideation
+Timing    : TTFT=0.4920s | Gen=0.0468s | TPS=42.71 | Total=0.5389s
+Tokens    : Prompt=522 | Completion=2 | Total=524
+Confidence: 1.000000
+Text:
+Going through the motions, I can’t remember a time where I was not numb. I see everyone talking about hating their lives and I wish I could be them, if only to feel something again. 
+
+Fifteen at the moment and my end date is twenty five but I’m not sure if I can even do it, I can’t even get out of bed most days how am I supposed to kill myself.
+
+Probably going to regret this post later but, oh well. Night guys.
+----------------------------------------
+
+Sample ID : 1671 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=0.5076s | Gen=0.0312s | TPS=64.09 | Total=0.5389s
+Tokens    : Prompt=447 | Completion=2 | Total=449
+Confidence: 1.000000
+Text:
+I’ve been wanting to die for months but I’m still too scared to actually kill myself I LOVE to sleep because of this
+----------------------------------------
+
+Sample ID : 1921 [FAIL]
+GT        : Indicator
+Pred      : Unsupportive
+Timing    : TTFT=0.5094s | Gen=0.0625s | TPS=47.96 | Total=0.5719s
+Tokens    : Prompt=533 | Completion=3 | Total=536
+Confidence: 1.000000
+Text:
+I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself I hate myself
+----------------------------------------
+
+Sample ID : 1964 [FAIL]
+GT        : Behavior
+Pred      : Ideation
+Timing    : TTFT=0.4295s | Gen=0.0312s | TPS=64.00 | Total=0.4607s
+Tokens    : Prompt=478 | Completion=2 | Total=480
+Confidence: 1.000000
+Text:
+there hasn’t been a single day that i haven’t thought about killing myself it wont leave my head. everything just keeps getting worse, my mum saw my self harm scars and got angry at me and told me i have nothing to be upset over and i’m dramatic and stuff lol
+----------------------------------------
+
+Sample ID : 2137 [FAIL]
+GT        : Indicator
+Pred      : Unsupportive
+Timing    : TTFT=0.5076s | Gen=0.0469s | TPS=64.01 | Total=0.5545s
+Tokens    : Prompt=424 | Completion=3 | Total=427
+Confidence: 1.000000
+Text:
+:( :(
+----------------------------------------
+
+Sample ID : 2211 [FAIL]
+GT        : Indicator
+Pred      : Ideation
+Timing    : TTFT=0.9080s | Gen=0.0938s | TPS=32.00 | Total=1.0018s
+Tokens    : Prompt=455 | Completion=3 | Total=458
+Confidence: 1.000000
+Text:
+Drunk and I feel like I can't take it anymore. But I'll probably just wake tomorriw like a coward to the same agony of the washing hours.
+----------------------------------------
+
+Sample ID : 2212 [FAIL]
+GT        : Behavior
+Pred      : Attempt
+Timing    : TTFT=1.5111s | Gen=0.0156s | TPS=64.01 | Total=1.5267s
+Tokens    : Prompt=543 | Completion=1 | Total=544
+Confidence: 1.000000
+Text:
+Bought a gun today. 😍 The cutting brings temporary relief. I'm fucking wrecking my arms and legs with razor blades every night like I've wanted to for years but was always scared of the repurcussions. Deciding to kill myself before the year's through helped a lot with breaking down that barrier. Now I just cut until I can faml asleep. He doesn't even noticethe blood on the sheets. This world is so cruel. No day is different in COVID-times, it's jus st helped me really internalize how much I hate myself. At least I won't be here for took much longer.
+----------------------------------------
+
+Sample ID : 2310 [FAIL]
+GT        : Indicator
+Pred      : Unsupportive
+Timing    : TTFT=0.4506s | Gen=0.0312s | TPS=96.01 | Total=0.4819s
+Tokens    : Prompt=430 | Completion=3 | Total=433
+Confidence: 1.000000
+Text:
+I can't look myself in the mirror anymore
+----------------------------------------
+
+Sample ID : 2367 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=0.4870s | Gen=0.0560s | TPS=35.69 | Total=0.5431s
+Tokens    : Prompt=643 | Completion=2 | Total=645
+Confidence: 1.000000
+Text:
+Help? So my girlfriend pretty much told me that I don't do enough and she is disappointed in me...I do my best at everything I do but apparently it's never enough...I had a good teaching job lined up but that fell apart because the woman training me expected me to be perfect (literately what she told me) and I had never taught before so I was pretty bad...so I can't be a teacher...something I wanted to be for years now...now I don't know what I'm going to do. My family is disappointed in me. I have $5000 in debt because I have a spending problem because I never was taught how to budget and save money. So I'm learning it all on my own. It's gotten better but now I have all of this debt to get out of with barely any income. The job I'm at now abuses me and treats me like crap. My family believes I'm a disappointment along with my girlfriend. I have nothing going for me...what's to stop me from killing myself...there's nothing out there for me. There's no reason for me to keep going...
+----------------------------------------
+
+Sample ID : 2742 [FAIL]
+GT        : Indicator
+Pred      : Ideation
+Timing    : TTFT=0.4806s | Gen=0.0469s | TPS=42.68 | Total=0.5275s
+Tokens    : Prompt=474 | Completion=2 | Total=476
+Confidence: 1.000000
+Text:
+It's agonizing to stay and it's too selfish to leave. What else is there to say? What can you even do when you are your own biggest obstacle, your own worst enemy? Every single day with this shit, for years. I'm so fucking tired.
+----------------------------------------
+
+Sample ID : 2856 [FAIL]
+GT        : Behavior
+Pred      : Ideation
+Timing    : TTFT=0.5097s | Gen=0.0312s | TPS=64.01 | Total=0.5410s
+Tokens    : Prompt=525 | Completion=2 | Total=527
+Confidence: 1.000000
+Text:
+Confidence? I don’t know why I’m writing this but maybe as a diary who knows not like anyone will see it. I have found out that severing brachial artery will leave you dead in 90 seconds has given me no fear and a bit of confidence when the time eventually comes, this isn’t a cry for help so don’t waste your time writing anything. I guess I felt a bit happy knowing that I’ll suffer one last time and all the pain and suffering will finally come to an end
+----------------------------------------
+
+Sample ID : 3441 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=0.4350s | Gen=0.0476s | TPS=41.99 | Total=0.4826s
+Tokens    : Prompt=749 | Completion=2 | Total=751
+Confidence: 1.000000
+Text:
+It’s an on and off feeling I’m 22, and I feel like I’m just wasting away my young years due to few reasons. Everyone is doing things, either studying or working a good job even, and I’m just there. I feel like I’m not going to be alive for long so it’s so hard for me to care or even get on track.
+
+I get this sudden urge several times a week to just end it all. I’d be at so much peace. This life altogether just hurts. I don’t like how this world is to fucking work all the time and then to die whenever. I don’t like being judged. I don’t like people. I feel alone (relationship wise) because of my sexuality. These are all just sum ups, I could get into details but I can’t really be asked rn to go through every single thing. I don’t see any point in living and I’m just useless, like so useless. I think if I go, it’ll be good for others around me cos then I won’t be a burden to them. I don’t think anyone will care, not that I’m really bothered about that, I’m just more focused on ways to end it. I keep telling myself that the sooner I end it, the better it’ll be. I’m scared to commit, and I’m just waiting for that moment to be fully triggered into doing it. So many things bother me. 
+I feel like I will end it soon anyways, or maybe is that just something that helps me get through the days. I can’t tell some days tbh.
+----------------------------------------
+
+Sample ID : 3481 [FAIL]
+GT        : Indicator
+Pred      : Unsupportive
+Timing    : TTFT=0.7297s | Gen=0.0312s | TPS=128.04 | Total=0.7609s
+Tokens    : Prompt=431 | Completion=4 | Total=435
+Confidence: 1.000000
+Text:
+Social anxiety is basically conspiracy theories about yourself.
+----------------------------------------
+
+Sample ID : 3576 [PASS]
+GT        : Indicator
+Pred      : Indicator
+Timing    : TTFT=0.6191s | Gen=0.0000s | TPS=0.00 | Total=0.6191s
+Tokens    : Prompt=487 | Completion=1 | Total=488
+Confidence: 1.000000
+Text:
+I had a question about mental hospitals I’m from the UK and wanted to know that if you don’t show any signs of improvement in a mental hospital, do they end up giving up on you and throwing you out or do they keep you in there until you make the smallest improvement so they can push you out the door?
+----------------------------------------
+
+Sample ID : 3680 [FAIL]
+GT        : Ideation
+Pred      : Unsupportive
+Timing    : TTFT=0.5119s | Gen=0.0312s | TPS=96.01 | Total=0.5431s
+Tokens    : Prompt=482 | Completion=3 | Total=485
+Confidence: 1.000000
+Text:
+crisis text line update 🤡🤡🤡 theyre useless. this girl is just repeating what i say. im like yup thats what i said &amp; then shes like anything else on ur mind? like ma’am i just told u. strangers on reddit help me more smh
+----------------------------------------
+
+Sample ID : 3722 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=1.2986s | Gen=0.0312s | TPS=64.09 | Total=1.3298s
+Tokens    : Prompt=518 | Completion=2 | Total=520
+Confidence: 1.000000
+Text:
+Am i wrong in the head? I dreamt that i cut my wrists in the bathroom and painted 'this is your fault' for all my family and 'friends' to see. My mom finds my cold, lifeless body on the tiles, and fantasize her reaction. But All she would care about is the mess. I create different images in my head of this scene. Its slightly different, ie the person finds me. I just want this dream to become a reality
+----------------------------------------
+
+Sample ID : 3763 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=1.0955s | Gen=0.0625s | TPS=48.00 | Total=1.1580s
+Tokens    : Prompt=465 | Completion=3 | Total=468
+Confidence: 1.000000
+Text:
+I no longer have a choice I don’t know if I can go on anymore. Life has been too painful, especially now starting a new year with the same shit going on. Tomorrow determines if I live or die
+----------------------------------------
+
+Sample ID : 3846 [PASS]
+GT        : Attempt
+Pred      : Attempt
+Timing    : TTFT=1.5892s | Gen=0.0156s | TPS=64.01 | Total=1.6049s
+Tokens    : Prompt=449 | Completion=1 | Total=450
+Confidence: 1.000000
+Text:
+How am i still here I took like 10 sleeping pills 2 hours ago but i feel absolutely nothing, i just want to die
+----------------------------------------
+
+Sample ID : 3938 [FAIL]
+GT        : Attempt
+Pred      : Ideation
+Timing    : TTFT=0.4648s | Gen=0.0312s | TPS=64.01 | Total=0.4961s
+Tokens    : Prompt=748 | Completion=2 | Total=750
+Confidence: 1.000000
+Text:
+Things just keep getting worse My whole life has been difficult. My health, especially, is a problem. I have fibromyalgia, chronic severe migraines, arthritis and herniated discs in my back, arthritis in my knee, bipolar 2 disorder, anxiety, and ptsd. Now, my roommate and I have to move out by the end of this week and we don't have enough money to survive August (we are both substitute teachers, so we are out of work until mid-August. Our first paychecks for the new school year will be on August 28th). We are easily $500 short of surviving the month. We thought it was less, but the place we are moving into temporarily had a whole bunch of hidden fees I only just found out about. I've been crying non-stop. I'm always low-key suicidal and have had a couple half-ass attempts in the past. I also spent a week in a psych hospital in 2012. I have enough of a particular med to take me out easily. MLD is 20 tablets. I have over 200. Plus, my liver is already well damaged from managing chronic pain for 25 years. So, I could end it. Only thing keeping me going is that my son is in American Idiot, which opens September 5th. But I"m not sure I can last that long. I want to see him perform, but I may be homeless by mid-august. My panic and suicidal ideation are growing exponentially, day by day. I just want to stop existing. I want to go to bed and not wake up.
+----------------------------------------
+
+Sample ID : 3997 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=1.4849s | Gen=0.0468s | TPS=42.72 | Total=1.5317s
+Tokens    : Prompt=551 | Completion=2 | Total=553
+Confidence: 1.000000
+Text:
+I realize why it’s time to go. My best friend passed away around Christmas 2019, and I blame myself for it. He was my true love. I should have done more. He’s gone and I’m still alive. It’s not fair. He deserved to live. I am going to kill myself. I keep fucking up in everything I do, even work, which I may be fired from. I ruin everything I touch. My mom got into a car wreck because I stressed her out. Will nitrogen do the trick as I do not want to do the other methods and fail. Please, someone come to my rescue.
+----------------------------------------
+
+Sample ID : 4022 [PASS]
+GT        : Behavior
+Pred      : Behavior
+Timing    : TTFT=1.4694s | Gen=0.0156s | TPS=64.15 | Total=1.4849s
+Tokens    : Prompt=485 | Completion=1 | Total=486
+Confidence: 1.000000
+Text:
+I cut myself on a daily basis A few weeks ago I started cutting myself, since then I haven't been able to stop. Now I do it every day...because my life sucks. It's addicting, I was trying to stop but then yesterday my dad called me a whore..... So I did it again.
+----------------------------------------
+
+Sample ID : 4293 [FAIL]
+GT        : Ideation
+Pred      : Indicator
+Timing    : TTFT=1.1977s | Gen=0.0817s | TPS=24.49 | Total=1.2794s
+Tokens    : Prompt=522 | Completion=2 | Total=524
+Confidence: 1.000000
+Text:
+Useless family/friends. I asked a family member the other day why they didn't bother getting help or trying to help whenever I mentioned I was depressed/suicidal. Their response was "well you tend to calm down after a few days, so I didn't think it was necessary". So I guess, they'll go and get me help when I haven't calmed down and am likely dead 😂 I honestly would love to be a fly on the wall when they realise the error in that logic.
+----------------------------------------
+
+Sample ID : 4381 [FAIL]
+GT        : Behavior
+Pred      : Attempt
+Timing    : TTFT=0.4328s | Gen=0.0469s | TPS=21.34 | Total=0.4797s
+Tokens    : Prompt=479 | Completion=1 | Total=480
+Confidence: 1.000000
+Text:
+I'm doing it on new year's. I don't even care anymore, this world has gone to complete hell. None of my family takes me seriously anymore, after my attempts. I'm going to tie the noose and leave this sick world. And I know exactly how to make it work.
+----------------------------------------
+
+Sample ID : 4607 [FAIL]
+GT        : Behavior
+Pred      : Ideation
+Timing    : TTFT=1.4747s | Gen=0.0313s | TPS=64.00 | Total=1.5059s
+Tokens    : Prompt=572 | Completion=2 | Total=574
+Confidence: 1.000000
+Text:
+every bad thing that’s ever happened to me is burned into my brain idk what to write here I keep deleting everything but lol idk im killing myself this year im so done lol
+
+im gonna be 17 soon and I’m still fat and friendless and ugly. birthday is in 10 days and i think I’m going to kill myself before then. i have to die before im 18
+
+youth has been like. my only valuable trait for as long as I can really remember lol lol I’m falling the fuck apart 
+
+
+it’s whatever though. maybe I should wait until the day after my birthday and spend all the money I get and then kill myself. 10 more days of nightmares and misery uwu love my life
+
+----------------------------------------
+
+Sample ID : 4633 [FAIL]
+GT        : Indicator
+Pred      : Ideation
+Timing    : TTFT=1.5043s | Gen=0.2150s | TPS=9.30 | Total=1.7194s
+Tokens    : Prompt=449 | Completion=2 | Total=451
+Confidence: 1.000000
+Text:
+Oh well I’m tired of this life, my life. It’s exhausting feeling like this. It’s just not worth it anymore.
+----------------------------------------
+
+Sample ID : 4921 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=1.3573s | Gen=0.0469s | TPS=42.67 | Total=1.4042s
+Tokens    : Prompt=638 | Completion=2 | Total=640
+Confidence: 1.000000
+Text:
+Disease filled carcass Should I just give up? Should I just go and kill myself?
+
+I'm sad for no reason, not the first time, not the last one. So sad that I get panic attacks everyday.
+
+My brain is trying to give a reason to these thoughts. To the unexplainable void and sadness I feel. There is no reason. It's just a chemical imbalance.
+
+I lock myself away from everyone because of that. My heart still wishes for someone to care for me while I'm sad and maybe try to make me happier. But I know for a fact that **nothing will make me happier. Not even love, being rich, surrounded by loving friends and family, being smart/goodlooking enough for my own liking. Nothing will.**
+
+And me being sad is dangerous. It's bad. I'm just a pretty shit person in general.
+
+Even when I'm happy I sound insane. Maybe I really am? I'm just trying to be kind, not selfish, considerate. I'm trying to fix things and they still manage to fall apart.
+
+Might as well just die.
+----------------------------------------
+
+Sample ID : 4927 [FAIL]
+GT        : Attempt
+Pred      : Ideation
+Timing    : TTFT=0.4139s | Gen=0.0469s | TPS=42.67 | Total=0.4607s
+Tokens    : Prompt=729 | Completion=2 | Total=731
+Confidence: 1.000000
+Text:
+Suicide is SO tempting to me  Thing is, I've been depressed 9-10 years now. Im 21m. I've been unemployed for 1.5 years, typical living in parents basement. I can't even look for a job thats how depressed I am. I didn't even look for a job. I dropped out of college because i'm beyond useless. Literally I feel nothing, aside from pain or anger/anxiety all god damn day long. Im so bored of everything at this point. No one finds me attractive despite 'putting myself out there', lifted weights for years, did nofap/noporn, all that shit, meditated lots, did alot. Like I have no damn personality tho, depression killed ALL of me it fucking sucks. Thats why i just dont even try anymore for anything. No point of me doing ANYTHING when im depressed. Honestly, I just wanna kill myself. I went from being religious to non religious, and meh if there is a god its OBVIOUS it hates me. So if there is hell after this hell atleast this life prepared me. I mean i am sorry to my parents but like, the fuck can i do. I dont wanna live. I've heard ALL the fucking advice in the world, i've tried so much. I'm tired. Nothing works anymore. Pyschedelics fucked my head up so much that weed no longer works, alcohol doesn't. Nothing does. No one cares either and even if they do it changes nothing. Fuck suicide is SO tempting.
+----------------------------------------
+
+Sample ID : 4982 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=1.0642s | Gen=0.2480s | TPS=12.10 | Total=1.3122s
+Tokens    : Prompt=438 | Completion=3 | Total=441
+Confidence: 1.000000
+Text:
+i feel so bad being a lesbian i think about harming myself everyday because of it
+----------------------------------------
+
+Sample ID : 5050 [PASS]
+GT        : Attempt
+Pred      : Attempt
+Timing    : TTFT=0.5566s | Gen=0.0312s | TPS=32.00 | Total=0.5879s
+Tokens    : Prompt=461 | Completion=1 | Total=462
+Confidence: 1.000000
+Text:
+Please help me I took 15 ibuprofen (6,000mg) and 10 prozac (200mg) will i be okay? what do i do?
+please help, thank you
+----------------------------------------
+
+Sample ID : 5064 [FAIL]
+GT        : Behavior
+Pred      : Attempt
+Timing    : TTFT=0.5587s | Gen=0.0156s | TPS=64.00 | Total=0.5744s
+Tokens    : Prompt=536 | Completion=1 | Total=537
+Confidence: 1.000000
+Text:
+Just fucked up I just fucked up, I ordered something online to as an easy way to end my life. It's completely legal, but didn't realise it's on a list of 'reportable' substances in the UK, and if it's suspicious the police are told etc etc. Since looking it up apparently the police have actually done welfare checks on people for this. All I wanted was an easy way out for when I needed it - fuck. Do you think they would report me for buying it? Why sell it tho if you would report people for buying? damn I screwed up
+----------------------------------------
+
+Sample ID : 5124 [FAIL]
+GT        : Behavior
+Pred      : Ideation
+Timing    : TTFT=0.6672s | Gen=0.0781s | TPS=38.40 | Total=0.7453s
+Tokens    : Prompt=939 | Completion=3 | Total=942
+Confidence: 1.000000
+Text:
+Covid makes it worse. I am in hell. I'm so alone, and that's true even when I'm amongst other people.  I have insane abandonment issues, but simultaneously this painful feeling of inability to connect when people are open.  When people aren't open, there is no learning experience, because ghosting doesn't tell you much about the situation unless you can figure it out on your own, and I mainly don't figure a thing out except to get more paranoid.
+
+Some people get ghosted looking for sex, and I'm not looking for that, and it makes me feel even sadder to not be looking for it.  I just want to have some human connection.  Honestly, most sex I've had was to try and have someone that felt they couldn't just leave me as easily.
+
+This is not a plea for attention, or at least not one that is a hope for salvation, just a warning.  All that comes from places like this subreddit is people that feel saying "don't kill yourself" does something in itself.  All that does is tell the person to wait for help that isn't coming.  Saying that a person is dealing with a temporary problem or that things get better is sadistic when things tend to get worse.
+
+I'm so bad at life that I'm terribly scared of how to accomplish death.  I don't want my head to explode via shotgun, because my father died without a funeral and I think for some people a closed casket is worse than an open one.  But for handguns I'm too stupid to understand if a small caliber or large caliber really makes a difference if shooting myself through my upper palate in my mouth.  I've looked into other options, but they're even scarier - I think of Mark Linkous overdosing, but waking up paralyzed from his leg oxygen being cut off.  A failed suicide that leaves you unable to attempt again is the worst fate.
+
+This is all while my body is continuously accompanied by death.  I'm nowhere close to dying, but the health issues I have make me so much lower than what I would consider a living person.  Every morning I wake in pain, and most of the day is depression and physical pain, until the night that I spend in high anxiety about what dreams would come if I fall asleep, or maybe I'm just afraid of the people who rape you when you're vulnerable.
+
+It doesn't get better.  If you are holding out for a miracle, no miracle is coming.  End it now, the world has evolved to be tooth and claw, never ending pain, and people self righteous in sociopathy.
+----------------------------------------
+
+Sample ID : 5350 [FAIL]
+GT        : Attempt
+Pred      : Behavior
+Timing    : TTFT=1.1935s | Gen=0.0702s | TPS=28.48 | Total=1.2637s
+Tokens    : Prompt=444 | Completion=2 | Total=446
+Confidence: 1.000000
+Text:
+i took a few parcocetomals i didnt have enough only 7 i feel like such a pussy
+----------------------------------------
+
+Sample ID : 5569 [PASS]
+GT        : Attempt
+Pred      : Attempt
+Timing    : TTFT=1.4334s | Gen=0.0156s | TPS=64.29 | Total=1.4489s
+Tokens    : Prompt=473 | Completion=1 | Total=474
+Confidence: 1.000000
+Text:
+Really fucking wish I died that day... Tried to suicide attempt but fucking flopped. Note to self eating 15 paracetomals wont kill you only fuck your body up. 
+
+And I really thought I was gonna do better but here we are.
+----------------------------------------
+
+Sample ID : 5631 [FAIL]
+GT        : Indicator
+Pred      : Unsupportive
+Timing    : TTFT=0.4629s | Gen=0.0312s | TPS=96.01 | Total=0.4941s
+Tokens    : Prompt=477 | Completion=3 | Total=480
+Confidence: 1.000000
+Text:
+Hey if youre seeing this and youre feeling alone i have a playlist i made full of wonderful songs that may help These songs are have each saved my life at least once and i hope they can help someone else here too. if you need to talk feel free to comment here.
+----------------------------------------
+
+Sample ID : 5730 [FAIL]
+GT        : Behavior
+Pred      : Ideation
+Timing    : TTFT=0.4920s | Gen=0.0469s | TPS=42.62 | Total=0.5389s
+Tokens    : Prompt=528 | Completion=2 | Total=530
+Confidence: 1.000000
+Text:
+Would a break up be easier on him? Made up my mind to kill myself today but I can't decide if I should break up with my boyfriend beforehand. He's such a sweet dear and so I would like to make it as easy as possible for him to get over my death. Either way it's going to hurt but would it be easier if I break up with him? I don't want people to talk shit but I made up my mind to die today so not killing myself is not an option.
+
+Thanks for the opinions in advance!
+----------------------------------------
+
+Sample ID : 5766 [PASS]
+GT        : Attempt
+Pred      : Attempt
+Timing    : TTFT=0.5410s | Gen=0.0156s | TPS=64.02 | Total=0.5566s
+Tokens    : Prompt=493 | Completion=1 | Total=494
+Confidence: 1.000000
+Text:
+I’m trying again tonight If you look back on my history of posting you will see that just a few days ago I took 40 something pills. Yes well now life is worse again and I’m going to take even more tonight if I can find enough to do that with. My goal is to take around 100 pills of whatever I can find.
+----------------------------------------
+
+Sample ID : 5831 [FAIL]
+GT        : Indicator
+Pred      : Ideation
+Timing    : TTFT=1.2826s | Gen=0.0414s | TPS=48.35 | Total=1.3240s
+Tokens    : Prompt=441 | Completion=2 | Total=443
+Confidence: 1.000000
+Text:
+so tired, i want to end it as soon as possible, no one shares my pain 
+----------------------------------------
+
+Sample ID : 5985 [FAIL]
+GT        : Behavior
+Pred      : Attempt
+Timing    : TTFT=1.4079s | Gen=0.0300s | TPS=33.35 | Total=1.4379s
+Tokens    : Prompt=509 | Completion=1 | Total=510
+Confidence: 1.000000
+Text:
+I don’t want to be here anymore I haven’t cut in over 5 years and i just did. I feel so empty and invalidated i just want to sleep and don’t wake up tomorrow. I hope this will finally make some sense. I just want the pain to stop. I just want to be loved, to be seen. I just took a pill i hope i don’t wake up tomorrow. I’m so sorry
+----------------------------------------
+
+Sample ID : 6045 [FAIL]
+GT        : Indicator
+Pred      : Ideation
+Timing    : TTFT=0.4962s | Gen=0.0312s | TPS=64.01 | Total=0.5274s
+Tokens    : Prompt=563 | Completion=2 | Total=565
+Confidence: 1.000000
+Text:
+I've had enough. I have just finished university. I have no job and just come out as transgender (I've known for many years). The waiting list for the gender dysphoria clinic in my area is 39 months so my life is on complete hold. I can't stand my facial hair and I hate having nothing on my chest. It makes me suicidal knowing I was born in the wrong body. I can't even go private since I have no money cos of covid which also means I can't buy woman things. I feel like my life is on hold and I can't leave the house in fear of being called a man when I'm not. I'm a freak and I'm done. Gonna end it all soon.
+----------------------------------------
+
+Sample ID : 6144 [FAIL]
+GT        : Behavior
+Pred      : Indicator
+Timing    : TTFT=0.5118s | Gen=0.0156s | TPS=64.01 | Total=0.5274s
+Tokens    : Prompt=443 | Completion=1 | Total=444
+Confidence: 1.000000
+Text:
+Could a stun gun/taser kill me if it’s used over the heart? (For research purposes)
+----------------------------------------
+
+Sample ID : 6203 [PASS]
+GT        : Attempt
+Pred      : Attempt
+Timing    : TTFT=1.5318s | Gen=0.0156s | TPS=63.99 | Total=1.5475s
+Tokens    : Prompt=709 | Completion=1 | Total=710
+Confidence: 1.000000
+Text:
+i can't take it anymore i've attempted suicide 3 times and obviously failed. twice landed myself in the ICU then psych ward (overdose).    
+
+i have a really good life. but i can't handle the pain anymore. i'm a sex and love addict, codependent, addicted to pills, insecure, self loathing, eating disorder, depressed, borderline. i hate myself so fucking much. i hate my face. i hate my body. my tattoos. my hair. my thighs. my stomach.    
+
+i have really good friends but it's not enough anymore. it used to be enough. i have 2 good jobs. i'm dating people. it's not enough.   
+
+i wish i had the courage to really truly kill myself. i'm afraid of what comes after. i'm afraid i succeeded in my overdoses and this is hell. but i have no way of knowing.    
+
+i can't take it anymore. i'm so fucking miserable. i hate living in my body. all i do is eat, and take pills, sleep as much as i can. i self harm by looking at old photos and videos of people who used to love me, but don't anymore.    
+
+please make it stop. i'm so fucking miserable. i can't do it anymore. i truly have nothing to live for. any happiness i have, it goes away. i can't take it. please make it stop. please let me die and go somewhere better. please.
+----------------------------------------
+
+Sample ID : 6360 [FAIL]
+GT        : Attempt
+Pred      : Ideation
+Timing    : TTFT=0.5000s | Gen=0.0389s | TPS=51.41 | Total=0.5389s
+Tokens    : Prompt=466 | Completion=2 | Total=468
+Confidence: 1.000000
+Text:
+Is it normal to dream about committing suicide? I’ve been having the same depressing dreams this past week, I would go to sleep just to wake up and remember that I had tried to commit suicide multiple times when sleeping.
+----------------------------------------
+
+Sample ID : 6832 [FAIL]
+GT        : Indicator
+Pred      : Ideation
+Timing    : TTFT=1.2459s | Gen=0.0468s | TPS=42.70 | Total=1.2927s
+Tokens    : Prompt=455 | Completion=2 | Total=457
+Confidence: 1.000000
+Text:
+Even if I jump off an overpass and get run over by three cars which then smash into each other all I’ll be known as was an unidentifiable male
+----------------------------------------
+
+Sample ID : 6855 [FAIL]
+GT        : Indicator
+Pred      : Ideation
+Timing    : TTFT=1.4849s | Gen=0.0313s | TPS=95.78 | Total=1.5162s
+Tokens    : Prompt=442 | Completion=3 | Total=445
+Confidence: 1.000000
+Text:
+It’s all I can think about Please someone talk to me. I don’t know what to do
+----------------------------------------
+
+Sample ID : 6911 [FAIL]
+GT        : Indicator
+Pred      : Ideation
+Timing    : TTFT=1.2595s | Gen=0.0717s | TPS=41.86 | Total=1.3311s
+Tokens    : Prompt=617 | Completion=3 | Total=620
+Confidence: 1.000000
+Text:
+Well looks like I'm back It's been a year since I last posted here and I'm in the exact same situation. I'm sick and tired of this vicious cycle of highs and lows. I really can't handle it anymore.. I don't know what to do with myself. I feel like a robot at this point, its so weird cus its like I feel nothing and like I'm overloading at the same time. I just want someone to care about me or to listen to how I actually feel for once instead of relying on me for stability when I'm not fucking stable myself. I'm exhausted. I don't know why I can't just enjoy my life, I really don't. I should enjoy it yet my jackass of a brain doesn't want to allow it. I don't think anyone even realises how bad I am again, like when I tell someone I need them it just flies over their head. I'm really trying but it feels completely hopeless bc I know I should be fine... but I'm just not.
+----------------------------------------
+
+Sample ID : 7107 [FAIL]
+GT        : Indicator
+Pred      : Unsupportive
+Timing    : TTFT=0.7382s | Gen=0.0811s | TPS=49.32 | Total=0.8193s
+Tokens    : Prompt=459 | Completion=4 | Total=463
+Confidence: 1.000000
+Text:
+Wake me up when it is over So wake me up when it's all over When I'm wiser and I'm older All this time I was finding myself And I didn't know﻿ I was lost.
+----------------------------------------
+
+Sample ID : 7274 [FAIL]
+GT        : Behavior
+Pred      : Attempt
+Timing    : TTFT=2.2425s | Gen=0.0156s | TPS=63.99 | Total=2.2581s
+Tokens    : Prompt=659 | Completion=1 | Total=660
+Confidence: 1.000000
+Text:
+What should I do I'm 17(f) from Germany.
+Never had a boyfriend and I don't want to have one, I don't want to lose my innocence.
+I regret that i had my first kiss on MDMA, because I could'nt control myself and my friend didn't stop me (even though he has gf).
+My friends never take the time to talk to me and no i won't make new friends (i don't have to strenght to make new ones).
+I Accidentally met someone on Omegle who is 25 years old and I fell in love with him.
+And we talked so much, we would fall asleep during the phonecalls, we would tell each other just everything.
+I thought that was it. I finally felt something new.
+Yeah
+We met
+I got clingy
+I confessed 
+He doesn't want to talk to me anymore
+He knows that i'm suicidal 
+He said that i craved for his attention
+I'm gonna prove him wrong
+
+
+I don't care anymore what you people are gonna say
+I will kill myself and find my peace
+Question: Do you think that I should take MDMA to reduce the survival instinct?
+I choose the train suicide.
+----------------------------------------
+
+Sample ID : 7325 [FAIL]
+GT        : Behavior
+Pred      : Ideation
+Timing    : TTFT=0.8633s | Gen=0.0468s | TPS=42.70 | Total=0.9101s
+Tokens    : Prompt=607 | Completion=2 | Total=609
+Confidence: 1.000000
+Text:
+Dying in a dream has made the decision to die easier I won't lie. I'm scared about fuckin it up but oh well I got executed in a dream, suddenly i couldn't feel anything physically, everything went black then this feeling of emptiness hit, the most horrible feeling I've ever experienced. I said "I'm dying, I'm dead" then I woke up thinking i was actually dead. Unlucky i guess. I'm still alive because I can't get a gun, I'm too broke and of course i didn't win the country lottery,wrong place, wrong time, wrong everything. I've been ready to die since 2018, I'm just so unlucky though, if I threw myself from a building I'd hit something break every bone and still survive so I can't do that. It's time to get a gun and do it, thought about suicide by cop but it's too slow and id appear on the news it's just not worth it.
+----------------------------------------
+
+Sample ID : 7362 [FAIL]
+GT        : Behavior
+Pred      : Ideation
+Timing    : TTFT=0.4891s | Gen=0.0383s | TPS=52.16 | Total=0.5275s
+Tokens    : Prompt=517 | Completion=2 | Total=519
+Confidence: 1.000000
+Text:
+Im killing myself today I have to end this madness.. No money, homeless, no clean clothes, I smell, I cant go on like this, its been 3yrs of hell, not fire and brimstone.. More like every single person i have met has betrayed me, lied, drugged me, raped me, tried to coerce me into fucking men, sucking dick... I cannot go on like this.. I have to kill myself.. I must see this through
+----------------------------------------
+
+Sample ID : 7393 [FAIL]
+GT        : Indicator
+Pred      : Unsupportive
+Timing    : TTFT=0.6212s | Gen=0.0625s | TPS=64.01 | Total=0.6837s
+Tokens    : Prompt=550 | Completion=4 | Total=554
+Confidence: 1.000000
+Text:
+Just need to be honest somewhere I have literally no one to talk too.
+I mean, I do, what I mean is that I don’t trust anyone, I feel like I need to maintain my image of being that person everyone can go to with things.
+I’m so so so exhausted already with my own life and I feel like I’m constantly being a therapist to everyone else in my life.
+Even if they feel bad for venting and ask me before doing so, of course I’m going to say yes, because I’m a people pleaser and I do care. 
+
+
+Point is, I’m tired, exhausted and lonely.
+----------------------------------------
+
+Sample ID : 7418 [FAIL]
+GT        : Indicator
+Pred      : Ideation
+Timing    : TTFT=0.9393s | Gen=0.0469s | TPS=64.00 | Total=0.9862s
+Tokens    : Prompt=695 | Completion=3 | Total=698
+Confidence: 1.000000
+Text:
+There's only one way to end this. For context re: degrees etc, I'm in Australia.
+
+I got diagnosed with bipolar in 2016, and the meds I was put on meant I could no longer finish my degree (it was in music performance, I had really bad hand tremors). I also can't drive, so that basically sank all of my job prospects. Haven't been able to get a proper job since.
+
+Switched to some shiny new degree the uni had just made up, called Electronic Music. Didn't learn shit (also the degree itself was seriously mismanaged, but that's a story for another day). I graduate in about four weeks with a completely useless degree. 
+
+&amp;#x200B;
+
+&amp;#x200B;
+
+ Job-wise, I thought maybe I could get a retail job if I volunteered at a charity shop first, but that was a complete trap. I've been working at that shop for 2+ years and I still can't get an interview. 
+
+Working at the shop is boring at best, some days I get abused by paid staff, and there's no room to get promoted. I fucking hate it, so I probably shouldn't be trying to get into retail anyway.   
+
+
+&amp;#x200B;
+
+I graduate end of this year (no ceremony of course, thanks covid), and honestly? I hate m degree
+----------------------------------------
+
+Sample ID : 7446 [FAIL]
+GT        : Behavior
+Pred      : Ideation
+Timing    : TTFT=0.9861s | Gen=0.0312s | TPS=64.09 | Total=1.0173s
+Tokens    : Prompt=537 | Completion=2 | Total=539
+Confidence: 1.000000
+Text:
+I'll probably kill myself tomorrow I'm done with my life. No one gives a fuck and the ones who used to care (or at least I think they cared) are far from me because I isolated myself.
+
+there's no reason for me to live anymore. I don't feel exactly ready to die but I don't want to wait
+
+I should be studying and thinking about which university I want to go, instead I'm researching about ways to die. I'm wasting my life but there's nothing else I want to do.
+
+I'm afraid I'll fail and be disabled or end up having an even worse life
+----------------------------------------
+
+Sample ID : 7732 [PASS]
+GT        : Attempt
+Pred      : Attempt
+Timing    : TTFT=1.3769s | Gen=0.0156s | TPS=64.02 | Total=1.3925s
+Tokens    : Prompt=471 | Completion=1 | Total=472
+Confidence: 1.000000
+Text:
+Im fucked There’s nothing I can do to get help besides almost die. So either I get better or I die so here I go im going to down as many pills as I can find. Im sorry I just can’t do this shit anymore
+----------------------------------------
+
+Sample ID : 7787 [FAIL]
+GT        : Attempt
+Pred      : Ideation
+Timing    : TTFT=1.5559s | Gen=0.0333s | TPS=60.04 | Total=1.5892s
+Tokens    : Prompt=620 | Completion=2 | Total=622
+Confidence: 1.000000
+Text:
+big balls being crushed and tortured dude im fucking 22 years old and spent my birthday fucking crying in the darkness of my room in my stupid shared apartment. everything is fucking shitty and fucking awful. i want to fucking kill myself because my life has been nothing but fucking garbage since the time my mother fucking conceived me. i really dont think anything will ever get fucking better because no matter how much i fucking try nothing works out. and its all my fucking fault. i am a horrible and disgusting human being and i dont deserve to be alive. i have no friends. i am miserable. all my co workers seem hate me. people fucking hate me. im just going to fucking sit and rot alone and continue to fucking live out my life until i get grab a huge bag of fucking dope and OD. id be doing the world a fucking favor. also im fucking sick of this fucking planet thats another thing. i fucking hate this world. and i hate everything and im terrible ok thanks bye
+----------------------------------------
+
+Sample ID : 7880 [PASS]
+GT        : Attempt
+Pred      : Attempt
+Timing    : TTFT=1.5251s | Gen=0.0231s | TPS=43.38 | Total=1.5481s
+Tokens    : Prompt=601 | Completion=1 | Total=602
+Confidence: 1.000000
+Text:
+There must be a reason I survived the first time, right? Am I giving up my second chance? A while ago I attempted suicide by hanging. When I was discovered I had no heartbeat and they had to do CPR and shock me. I woke up a few days later in the ICU with a deep rope imprint on my neck and broken ribs. I was in the hospital for several months. I cannot fucking believe I survived that. If they had found me a minute later it may have been too late.
+
+I still want to die. I want to do it to make sure I would not be stopped. But there is this tiny part of me that says maybe there is a reason I survived, some purpose I haven't yet fulfilled. I don't know...
+
+In a way it makes me want death even more I felt the peace of death. I don't know why they couldn't just let me go.
+----------------------------------------
+
+Sample ID : 7884 [FAIL]
+GT        : Behavior
+Pred      : Ideation
+Timing    : TTFT=0.4857s | Gen=0.0393s | TPS=50.90 | Total=0.5250s
+Tokens    : Prompt=457 | Completion=2 | Total=459
+Confidence: 1.000000
+Text:
+im at the end i want to hang myself i want to i want to i want to my head keeps telling me to do it i need fucking help it hurts too much please
+----------------------------------------
+
+Sample ID : 8536 [FAIL]
+GT        : Indicator
+Pred      : Ideation
+Timing    : TTFT=0.9904s | Gen=0.0781s | TPS=38.41 | Total=1.0685s
+Tokens    : Prompt=432 | Completion=3 | Total=435
+Confidence: 1.000000
+Text:
+I just want to stay in bed my whole life
+----------------------------------------
+
+Sample ID : 8707 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=0.4181s | Gen=0.0271s | TPS=73.72 | Total=0.4452s
+Tokens    : Prompt=469 | Completion=2 | Total=471
+Confidence: 1.000000
+Text:
+I don’t think I could ever be myself Coming out and sharing my feelings with people in real life? I don’t think I’ll ever be able to do any of that, every time I think about that I just want to die
+----------------------------------------
+
+Sample ID : 8752 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=1.2323s | Gen=0.0428s | TPS=46.78 | Total=1.2751s
+Tokens    : Prompt=447 | Completion=2 | Total=449
+Confidence: 1.000000
+Text:
+Everyday is a reason to finally end it. Every. FUCKING. DAY.
+JUST FUCKING KILL ME ALREADY
+----------------------------------------
+
+Sample ID : 8953 [FAIL]
+GT        : Indicator
+Pred      : Ideation
+Timing    : TTFT=0.8654s | Gen=0.0780s | TPS=38.44 | Total=0.9434s
+Tokens    : Prompt=538 | Completion=3 | Total=541
+Confidence: 1.000000
+Text:
+Fog The past 12 years are a blur. I dropped out of high school at 16, dropped out of college twice and trade school once. Im 28, no career no friends, no family, no skills or talents. I've had so much free time in these years because I only work part time but I never did anything with that time. I've felt shitty everyday for so long and I can't even have genuine interactions with people anymore. my debt is stacking and I'm ready to tap out. I can only blame myself. Stay in school and get help while you can.
+----------------------------------------
+
+Sample ID : 9349 [FAIL]
+GT        : Behavior
+Pred      : Ideation
+Timing    : TTFT=0.8789s | Gen=0.0469s | TPS=42.67 | Total=0.9258s
+Tokens    : Prompt=471 | Completion=2 | Total=473
+Confidence: 1.000000
+Text:
+How can i commit suicide? Hello I'm wondering how can i commit suicide but a method thats not hanging myself. I was planning on overdosing but my friend told me that to overdose you need to take large amounts of drugs daily is that true?
+----------------------------------------
+
+Sample ID : 9574 [FAIL]
+GT        : Attempt
+Pred      : Behavior
+Timing    : TTFT=1.6263s | Gen=0.0312s | TPS=32.00 | Total=1.6575s
+Tokens    : Prompt=448 | Completion=1 | Total=449
+Confidence: 1.000000
+Text:
+Pills and Nausea Ever my overdose attempts I have serious problems swallowing tablets. Anyone got any suggestions of over coming these issues
+----------------------------------------
+
+Sample ID : 9586 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=0.4504s | Gen=0.0313s | TPS=64.00 | Total=0.4817s
+Tokens    : Prompt=664 | Completion=2 | Total=666
+Confidence: 1.000000
+Text:
+My life is horrible and I just wanna kill myself. I am 16 years old, have ocd, depression, and social anxiety, and I have problems in focusing. I have friends but, I cant express myself beacause of social anxiety, I cant be myself, I am afraid of what people thinks about me, everyday I feel uncomfortable, depressed and I feel dumb because I always fail at school and end up cheating which is humiliating, I wanna kill myself, everything feels hard to do, I have shit skin so no girls like me while my friend he gets all the girls and im just a loser, my medications doenst work so I just stopped it and I cant continue my treatment because my father wont support me and cant understand what I'm going through, I am just a pissed of shit and I feel like I am an inmate in my own mind, I dont know what to do and if I tried fixing my problems there will always someone or something that prevents me from fixing it. I am a people pleaser which is dumb because I am trying to please normal people how pathetic I am. I am just losing my hope I've been dealing with this shit for about 5 years now.
+----------------------------------------
+
+Sample ID : 10324 [PASS]
+GT        : Attempt
+Pred      : Attempt
+Timing    : TTFT=0.5875s | Gen=0.0156s | TPS=64.01 | Total=0.6031s
+Tokens    : Prompt=442 | Completion=1 | Total=443
+Confidence: 1.000000
+Text:
+Suicide attempt 2 The pills is hurting my stomach.  Hope it works. Bai bai.
+----------------------------------------
+
+Sample ID : 10639 [PASS]
+GT        : Attempt
+Pred      : Attempt
+Timing    : TTFT=0.4493s | Gen=0.0156s | TPS=64.01 | Total=0.4649s
+Tokens    : Prompt=503 | Completion=1 | Total=504
+Confidence: 1.000000
+Text:
+Suicide is not an choice, it's something that happens when you run out of resources to cope... I don't want to kms, but I feel like I have no other option and I want the pain to stop, I can't take it anymore. Next time I'll be home alone, I will hang myself. After my previous attempt and considering how fucked up my mental health is, it's probably my destiny anyway...
+----------------------------------------
+
+Sample ID : 11169 [PASS]
+GT        : Indicator
+Pred      : Indicator
+Timing    : TTFT=0.4607s | Gen=0.0000s | TPS=0.00 | Total=0.4607s
+Tokens    : Prompt=702 | Completion=1 | Total=703
+Confidence: 1.000000
+Text:
+Don't take the pills. I'm not here to police you. I'm not here to tell you to not commit suicide. However, I do want to clear something up. Overdosing is not a peaceful way to die.
+
+Many people think that overdosing means taking a few pills, sleeping and then... that's it. Life over. Nope. It is one of the worst things you could ever do. 
+
+Firstly, overdoses usually take 24-42 hours to take effect. Lots of time to regret your decision. Secondly, the liver damage is not worth it. Most overdoses do NOT result in suicide. But they do often result in permanent liver damage. This will never go away and its so easy to do. 
+
+But let's say you do end it with pills, what will that be like? You'll feel fine for a day or so. Then you'll start vomiting because your liver is trying to get rid of the substances. Depending on what you overdose on, you'll either be vomiting all the time. And this will be the most acidic gross vomit you could imagine. Or doing a mixture of vomiting and letting out black urine as your body tries to save you. 
+
+A few hours later, you'll become jaundiced and start having liver failure. Your heart beat will increase, you'll have horrible stomach pains, your liver will slowly die. Then that's it. 
+
+Don't take the pills.
+----------------------------------------
+
+Sample ID : 11437 [FAIL]
+GT        : Indicator
+Pred      : Unsupportive
+Timing    : TTFT=0.9278s | Gen=0.0625s | TPS=64.01 | Total=0.9903s
+Tokens    : Prompt=464 | Completion=4 | Total=468
+Confidence: 1.000000
+Text:
+The voicecracks I get after not talking for weeks. Gotta love this beautiful life, for real feel bad for everyone that is dead, they cant experience this beautiful life that only gets better and better.
+----------------------------------------
+
+Sample ID : 11871 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=1.1111s | Gen=0.0312s | TPS=64.01 | Total=1.1423s
+Tokens    : Prompt=479 | Completion=2 | Total=481
+Confidence: 1.000000
+Text:
+I'm barely holding on. I'm really on-edge and have no idea why to live anymore, Im only alive because I have no way to commit suicide yet. If I once find a way to die painlessly then I'll get on it instantly.
+
+Don't bother helping it's too late for that.
+----------------------------------------
+
+Sample ID : 12015 [PASS]
+GT        : Attempt
+Pred      : Attempt
+Timing    : TTFT=0.5566s | Gen=0.0000s | TPS=0.00 | Total=0.5566s
+Tokens    : Prompt=796 | Completion=1 | Total=797
+Confidence: 1.000000
+Text:
+I’m so trapped My head literally hurts from mental pain and I’ve took pills for my headache. I can’t stand being black. I can’t. I can’t. I can’t. I  C A N T!!!
+
+I’m forced into this body and I have to live the consequences of something I didn’t choose. 
+
+Each day is getting worse and it’s getting to the point where I feel numb. Since I’ve been suicidal for 7 years, on and off, I’ve noticed whenever it’s on again it’s worse than the last time. 
+
+The last time it was on, which was in fall of 2019, it was just thoughts that were easy to overcome. Sometimes it would be hard, but it was easy to talk me out of it and get better. 
+
+The other last time, which was in 2017, it was brief thoughts but I then removed them and tried to better myself. 
+
+And the few other times, years ranging in 2013-2015, I would feel suicidal for a day or a moment and then boom! It would take a long while for another thought to come. 
+
+Now, as of 2020, it’s to the point where no one can convince me out of it, but you can still convince me to stay longer. I seriously fear if this becomes off again and then back on it will cause me to actually attempt it. 
+
+Sometimes I don’t want help because I’ll always be a black girl and never an attractive white girl/boy. 
+
+I feel so trapped because I don’t want to hurt others by committing suicide, but it mentally torturing to stay and I fear that the possible afterlife I’ll get punished for taking my own like. 
+
+I FEEL SO STUCK, I WANT TO SCREAM! I HOPE I GET COVID!!
+----------------------------------------
+
+Sample ID : 12116 [FAIL]
+GT        : Attempt
+Pred      : Ideation
+Timing    : TTFT=0.5076s | Gen=0.0572s | TPS=34.98 | Total=0.5648s
+Tokens    : Prompt=520 | Completion=2 | Total=522
+Confidence: 1.000000
+Text:
+Bro I’m done. Ideas on ways to go? Been trying but still crying. 
+God I hate life.
+I hate God more than anyone in the world 
+Why did he create this shit reality 
+That sack of shit.
+
+Every time I try and commit suicide I can’t get myself to do it. How can I for sure die? What should I tell myself to convince me enough to die? Help! I don’t wanna be here anymore I fuckingggg hate this place!
+----------------------------------------
+
+Sample ID : 12374 [FAIL]
+GT        : Behavior
+Pred      : Attempt
+Timing    : TTFT=1.3974s | Gen=0.0169s | TPS=59.16 | Total=1.4143s
+Tokens    : Prompt=489 | Completion=1 | Total=490
+Confidence: 1.000000
+Text:
+Might as well tell you guys thanks for the support, but I wasn't strong enough This is it. I'm gonna hang myself tonight. I've already got my note written and the noose tied. Just gotta wait for everyone to go to bed so I can do It uninterrupted. I appreciate all your support but I'm afraid this is goodbye.
+----------------------------------------
+
+Sample ID : 12620 [FAIL]
+GT        : Attempt
+Pred      : Behavior
+Timing    : TTFT=1.4381s | Gen=0.0157s | TPS=63.86 | Total=1.4538s
+Tokens    : Prompt=468 | Completion=1 | Total=469
+Confidence: 1.000000
+Text:
+one of my best friends saw a few of my healing self harm scratches today at school and i got so nervous i had to say my cat made them. she said as a joke afterwards “oooh you did them yourself right”
+----------------------------------------
+
+Sample ID : 12662 [PASS]
+GT        : Indicator
+Pred      : Indicator
+Timing    : TTFT=0.5109s | Gen=0.0156s | TPS=64.00 | Total=0.5266s
+Tokens    : Prompt=476 | Completion=1 | Total=477
+Confidence: 1.000000
+Text:
+Every time I express emotion If I had a nickel every time I had told someone on here that I was depressed and they called me a “troll” I would literally be a billionaire. I’ve said it many times. Nobody actually cares about you, they just pretend
+----------------------------------------
+
+Sample ID : 12835 [FAIL]
+GT        : Behavior
+Pred      : Ideation
+Timing    : TTFT=1.3625s | Gen=0.0393s | TPS=50.90 | Total=1.4017s
+Tokens    : Prompt=452 | Completion=2 | Total=454
+Confidence: 1.000000
+Text:
+if you overdose sleeping pills will you die? if yes then how many do i need? filler filler filler filler filler filler filler filler filler fileer filler
+----------------------------------------
+
+Sample ID : 13038 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=0.4526s | Gen=0.0330s | TPS=60.55 | Total=0.4856s
+Tokens    : Prompt=451 | Completion=2 | Total=453
+Confidence: 1.000000
+Text:
+I like reading about people who lost their loved ones to suicide because it helps me realize nobody would ever do that for me and that I'm useless.
+----------------------------------------
+
+Sample ID : 13050 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=1.0486s | Gen=0.0781s | TPS=38.41 | Total=1.1267s
+Tokens    : Prompt=601 | Completion=3 | Total=604
+Confidence: 1.000000
+Text:
+I cant even believe I feel like this Just a year or so ago I was feeling fine. A normal happy person that enjoyed going out. Over the whole pandemic I found a really awesome online group to help out during these times, but since I am here my mental health only continues to get worse. I've been getting more darker thoughts of wanting to end it all. Not only from the stress of trying to find a new job and get a place during Covid, but because I just can't take what's going on anymore. I'm sick of worrying about variants. I am sick of waking up to just more covid this and Covid that. I feel like the longer this goes on I am going to feel even worse than I am now. I haven't been able to go all the way through with suicide because of my family and girlfriend, but lately I've just been feeling so miserable and stressed I just don't know...
+----------------------------------------
+
+Sample ID : 13108 [FAIL]
+GT        : Behavior
+Pred      : Ideation
+Timing    : TTFT=1.5300s | Gen=0.0123s | TPS=162.04 | Total=1.5424s
+Tokens    : Prompt=467 | Completion=2 | Total=469
+Confidence: 1.000000
+Text:
+I missed my psychiatrist appointment. The one I’ve been waiting for for a month. And now I’m going to kill my self I can’t wait any longer. I can’t. I’m too tired of holding onto hope
+----------------------------------------
+
+Sample ID : 13114 [FAIL]
+GT        : Indicator
+Pred      : Ideation
+Timing    : TTFT=1.1444s | Gen=0.0625s | TPS=32.02 | Total=1.2069s
+Tokens    : Prompt=432 | Completion=2 | Total=434
+Confidence: 1.000000
+Text:
+“I will Kill myself if you leave” Fuck off
+----------------------------------------
+
+Sample ID : 13285 [FAIL]
+GT        : Attempt
+Pred      : Ideation
+Timing    : TTFT=0.5878s | Gen=0.0312s | TPS=64.01 | Total=0.6191s
+Tokens    : Prompt=777 | Completion=2 | Total=779
+Confidence: 1.000000
+Text:
+Suicidal Thoughts Are Calming to Me Ever since I was 13 I thought about it every damn day and I'm not overexaggerating in the slightest. Some days it ranges from a single passing thought that sails by but other days the emptiness and stress builds up to the point where I put a knife to my neck and dare myself to fall on it. I've attempted a couple times but they obviously didn't work and I guess I'm grateful I don't have any lasting injuries or internal damage. In a twisted way it's so calming to have that option in the air. Whenever I get stressed or angry instead of counting to ten or doing breathing exercises, I fantasize about putting a bullet through my head. I don't have a gun but if I did, I'd probably blow my brains out of impulse or on a really bad day. I know One thing that stops me from killing myself now was the fact that I formed somewhat of a parasocial relationship with someone I grew close to. He wasn't someone super famous so I was able to talk to him more, and he was funny and always stood up for what's right but he unfortunately made the tragic decision to end his life due to his past misdeeds and abuse. Even after he explained in his suicide note how he was a serial cheater and had emotionally manipulated people, I was still sad that he died. I sort of saw it coming since he did copious amounts of drugs and had a history of child abuse, but I think to myself (and excuse me if I sound selfish right now) that if I don't think he deserved to die then I don't think I deserve to die either. It's too bad the only things I have to remember of him now is his suicide note and the sound of his broken sweet voice.
+----------------------------------------
+
+Sample ID : 13639 [PASS]
+GT        : Ideation
+Pred      : Ideation
+Timing    : TTFT=0.6170s | Gen=0.0469s | TPS=42.64 | Total=0.6639s
+Tokens    : Prompt=479 | Completion=2 | Total=481
+Confidence: 1.000000
+Text:
+I’m so broke I can’t ever recover. I’m in 13k of debt with my gambling addiciton with $80 to my name. I only make $16 an hour and work 25 hours a week. I’m probably going to have to end it soon.
+----------------------------------------
+
+Sample ID : 13687 [FAIL]
+GT        : Behavior
+Pred      : Ideation
+Timing    : TTFT=1.2792s | Gen=0.0469s | TPS=42.67 | Total=1.3261s
+Tokens    : Prompt=471 | Completion=2 | Total=473
+Confidence: 1.000000
+Text:
+If anything kills me, it’s gonna be the constant rollercoaster of highs and lows. I can’t take it anymore. I’m tired of being dickteased thinking I wanna live and then being reminded I’m a fucking idiot. 
+----------------------------------------
+
+Sample ID : 13852 [PASS]
+GT        : Attempt
+Pred      : Attempt
+Timing    : TTFT=1.0854s | Gen=0.1236s | TPS=16.18 | Total=1.2090s
+Tokens    : Prompt=766 | Completion=2 | Total=768
+Confidence: 1.000000
+Text:
+Don’t know what to do Hey so basically I just got out of the mental hospital today. Anyways I still have some issues. I absolutely hate being lonely. I have like no friends. But I also hate being around people. I just get very socially anxious around others. Also this weird things happens with my mood where one minute I’m hyper and the next I have no motivation at all. I’m supposed to be getting out on new anxiety meds soon so hopefully that helps. School is stressing me out as well and I’m probably going to fail. I feel so bad for my mom because she is so supportive of me. Sometimes I want to kill myself for no reason(probably intrusive thoughts). Sometimes they don’t go away for a while though and it’s impossible to get my thoughts off of them. I don’t think my meds are working but I have to wait a few weeks to be able to talk to my psychiatrist about my meds. I’m insecure about my weight but I have a problem with binge eating. Everybody tells me I’m skinny but I still feel like insecure about myself. I feel like I annoy everyone and they don’t like me. I feel bad because my issues are so small compared to other peoples issues. Anyways I’m probably going to continue being lonely because I don’t know how to start conversations with people in public. It’s to the point where I miss being in the mental hospital because I got to socialize with others. Anyways I’m just ranting here because suicide is always still an option for me. I would probably try hanging myself next if I were to attempt to commit suicide. I’ve tried pills twice and that was extremely painful. Never want to go through that again.
+----------------------------------------
+
+Sample ID : 13860 [FAIL]
+GT        : Behavior
+Pred      : Attempt
+Timing    : TTFT=0.4607s | Gen=0.0000s | TPS=0.00 | Total=0.4607s
+Tokens    : Prompt=716 | Completion=1 | Total=717
+Confidence: 1.000000
+Text:
+I’ll be dead by the end of this month I’m just saving up the pills since the pills are locked up. Waiting till I get 30 hydroxyzine to be exact. I get 3 hydroxyzine a day so I should be ready within the next 10 days. I don’t want to hear “trying to od is painful and probably won’t work”. I already fucking know that but I don’t care. I’m too mentally exhausted to do this anymore. I only have a few online friends and honestly they are the only reason I’m alive. I was going to drink bleach a few days ago but I started talking to them and it distracted me and calmed me down. I just want real life friends to talk to but I’m too socially anxious to talk to people irl. I hate my body and looks. I act confident but I’m just trying to hide the fact that I’m so fucking insecure. I force myself to throw up food I eat because I feel like I eat too much. I’m tired of the mood swings. I’m tired of being sad one minute and then happy again the next. I don’t want to get better because being depressed feels comfortable now. Should I leave a note? Please don’t try to stop me. I have already made up my mind and I just want to know if I should leave a note or not. You can’t save me because I don’t want to be saved.
+----------------------------------------
+
+Sample ID : 14025 [PASS]
+GT        : Attempt
+Pred      : Attempt
+Timing    : TTFT=1.4466s | Gen=0.0167s | TPS=60.04 | Total=1.4632s
+Tokens    : Prompt=469 | Completion=1 | Total=470
+Confidence: 1.000000
+Text:
+Breakups. I’ve tried to commit suicide after every guy who’s broken up with me. This past time I failed. I’m about to try again. I can’t keep my bipolar in check long enough to keep other people happy
+----------------------------------------
+
+Sample ID : 14294 [FAIL]
+GT        : Indicator
+Pred      : Ideation
+Timing    : TTFT=1.6517s | Gen=0.0156s | TPS=128.00 | Total=1.6673s
+Tokens    : Prompt=553 | Completion=2 | Total=555
+Confidence: 1.000000
+Text:
+my life would be easier if i wasn’t different than the others it's not good to be different because the others are against you, people are against me because i'm different i haven't had any friends since i was born, i have never actually had contact with someone who is not my family and i also don't want to have friends online because they're not real friends, i am failing school, i don't go to therapy because i never have days off on weekdays, my weeks are very stressful, i have bad grades because of homeschooling, my parents will take everything away from me if i fail
+
+hopefully my life will soon end successfully as my last attempts have not gone well
+----------------------------------------
+
+Sample ID : 14380 [FAIL]
+GT        : Behavior
+Pred      : Attempt
+Timing    : TTFT=1.4850s | Gen=0.0156s | TPS=64.02 | Total=1.5006s
+Tokens    : Prompt=456 | Completion=1 | Total=457
+Confidence: 1.000000
+Text:
+i will plan to do it during a school lesson i will skip the lesson walk on the school building and jump down it will happen in few days or in 1 week
+----------------------------------------
+
+Sample ID : 14391 [FAIL]
+GT        : Behavior
+Pred      : Ideation
+Timing    : TTFT=0.4781s | Gen=0.0313s | TPS=63.90 | Total=0.5094s
+Tokens    : Prompt=586 | Completion=2 | Total=588
+Confidence: 1.000000
+Text:
+my life will end at the age of 16 i can't stand to be alone anymore i have no friends, i can't tell anyone that i'm going to kill myself i've always been a joke, even for my family i wish i wasn't born like this i have been crying for 5 hours people don't take me seriously everyone bullies me even my family i get beaten up sometimes i am a weak person and people always say weak people do not belong on earth i want so badly to harm myself now but i don't wanna end up in the hospital i'll write the suicide note at school and leave it behind and kill myself i wish i wasn't born sensitive i was probably born mentally handicapped, definitely autism that's why i'm like that and i'm ugly too because of that people hate me too i'll probably get kicked out of home because of my homosexuality
+----------------------------------------
+
+Sample ID : 14650 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=2.9873s | Gen=0.0469s | TPS=85.34 | Total=3.0341s
+Tokens    : Prompt=449 | Completion=4 | Total=453
+Confidence: 1.000000
+Text:
+Recently I've been spending hours working on my project car, but I'm honestly not very good at it yet. I love it so much.
+----------------------------------------
+
+Sample ID : 15166 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4613s | Gen=0.0312s | TPS=96.01 | Total=1.4925s
+Tokens    : Prompt=460 | Completion=3 | Total=463
+Confidence: 1.000000
+Text:
+The simple act of breathing takes a toll on my mind and body every second of every day. I can sleep for a dozen hours the exhaustion never actually goes away and the cycle just repeats.
+----------------------------------------
+
+Sample ID : 16058 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.5238s | Gen=0.0312s | TPS=96.01 | Total=1.5550s
+Tokens    : Prompt=515 | Completion=3 | Total=518
+Confidence: 1.000000
+Text:
+This is my depression in a nutshell - so tired. All the time. Doesn't matter how much I sleep. Just have enough energy to wake up and eat some breakfast and then go right back to sleep again. Maybe spend some time wasting on Facebook or YouTube with all the brain dead things that makes up FB and YT. And on top of that - feeling guilty for wasting time on shit. Try to pretend that everything is ok, but it is exhausting.
+----------------------------------------
+
+Sample ID : 16172 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.9667s | Gen=0.0000s | TPS=0.00 | Total=0.9667s
+Tokens    : Prompt=548 | Completion=4 | Total=552
+Confidence: 1.000000
+Text:
+And - get the barf bag ready - I even scanned dear old Google Scholar for research papers about fecal transplants after I watched a video about some bio hacker who used this on himself to get rid of digestive problems. Kind of insane, but... Here you go: https://vimeo.com/214523759 - the critical sentence for me was in the end: 'And he developed a sweet tooth.' - made me think... But so far, little research has been conducted about neuropsychological effects yet, however it seems like there's some potential - the word 'gut brain' exists for a reason, doesn't it?
+----------------------------------------
+
+Sample ID : 16257 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.1235s | Gen=0.0312s | TPS=128.18 | Total=1.1547s
+Tokens    : Prompt=430 | Completion=4 | Total=434
+Confidence: 1.000000
+Text:
+Edit: Jesus, that got long.
+----------------------------------------
+
+Sample ID : 16443 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4613s | Gen=0.0312s | TPS=96.01 | Total=1.4925s
+Tokens    : Prompt=457 | Completion=3 | Total=460
+Confidence: 1.000000
+Text:
+I know exactly what you're talking about. It feels like the apocalypse is happening all around you but you can't be bothered to do anything because you're exhausted just going through the day.
+----------------------------------------
+
+Sample ID : 16482 [FAIL]
+GT        : Unsupportive
+Pred      : Ideation
+Timing    : TTFT=0.5320s | Gen=0.0313s | TPS=63.92 | Total=0.5633s
+Tokens    : Prompt=485 | Completion=2 | Total=487
+Confidence: 1.000000
+Text:
+I often feel that I need a break. It's not even that 'stop living' is thr right word. It's more that I wwnt to be transported to some between realm with no distractions and nothing to worry about with just my thoughts until I'm ready to rejoin reality at the same point and time I left.
+----------------------------------------
+
+Sample ID : 16524 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=3.7001s | Gen=0.0312s | TPS=96.01 | Total=3.7313s
+Tokens    : Prompt=430 | Completion=3 | Total=433
+Confidence: 1.000000
+Text:
+Oh and I tend to overthink everything
+----------------------------------------
+
+Sample ID : 16552 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4769s | Gen=0.0469s | TPS=64.01 | Total=1.5238s
+Tokens    : Prompt=455 | Completion=3 | Total=458
+Confidence: 1.000000
+Text:
+Paralyzing apathy. No desire to get up out of bed. Letting every intrusive thought run rampant in my mind. Forgetting to eat and hydrate.
+----------------------------------------
+
+Sample ID : 16580 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.5081s | Gen=0.0625s | TPS=48.01 | Total=1.5706s
+Tokens    : Prompt=442 | Completion=3 | Total=445
+Confidence: 1.000000
+Text:
+Why would I want to deactivate when I can browse super depressing subs and make myself feel WORSE!?
+----------------------------------------
+
+Sample ID : 16581 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.0141s | Gen=0.1250s | TPS=32.00 | Total=1.1391s
+Tokens    : Prompt=449 | Completion=4 | Total=453
+Confidence: 1.000000
+Text:
+I told my therapist everytime I get the motivation to try, something knocks me down. Like a bird that keeps flying into a window.
+----------------------------------------
+
+Sample ID : 23007 [FAIL]
+GT        : Unsupportive
+Pred      : Indicator
+Timing    : TTFT=1.5862s | Gen=0.0312s | TPS=32.00 | Total=1.6175s
+Tokens    : Prompt=492 | Completion=1 | Total=493
+Confidence: 1.000000
+Text:
+Hey, I'm 43 and doing this for the last time. Prepare your mental hygene, self-care, meditation, and forgiveness strategies NOW. You matter. I wish I could go back and re-do my last 20 years, but I cant. What I can do is live the rest of my life the best way I can EVERYDAY.
+----------------------------------------
+
+Sample ID : 23029 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.5149s | Gen=0.0468s | TPS=64.11 | Total=0.5617s
+Tokens    : Prompt=449 | Completion=3 | Total=452
+Confidence: 1.000000
+Text:
+Depression is like a toxic ex you pray you don't accidentally bump in to because every time you see them they ruin your life again.
+----------------------------------------
+
+Sample ID : 23226 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4769s | Gen=0.0312s | TPS=96.01 | Total=1.5081s
+Tokens    : Prompt=440 | Completion=3 | Total=443
+Confidence: 1.000000
+Text:
+shit that sounds exactly how i am feeling like for the last few years. thats not good
+----------------------------------------
+
+Sample ID : 23318 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.2712s | Gen=0.0723s | TPS=55.32 | Total=1.3435s
+Tokens    : Prompt=548 | Completion=4 | Total=552
+Confidence: 1.000000
+Text:
+It's such an unreal feeling. I've gotten mostly past my dp/Dr although it never really goes, I've just gotten better at not falling deep into it. At my peak, I remember looking at my own body and feeling like it didn't belong to me. My hands weren't mine, my skin wasn't mine, my voice wasn't mine. I wasn't even looking through my eyes, it felt like I was watching from behind my eyes. It was like I was watching TV from the backyard through the back window. The world around me didn't feel real. The bricks making my house looked like plastic. The lines inside my home were too sharp.
+----------------------------------------
+
+Sample ID : 23700 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.4377s | Gen=0.0532s | TPS=56.36 | Total=0.4909s
+Tokens    : Prompt=446 | Completion=3 | Total=449
+Confidence: 1.000000
+Text:
+I can't stop thinking about that one argument from years ago. I feel like an alien observing the world from the outside.
+----------------------------------------
+
+Sample ID : 23707 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.0610s | Gen=0.0781s | TPS=51.21 | Total=1.1391s
+Tokens    : Prompt=442 | Completion=4 | Total=446
+Confidence: 1.000000
+Text:
+I don't know how to fix things when they get this bad. I feel so small and insignificant.
+----------------------------------------
+
+Sample ID : 23815 [FAIL]
+GT        : Unsupportive
+Pred      : Indicator
+Timing    : TTFT=1.0126s | Gen=0.1256s | TPS=15.92 | Total=1.1382s
+Tokens    : Prompt=434 | Completion=2 | Total=436
+Confidence: 1.000000
+Text:
+I'm so tired of feeling like a burden to my friends.
+----------------------------------------
+
+Sample ID : 23837 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.1039s | Gen=0.0312s | TPS=128.01 | Total=1.1352s
+Tokens    : Prompt=433 | Completion=4 | Total=437
+Confidence: 1.000000
+Text:
+I feel like my feelings just don't matter to anyone.
+----------------------------------------
+
+Sample ID : 23839 [FAIL]
+GT        : Unsupportive
+Pred      : Indicator
+Timing    : TTFT=1.4925s | Gen=0.0156s | TPS=64.00 | Total=1.5081s
+Tokens    : Prompt=441 | Completion=1 | Total=442
+Confidence: 1.000000
+Text:
+I'm so frustrated by the lack of empathy in the world. I feel like I'm losing hope.
+----------------------------------------
+
+Sample ID : 23872 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.1532s | Gen=0.0625s | TPS=64.01 | Total=1.2157s
+Tokens    : Prompt=451 | Completion=4 | Total=455
+Confidence: 1.000000
+Text:
+It physically hurts how lonely I feel right now. It feels like I'm drowning in my own emotions. I just don't know what to do anymore.
+----------------------------------------
+
+Sample ID : 23877 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.5290s | Gen=0.0156s | TPS=192.01 | Total=0.5447s
+Tokens    : Prompt=453 | Completion=3 | Total=456
+Confidence: 1.000000
+Text:
+It’s like a heavy cloud is following me everywhere. It's like there's a barrier between me and the rest of humanity. I just want to be happy.
+----------------------------------------
+
+Sample ID : 24114 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.7765s | Gen=0.0469s | TPS=85.35 | Total=0.8234s
+Tokens    : Prompt=449 | Completion=4 | Total=453
+Confidence: 1.000000
+Text:
+When I get overwhelmed, I just stare blankly at the wall feeling my heart race. I just want to feel normal for once.
+----------------------------------------
+
+Sample ID : 24407 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.8588s | Gen=0.0469s | TPS=64.01 | Total=0.9057s
+Tokens    : Prompt=454 | Completion=3 | Total=457
+Confidence: 1.000000
+Text:
+I am so incredibly furious with my so-called friends. I confront them and they just play the victim. I deserve way better friends than this. Never again.
+----------------------------------------
+
+Sample ID : 24483 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4613s | Gen=0.0469s | TPS=64.01 | Total=1.5081s
+Tokens    : Prompt=448 | Completion=3 | Total=451
+Confidence: 1.000000
+Text:
+It breaks my heart to see us losing touch. The silence between us has grown incredibly deafening. It's depressing to think about.
+----------------------------------------
+
+Sample ID : 24491 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.8926s | Gen=0.0747s | TPS=53.57 | Total=0.9673s
+Tokens    : Prompt=452 | Completion=4 | Total=456
+Confidence: 1.000000
+Text:
+Friends for life. Thinking about our memories always makes me smile. They completely understand my weird sense of humor. It just makes life so much better.
+----------------------------------------
+
+Sample ID : 24669 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.8989s | Gen=0.0410s | TPS=97.48 | Total=1.9400s
+Tokens    : Prompt=439 | Completion=4 | Total=443
+Confidence: 1.000000
+Text:
+My friends are the absolute best. We always hype each other up no matter what.
+----------------------------------------
+
+Sample ID : 25175 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.8833s | Gen=0.1382s | TPS=28.94 | Total=2.0215s
+Tokens    : Prompt=459 | Completion=4 | Total=463
+Confidence: 1.000000
+Text:
+It hurts when you realize you're the backup friend. I see their pictures on social media and just feel a pit in my stomach. Friendship breakups are truly the hardest. So lonely.
+----------------------------------------
+
+Sample ID : 25415 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.4681s | Gen=0.0624s | TPS=48.06 | Total=0.5305s
+Tokens    : Prompt=477 | Completion=3 | Total=480
+Confidence: 1.000000
+Text:
+I wish I had a good answer for us both. Usually, I'd spend all my free weekends painting miniatures. However, the depression has been so heavy I haven't touched it in months. I am constantly exhausted, no matter how many hours of sleep I manage to get.
+----------------------------------------
+
+Sample ID : 25458 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.3754s | Gen=0.0621s | TPS=48.28 | Total=1.4375s
+Tokens    : Prompt=464 | Completion=3 | Total=467
+Confidence: 1.000000
+Text:
+I feel seen reading this. Someone asked about hobbies... mine was definitely pottery. Every time I try to start, a wave of sadness just washes over me. Every small task feels like climbing a massive mountain.
+----------------------------------------
+
+Sample ID : 25579 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.8476s | Gen=0.0469s | TPS=85.34 | Total=0.8945s
+Tokens    : Prompt=437 | Completion=4 | Total=441
+Confidence: 1.000000
+Text:
+I totally get that. I just want to sleep for a week straight.
+----------------------------------------
+
+Sample ID : 25607 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.5848s | Gen=0.0625s | TPS=64.01 | Total=1.6473s
+Tokens    : Prompt=489 | Completion=4 | Total=493
+Confidence: 1.000000
+Text:
+Honestly, I've always been extremely passionate about crocheting. But my motivation is completely gone. I just sleep instead. There's a deep, unexplainable sadness that lingers in the background of everything. Some days are mildly better, but the bad days drag me down so far. Sending love to anyone else feeling this heavy way.
+----------------------------------------
+
+Sample ID : 25896 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4067s | Gen=0.0390s | TPS=76.99 | Total=1.4456s
+Tokens    : Prompt=428 | Completion=3 | Total=431
+Confidence: 1.000000
+Text:
+Nothing makes sense right now.
+----------------------------------------
+
+Sample ID : 26002 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.4978s | Gen=0.0469s | TPS=64.01 | Total=0.5447s
+Tokens    : Prompt=441 | Completion=3 | Total=444
+Confidence: 1.000000
+Text:
+Man, I feel exactly the same way. I can't stop crying for no reason at all.
+----------------------------------------
+
+Sample ID : 26008 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.7739s | Gen=0.0625s | TPS=64.01 | Total=1.8364s
+Tokens    : Prompt=556 | Completion=4 | Total=560
+Confidence: 1.000000
+Text:
+It's like you read my mind with this post.Someone asked about hobbies...mine was definitely building PCs.Every time I try to start, a wave of sadness just washes over me.Every small task feels like climbing a massive mountain.The silence in my apartment is deafening but I can't bring myself to play music.It's frustrating because on paper, my life is fine, but inside I'm miserable.I feel completely disconnected from my friends, my family, and even myself.It's incredibly lonely feeling this way when everyone else seems totally fine.Everything just feels so gray, monotonous, and bleak.Even forming words to reply to a simple text message takes too much effort.
+----------------------------------------
+
+Sample ID : 26034 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.7739s | Gen=0.4552s | TPS=8.79 | Total=2.2291s
+Tokens    : Prompt=439 | Completion=4 | Total=443
+Confidence: 1.000000
+Text:
+I was just thinking about this today. Just having a really, really bad day.
+----------------------------------------
+
+Sample ID : 26405 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.9157s | Gen=0.0156s | TPS=191.94 | Total=0.9313s
+Tokens    : Prompt=445 | Completion=3 | Total=448
+Confidence: 1.000000
+Text:
+I can just put on some music, get into the zone, and forget about work. I really enjoy it.
+----------------------------------------
+
+Sample ID : 26469 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.5759s | Gen=0.0048s | TPS=624.06 | Total=0.5807s
+Tokens    : Prompt=459 | Completion=3 | Total=462
+Confidence: 1.000000
+Text:
+Just my two cents: Man, I really miss skateboarding. It was my favorite thing to do in college. I'm planning to carve out some time next month to finally start again.
+----------------------------------------
+
+Sample ID : 26775 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.9903s | Gen=0.1094s | TPS=36.58 | Total=2.0997s
+Tokens    : Prompt=437 | Completion=4 | Total=441
+Confidence: 1.000000
+Text:
+Honestly, I've been watching tutorials on playing piano and it looks so fascinating.
+----------------------------------------
+
+Sample ID : 26976 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4613s | Gen=0.0469s | TPS=64.01 | Total=1.5081s
+Tokens    : Prompt=438 | Completion=3 | Total=441
+Confidence: 1.000000
+Text:
+Great topic! I never thought I'd be able to do coding at this level.
+----------------------------------------
+
+Sample ID : 26995 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4769s | Gen=0.0312s | TPS=96.01 | Total=1.5081s
+Tokens    : Prompt=556 | Completion=3 | Total=559
+Confidence: 1.000000
+Text:
+In my experience, I've been watching tutorials on skateboarding and it looks so fascinating.It genuinely puts a huge smile on my face every single time.It's amazing what you can achieve when you dedicate yourself to a craft.I still watch videos about it online to live vicariously through others.Every time I see someone doing it, I feel a pang of nostalgia.Best feeling in the world.In my experience, I've been watching tutorials on skateboarding and it looks so fascinating.It genuinely puts a huge smile on my face every single time.It's amazing what you can achieve when you dedicate yourself to a craft.I still watch videos about it online to live vicariously through others.
+----------------------------------------
+
+Sample ID : 27248 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=2.9873s | Gen=0.1250s | TPS=32.00 | Total=3.1122s
+Tokens    : Prompt=452 | Completion=4 | Total=456
+Confidence: 1.000000
+Text:
+For what it's worth, For me, homebrewing is the ultimate stress relief. I always feel incredibly refreshed after spending a few hours doing it.
+----------------------------------------
+
+Sample ID : 28496 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.5290s | Gen=0.1282s | TPS=23.41 | Total=0.6572s
+Tokens    : Prompt=508 | Completion=3 | Total=511
+Confidence: 1.000000
+Text:
+Just fyi you tried to post ^_^ but it came out messed up. This is because when reddit sees the ^ character it thinks you want to write in super script like this . The way to prevent this is to use the escape character \ which tells reddit to ignore any special formatting that the next character would create. So to get ^_^ what you need to do is write \^_\^ in the editor. Cheers.
+----------------------------------------
+
+Sample ID : 28694 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.8888s | Gen=0.5431s | TPS=7.36 | Total=1.4320s
+Tokens    : Prompt=483 | Completion=4 | Total=487
+Confidence: 1.000000
+Text:
+This is Go. You should really try it out! It's a little hard to get into, but there are many ways to learn the rules and common problems and patterns. I believe (and might be wrong) that this site is a good place to start if you want to learn how to play go.
+----------------------------------------
+
+Sample ID : 28743 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.9768s | Gen=0.0723s | TPS=55.34 | Total=1.0491s
+Tokens    : Prompt=459 | Completion=4 | Total=463
+Confidence: 1.000000
+Text:
+I'm thinking about joining at my wife's dojo where she started doing karate. What should I know going in? I haven't done anything close to it since wrestling in junior high (30 now).
+----------------------------------------
+
+Sample ID : 28779 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.8209s | Gen=0.0624s | TPS=64.08 | Total=1.8833s
+Tokens    : Prompt=479 | Completion=4 | Total=483
+Confidence: 1.000000
+Text:
+The beast is a great disc. Also an orc, valkarie, or star would work great. I'm under the impression that everyone needs an aviar too. (two discs total). Plus if you need to get some weed there is always a guy out there for that!
+----------------------------------------
+
+Sample ID : 28814 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4010s | Gen=0.0313s | TPS=95.99 | Total=1.4323s
+Tokens    : Prompt=466 | Completion=3 | Total=469
+Confidence: 1.000000
+Text:
+haha hell yeah! I mean, I don't know how harsh your local authorities are...But my go-to course is heavily forested, so you can get away with a lot. Hell I had sex on that course.
+----------------------------------------
+
+Sample ID : 28824 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.5428s | Gen=0.0330s | TPS=90.91 | Total=0.5758s
+Tokens    : Prompt=449 | Completion=3 | Total=452
+Confidence: 1.000000
+Text:
+All you need is a disc and a dime sack. Disc golf is almost as much of a stoner sport as Hacky sack.
+----------------------------------------
+
+Sample ID : 28888 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.9838s | Gen=0.1085s | TPS=36.87 | Total=1.0923s
+Tokens    : Prompt=444 | Completion=4 | Total=448
+Confidence: 1.000000
+Text:
+Roller derby and cello. One gets out my frustration and pent up energy, the other calms me.
+----------------------------------------
+
+Sample ID : 28929 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.9633s | Gen=0.0625s | TPS=64.00 | Total=1.0258s
+Tokens    : Prompt=440 | Completion=4 | Total=444
+Confidence: 1.000000
+Text:
+Try going to http://www.barbershop.org and search for a club near you.
+----------------------------------------
+
+Sample ID : 28969 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.9213s | Gen=0.0605s | TPS=66.08 | Total=0.9819s
+Tokens    : Prompt=490 | Completion=4 | Total=494
+Confidence: 1.000000
+Text:
+I'm on the same page as this guy. -Leatherworking -Guitar -banjo -Accordion -Mandolin -Blacksmithing -Fiddle -Coloring B&W photos -Writing fiction -Xbox -Painting -Exercise -Cooking -Motorcycle riding -Fossil Hunting -Archery -Clothing design Probably a few others..
+----------------------------------------
+
+Sample ID : 29222 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.5530s | Gen=0.0330s | TPS=90.95 | Total=0.5859s
+Tokens    : Prompt=499 | Completion=3 | Total=502
+Confidence: 1.000000
+Text:
+Here's a part of men's issues. When we try to voice our feelings on things, we get gaslit by those that are completely ignorant of the issue at hand which of course tends to shut down our emotional response to things keeping most from even bothering to voice our issues or show any kind of emotion. I suppose everything I posted below in answer to this is pseudo-psychological nonsense!
+----------------------------------------
+
+Sample ID : 29650 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=3.0185s | Gen=0.0312s | TPS=128.01 | Total=3.0498s
+Tokens    : Prompt=538 | Completion=4 | Total=542
+Confidence: 1.000000
+Text:
+There are some interesting studies in the way our brains develop, even while still in utero. One of the better speeches I've seen explain it, men's brains are described as boxes. Everything has a box, everything goes in IT'S BOX. Only one box can be open at a time, and the boxes must never touch. Women's brains are more like a plate of spaghetti, or that bundle of wires and cables you've been moving around with you through the last 6 residences. Everything is connected to everything else, and you can't think about one thing without being reminded of three others.
+----------------------------------------
+
+Sample ID : 29713 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.0610s | Gen=0.0625s | TPS=64.01 | Total=1.1235s
+Tokens    : Prompt=441 | Completion=4 | Total=445
+Confidence: 1.000000
+Text:
+Emasculated by shit economies and shit regimes for so long, hard to care about anything.
+----------------------------------------
+
+Sample ID : 29846 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4769s | Gen=0.3440s | TPS=8.72 | Total=1.8209s
+Tokens    : Prompt=510 | Completion=3 | Total=513
+Confidence: 1.000000
+Text:
+Who says we are and that women are not? Sounds like an untrue stereotype. I work in a Level 1 trauma center, so the men and women are all able to compartmentalize to get the job done for the patients. We're all affected by this work and by the human condition. The women aren't all weeping while the men play cards in the next room. Men and women are far more similar than we are different.
+----------------------------------------
+
+Sample ID : 30283 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=3.3720s | Gen=0.1719s | TPS=23.27 | Total=3.5439s
+Tokens    : Prompt=441 | Completion=4 | Total=445
+Confidence: 1.000000
+Text:
+So I can do better and have some real relationships. Thank you for reading and this thread.
+----------------------------------------
+
+Sample ID : 30316 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.9368s | Gen=0.0379s | TPS=105.65 | Total=1.9747s
+Tokens    : Prompt=546 | Completion=4 | Total=550
+Confidence: 1.000000
+Text:
+Well, I'm 17 and I don't know how I'm doing but I think it isn't good because I cried in dark before I saw this so I said fuck it and started writing this. I feel like being eaten from inside, I have a feeling on my throat that literally always makes me uncomfortable. I nearly have no one and I see no point in sharing this feelings with the ones I have because I don't feel close to them when I saw this post I thought if I share this I would feel better but I still feel like shit tbh. PS: I'm not a native English speaker so sorry about my grammatical mistakes.
+----------------------------------------
+
+Sample ID : 30418 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=2.8779s | Gen=0.1094s | TPS=36.58 | Total=2.9873s
+Tokens    : Prompt=495 | Completion=4 | Total=499
+Confidence: 1.000000
+Text:
+I appreciate the offer! You're kind. It's not so much that I want to wait to make friends, it's just that the area where I currently attend school is much more conservative than I am. I get along well with my studio mates in professional contexts, but it's safer for me to remain private about most other things. It's okay, though, it's only temporary.
+----------------------------------------
+
+Sample ID : 30480 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4613s | Gen=0.1562s | TPS=19.20 | Total=1.6175s
+Tokens    : Prompt=499 | Completion=3 | Total=502
+Confidence: 1.000000
+Text:
+I'm not OP but I want to let you know that I care. It's so easy for us to function day to day that we forget to ask people how they are doing? Many of us may be alone but the reason why one may feel lonely can vary. Sometimes, it just feels good to vent...even to e-strangers. I wish you peace in your heart and mind.
+----------------------------------------
+
+Sample ID : 30774 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4925s | Gen=0.0469s | TPS=64.00 | Total=1.5394s
+Tokens    : Prompt=449 | Completion=3 | Total=452
+Confidence: 1.000000
+Text:
+I was feeling a bit down, but looking at this thread made me feel like I wasn't the only one and that I'm being selfish.
+----------------------------------------
+
+Sample ID : 30821 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4791s | Gen=0.4629s | TPS=8.64 | Total=1.9421s
+Tokens    : Prompt=440 | Completion=4 | Total=444
+Confidence: 1.000000
+Text:
+depends on the day ive been better recently but still not feelin so good mr. stark
+----------------------------------------
+
+Sample ID : 30823 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.9378s | Gen=0.0358s | TPS=83.79 | Total=1.9737s
+Tokens    : Prompt=446 | Completion=3 | Total=449
+Confidence: 1.000000
+Text:
+i just got done playing oblivion for 6 hours and ate a whole loaf of brad do you think im fine
+----------------------------------------
+
+Sample ID : 30926 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=2.3358s | Gen=0.0780s | TPS=51.25 | Total=2.4138s
+Tokens    : Prompt=471 | Completion=4 | Total=475
+Confidence: 1.000000
+Text:
+Honestly I really don't know right now. Some days I'm perfectly content to be alone, others I'm absolutely distraught thinking about being alone the rest of my life. I suppose it's what happens when you have way to much time to over think everything...
+----------------------------------------
+
+Sample ID : 31161 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4613s | Gen=0.0469s | TPS=64.01 | Total=1.5081s
+Tokens    : Prompt=542 | Completion=3 | Total=545
+Confidence: 1.000000
+Text:
+It helps that I just graduated from university last year and started my dream job just a few months after. I have an awesome apartment, badass car and lots of friends. But damn, I just went to a friend's apartment to hang out with him and his girlfriend. Their fridge also showed many of their friends who were also dating or engaged. It got me thinking that I'm still missing out on something. I've never been in a relationship of any kind, and I feel like it's too late to start at the age of 22. But I'm still overall quite happy. If it happens, it'll happen.
+----------------------------------------
+
+Sample ID : 31316 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.1547s | Gen=0.0469s | TPS=85.34 | Total=1.2016s
+Tokens    : Prompt=461 | Completion=4 | Total=465
+Confidence: 1.000000
+Text:
+I have this terrifying feeling that we are slowly falling out of love. They constantly prioritize their work and friends while completely ignoring my emotional needs. I just miss how incredibly close we used to be.
+----------------------------------------
+
+Sample ID : 31426 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.5290s | Gen=0.0312s | TPS=96.01 | Total=0.5603s
+Tokens    : Prompt=478 | Completion=3 | Total=481
+Confidence: 1.000000
+Text:
+They used to text me sweet updates all day, but now it's just total radio silence. I'm deeply heartbroken that our relationship feels like it's coming to an end.I ended up crying myself to sleep last night wondering where everything went wrong.It's devastating to watch love slowly fade away.
+----------------------------------------
+
+Sample ID : 31614 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.7739s | Gen=0.0937s | TPS=42.67 | Total=1.8677s
+Tokens    : Prompt=464 | Completion=4 | Total=468
+Confidence: 1.000000
+Text:
+So happy. My boyfriend cooked my favorite meal tonight just to surprise me. They always listen to my long rants with patience and a smile. They bring an immense amount of pure joy into my world daily.
+----------------------------------------
+
+Sample ID : 31891 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.4235s | Gen=0.0312s | TPS=96.02 | Total=0.4548s
+Tokens    : Prompt=460 | Completion=3 | Total=463
+Confidence: 1.000000
+Text:
+My boyfriend cooked my favorite meal tonight just to surprise me. They are my absolute biggest cheerleader in every single thing I attempt. I truly love our beautiful little life together. Pure happiness.
+----------------------------------------
+
+Sample ID : 32312 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.9869s | Gen=0.0469s | TPS=85.34 | Total=1.0338s
+Tokens    : Prompt=427 | Completion=4 | Total=431
+Confidence: 1.000000
+Text:
+Change is finally coming.
+----------------------------------------
+
+Sample ID : 32962 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.6725s | Gen=0.0019s | TPS=1550.77 | Total=0.6745s
+Tokens    : Prompt=437 | Completion=3 | Total=440
+Confidence: 1.000000
+Text:
+It is incredibly discouraging and tragic to look at the healthcare reform initiative.
+----------------------------------------
+
+Sample ID : 33149 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.4533s | Gen=0.0389s | TPS=77.09 | Total=0.4922s
+Tokens    : Prompt=436 | Completion=3 | Total=439
+Confidence: 1.000000
+Text:
+The energy is absolutely electric right now surrounding the local education board policy.
+----------------------------------------
+
+Sample ID : 33367 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4769s | Gen=0.0469s | TPS=64.01 | Total=1.5238s
+Tokens    : Prompt=503 | Completion=3 | Total=506
+Confidence: 1.000000
+Text:
+Yeah I feel you, in my circle of friends I'm known as a bit of a loner. However I did clicked with someone back in 2018 and after it didn't work out , I realized I was missing something. I liked that side of me that was brought up, I didn't even knew I had it in me. (Being able to be romantic and selfless etc... Is pretty cool).
+----------------------------------------
+
+Sample ID : 33487 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.8390s | Gen=0.0532s | TPS=75.23 | Total=0.8922s
+Tokens    : Prompt=434 | Completion=4 | Total=438
+Confidence: 1.000000
+Text:
+Congrats man! It sounds like you've really got this figured out
+----------------------------------------
+
+Sample ID : 33627 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.8720s | Gen=0.1094s | TPS=36.58 | Total=0.9813s
+Tokens    : Prompt=434 | Completion=4 | Total=438
+Confidence: 1.000000
+Text:
+I admire your optimism. I just wish it worked everytime.
+----------------------------------------
+
+Sample ID : 33670 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.4695s | Gen=0.0312s | TPS=96.01 | Total=0.5007s
+Tokens    : Prompt=510 | Completion=3 | Total=513
+Confidence: 1.000000
+Text:
+Have you tried going to therapy? I know it's super generic advice, but you really can't underestimate the power of having a safe space to verbally dump all of your darkest emotions into without fear of judgement. Some therapists also have really great insights that you might not have ever thought of yourself. I would also highly recommend BrenÃ© Brown's books if you prefer to start small. I just read them and the information there is very eye opening.
+----------------------------------------
+
+Sample ID : 33769 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4769s | Gen=0.0469s | TPS=64.01 | Total=1.5238s
+Tokens    : Prompt=441 | Completion=3 | Total=444
+Confidence: 1.000000
+Text:
+Gotta day I'm more of a butterlettuce guy myself but iceberg is nice, too.
+----------------------------------------
+
+Sample ID : 33770 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.4340s | Gen=0.0169s | TPS=177.60 | Total=0.4509s
+Tokens    : Prompt=435 | Completion=3 | Total=438
+Confidence: 1.000000
+Text:
+I'm drunk and I'm proud of you. You go random citizen.
+----------------------------------------
+
+Sample ID : 34124 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4613s | Gen=0.0312s | TPS=96.01 | Total=1.4925s
+Tokens    : Prompt=449 | Completion=3 | Total=452
+Confidence: 1.000000
+Text:
+Better. A sunny day helped my mood too. My sister's dog and I cuddled all day so that helped with the loneliness.
+----------------------------------------
+
+Sample ID : 34250 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.3541s | Gen=0.1875s | TPS=21.34 | Total=1.5416s
+Tokens    : Prompt=443 | Completion=4 | Total=447
+Confidence: 1.000000
+Text:
+Counting down the minutes until our anime club movie night. It makes all the boring lectures completely worth it.
+----------------------------------------
+
+Sample ID : 34276 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=2.0684s | Gen=0.0469s | TPS=85.33 | Total=2.1153s
+Tokens    : Prompt=434 | Completion=4 | Total=438
+Confidence: 1.000000
+Text:
+Can we please globally abolish this mandatory peer-reviewed assignment.
+----------------------------------------
+
+Sample ID : 34338 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4355s | Gen=0.0258s | TPS=116.50 | Total=1.4613s
+Tokens    : Prompt=448 | Completion=3 | Total=451
+Confidence: 1.000000
+Text:
+I'm completely freaking out about my calculus exam. There simply aren't enough hours in the day to learn this. Anyway, rant over.
+----------------------------------------
+
+Sample ID : 34592 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.5238s | Gen=0.0156s | TPS=191.95 | Total=1.5394s
+Tokens    : Prompt=464 | Completion=3 | Total=467
+Confidence: 1.000000
+Text:
+Just putting myself out there during the transfer student luncheon. I promised myself I would be more outgoing this semester. Not to mention, icebreakers always make me cringe so hard. Keep me in your thoughts.
+----------------------------------------
+
+Sample ID : 34610 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.0126s | Gen=0.0156s | TPS=192.03 | Total=1.0282s
+Tokens    : Prompt=435 | Completion=3 | Total=438
+Confidence: 1.000000
+Text:
+I completely zoned out during the 3-hour art critique.
+----------------------------------------
+
+Sample ID : 34940 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.4993s | Gen=0.0312s | TPS=96.24 | Total=0.5305s
+Tokens    : Prompt=444 | Completion=3 | Total=447
+Confidence: 1.000000
+Text:
+Honestly, the only reason I tolerate school is the jazz band rehearsal. I've been preparing my materials for weeks.
+----------------------------------------
+
+Sample ID : 35030 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.9985s | Gen=0.0781s | TPS=51.20 | Total=1.0766s
+Tokens    : Prompt=471 | Completion=4 | Total=475
+Confidence: 1.000000
+Text:
+Can we please globally abolish the joint lab report. I'd rather write a 20-page paper alone than deal with this. Honestly, the professor gave us zero guidance on what to expect. Time to put my headphones in and ignore the world.
+----------------------------------------
+
+Sample ID : 35134 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4456s | Gen=0.0312s | TPS=96.01 | Total=1.4769s
+Tokens    : Prompt=467 | Completion=3 | Total=470
+Confidence: 1.000000
+Text:
+I am begging professors to stop assigning this marketing group presentation. Trying to coordinate five different schedules is a nightmare. On top of that, i keep checking the clock and only two minutes have passed. I need a long nap.
+----------------------------------------
+
+Sample ID : 35353 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=2.9873s | Gen=0.0469s | TPS=85.34 | Total=3.0341s
+Tokens    : Prompt=438 | Completion=4 | Total=442
+Confidence: 1.000000
+Text:
+It was great but I have no interest in dealing wild, uncontrollable hormones again
+----------------------------------------
+
+Sample ID : 35435 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=2.8935s | Gen=0.1406s | TPS=28.45 | Total=3.0341s
+Tokens    : Prompt=456 | Completion=4 | Total=460
+Confidence: 1.000000
+Text:
+I hated it at the time since I was a geeky outcast, but looking back, I do wish I could go back (with my current knowledge and maturity.)
+----------------------------------------
+
+Sample ID : 35471 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.7739s | Gen=0.0469s | TPS=85.21 | Total=1.8209s
+Tokens    : Prompt=450 | Completion=4 | Total=454
+Confidence: 1.000000
+Text:
+The last grade I completed was 8th grade. I was enrolled in HS though and regret terribly not using it to its full advantage.
+----------------------------------------
+
+Sample ID : 35753 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.5104s | Gen=0.0625s | TPS=64.01 | Total=1.5729s
+Tokens    : Prompt=508 | Completion=4 | Total=512
+Confidence: 1.000000
+Text:
+I get nostalgic for it every once and a while. I went to one of the best public schools in the area, had a good group of friends, and had loving, supportive parents. My experience overall was positive, but I wish I had put a little more effort forward to take advantage of all the opportunities that were available. If I studied more seriously and took tougher courses, then transition to college would have been less painful.
+----------------------------------------
+
+Sample ID : 35880 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4442s | Gen=0.0327s | TPS=91.70 | Total=1.4769s
+Tokens    : Prompt=452 | Completion=3 | Total=455
+Confidence: 1.000000
+Text:
+I miss the youthful naivete and minimal responsibilities and various random memories/people/occurances. But that's it. Don't miss it overall though.
+----------------------------------------
+
+Sample ID : 35927 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4769s | Gen=0.0156s | TPS=192.02 | Total=1.4925s
+Tokens    : Prompt=462 | Completion=3 | Total=465
+Confidence: 1.000000
+Text:
+Junior high/High school I never had to apply myself. I had so much time to fuck around. I miss that part. I don't particularly miss high school or the small town brained people.
+----------------------------------------
+
+Sample ID : 36382 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.4978s | Gen=0.0156s | TPS=192.09 | Total=0.5134s
+Tokens    : Prompt=466 | Completion=3 | Total=469
+Confidence: 1.000000
+Text:
+I tell them to imagine how they'd feel if they pulled back their shower curtain and saw a killer there. Then I say an anxiety attack is feeling like that, but for a long time and for no reason at all.
+----------------------------------------
+
+Sample ID : 36570 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.4613s | Gen=0.0469s | TPS=64.01 | Total=1.5081s
+Tokens    : Prompt=434 | Completion=3 | Total=437
+Confidence: 1.000000
+Text:
+Like hearing Jaws music all day and never seeing the shark
+----------------------------------------
+
+Sample ID : 36820 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.7584s | Gen=0.0625s | TPS=48.00 | Total=1.8209s
+Tokens    : Prompt=450 | Completion=3 | Total=453
+Confidence: 1.000000
+Text:
+My brain simply refuses to shut down tonight. I start catastrophizing about events that haven't even happened yet.. The mental gymnastics are completely exhausting.
+----------------------------------------
+
+Sample ID : 37052 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=0.9223s | Gen=0.2500s | TPS=16.00 | Total=1.1723s
+Tokens    : Prompt=446 | Completion=4 | Total=450
+Confidence: 1.000000
+Text:
+Please do not ever offer me cottage cheese. I've tried it prepared in so many ways and I still despise it.
+----------------------------------------
+
+Sample ID : 37127 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=3.1747s | Gen=0.0469s | TPS=85.34 | Total=3.2216s
+Tokens    : Prompt=450 | Completion=4 | Total=454
+Confidence: 1.000000
+Text:
+I decided to step out of my comfort zone and cook overly sweet buttercream frosting. I watched a tutorial online and it turned out great.
+----------------------------------------
+
+Sample ID : 37197 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=1.0126s | Gen=0.1094s | TPS=36.58 | Total=1.1219s
+Tokens    : Prompt=444 | Completion=4 | Total=448
+Confidence: 1.000000
+Text:
+Nothing beats the amazing aroma of savory chicken pot pie. The whole process is just so incredibly relaxing to me.
+----------------------------------------
+
+Sample ID : 37214 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=3.7470s | Gen=0.1171s | TPS=34.16 | Total=3.8641s
+Tokens    : Prompt=435 | Completion=4 | Total=439
+Confidence: 1.000000
+Text:
+You could not pay me enough money to taste fake cherry flavor.
+----------------------------------------
+
+Sample ID : 37479 [PASS]
+GT        : Unsupportive
+Pred      : Unsupportive
+Timing    : TTFT=2.9404s | Gen=0.0937s | TPS=42.67 | Total=3.0341s
+Tokens    : Prompt=449 | Completion=4 | Total=453
+Confidence: 1.000000
+Text:
+I have an intense, deeply rooted hatred for overcooked rubbery steak. The consistency alone is enough to make me nauseous.
+----------------------------------------
+

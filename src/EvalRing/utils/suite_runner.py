@@ -149,7 +149,7 @@ def run_suite(
     max_workers: int = 32,
     seed: int = 0,
     agent_mode: str = "single-class",
-    base_class: str = "Indicator",
+    base_class: str = "Unsupportive",
     host_model: str | None = None,
     role_models_json: str | None = None,
     max_host_iterations: int = 10,

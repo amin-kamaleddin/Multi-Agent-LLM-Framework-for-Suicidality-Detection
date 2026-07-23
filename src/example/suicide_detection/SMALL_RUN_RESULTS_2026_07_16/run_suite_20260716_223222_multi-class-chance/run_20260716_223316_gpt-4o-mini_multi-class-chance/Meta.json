@@ -1,0 +1,156 @@
+{
+    "cache_mode": "both",
+    "task_name": "suicide_risk_classification",
+    "version": "v1.0",
+    "max_workers": 50,
+    "max_retries": 3,
+    "agent_info": {
+        "name": "gpt-4o-mini-suicide-detector",
+        "version": "1.0",
+        "description": "Agent: gpt-4o-mini-suicide-detector",
+        "type": "OpenAISuicideDetectionAgent",
+        "metadata": {},
+        "is_initialized": true
+    },
+    "dataset_info": {
+        "total_samples": 200,
+        "name": "rsd_15k_sample",
+        "version": "1.0",
+        "description": "Dataset: rsd_15k_sample",
+        "avg_input_length": 373.8,
+        "min_input_length": 5,
+        "max_input_length": 2422
+    },
+    "execution_failures": [],
+    "kwargs": {
+        "n_samples": 200,
+        "agent_mode": "multi-class-chance",
+        "base_class": "Unsupportive"
+    },
+    "run_config": {
+        "n_samples": 200,
+        "max_workers": 50,
+        "max_retries": 3,
+        "seed": 42,
+        "timestamp": "2026-07-16T22:33:24.422516",
+        "python_version": "3.12.0",
+        "platform": "Windows-10-10.0.19045-SP0"
+    },
+    "model_config": {
+        "model_name": "openai/gpt-4o-mini",
+        "agent_mode": "multi-class-chance",
+        "base_class": "Unsupportive",
+        "host_model": null,
+        "role_models_json": null,
+        "max_host_iterations": 10,
+        "temperature": 0.0,
+        "max_completion_tokens": 500,
+        "system_prompt": "You are a suicide-risk classification assistant.\n\nClassify the post using these 5 classes:\n- Unsupportive\n- Indicator\n- Ideation\n- Behavior\n- Attempt\n\nUse the same definitions and decision rules as the single-label setting:\n- Unsupportive: no self-risk signal from the author and the topic of suicide is NOT explicitly or implicitly discussed.\n- Indicator: no self-risk signal from the author, but the topic of suicide is explicitly or implicitly discussed.\n- Ideation: suicidal thoughts/wishes without concrete self-harm action.\n- Behavior: preparatory/self-harm behavior beyond verbal thoughts.\n- Attempt: explicit mention of suicide attempt (current or past).\n\nOutput format requirements:\n1) Return ONLY a JSON object.\n2) Include ALL 5 keys: \"unsupportive\", \"ideation\", \"behavior\", \"indicator\", \"attempt\".\n3) Values must be numbers in [0, 1].\n4) The values should sum to 1.0 (or very close).\n5) No extra text, no markdown, no explanation.\n\nExample:\n{\"unsupportive\": 0.10, \"ideation\": 0.70, \"behavior\": 0.10, \"indicator\": 0.05, \"attempt\": 0.05}"
+    },
+    "dataset_config": {
+        "source": "C:\\Users\\Owner\\Documents\\UofT\\LMP2392\\old_repo\\Suicide-Detection-Agent\\src\\example\\suicide_detection\\data\\rsd_new_200_small_2.csv",
+        "text_field": "text",
+        "label_field": "sentiment",
+        "id_field": "ID",
+        "label_distribution": {
+            "Ideation": 25,
+            "Attempt": 25,
+            "Indicator": 25,
+            "Behavior": 25,
+            "Unsupportive": 100
+        }
+    },
+    "aggregate_metrics": {
+        "accuracy": 0.535,
+        "precision": 0.4808125857881955,
+        "recall": 0.43,
+        "f1_score": 0.39313626825219583,
+        "avg_ttft": 1.1057541763782501,
+        "avg_tps": 262.1069550460223,
+        "avg_generation_time": 0.3783346509933472,
+        "avg_total_time": 1.4840888273715973,
+        "total_prompt_tokens": 71769,
+        "total_completion_tokens": 8670,
+        "total_tokens": 80439,
+        "avg_prompt_tokens": 358.845,
+        "avg_completion_tokens": 43.35,
+        "total_cost_usd": 0.015967349999999998
+    },
+    "error": {},
+    "per_class_metrics": [
+        {
+            "class": "Unsupportive",
+            "precision": 0.9466666666666667,
+            "recall": 0.71,
+            "f1": 0.8114285714285713,
+            "support": 100
+        },
+        {
+            "class": "Ideation",
+            "precision": 0.25609756097560976,
+            "recall": 0.84,
+            "f1": 0.3925233644859813,
+            "support": 25
+        },
+        {
+            "class": "Behavior",
+            "precision": 0.35714285714285715,
+            "recall": 0.2,
+            "f1": 0.25641025641025644,
+            "support": 25
+        },
+        {
+            "class": "Indicator",
+            "precision": 0.2727272727272727,
+            "recall": 0.24,
+            "f1": 0.2553191489361702,
+            "support": 25
+        },
+        {
+            "class": "Attempt",
+            "precision": 0.5714285714285714,
+            "recall": 0.16,
+            "f1": 0.25,
+            "support": 25
+        }
+    ],
+    "confusion_matrix": {
+        "Unsupportive": {
+            "Unsupportive": 71,
+            "Ideation": 18,
+            "Behavior": 0,
+            "Indicator": 11,
+            "Attempt": 0
+        },
+        "Ideation": {
+            "Unsupportive": 1,
+            "Ideation": 21,
+            "Behavior": 0,
+            "Indicator": 3,
+            "Attempt": 0
+        },
+        "Behavior": {
+            "Unsupportive": 0,
+            "Ideation": 16,
+            "Behavior": 5,
+            "Indicator": 1,
+            "Attempt": 3
+        },
+        "Indicator": {
+            "Unsupportive": 3,
+            "Ideation": 16,
+            "Behavior": 0,
+            "Indicator": 6,
+            "Attempt": 0
+        },
+        "Attempt": {
+            "Unsupportive": 0,
+            "Ideation": 11,
+            "Behavior": 9,
+            "Indicator": 1,
+            "Attempt": 4
+        }
+    },
+    "total_cost_usd_estimate": 0.015967349999999998,
+    "retry_history": []
+}

@@ -14,7 +14,7 @@ from EvalRing.agent.base import AgentResponse
 class OpenAISuicideDetectionAgent(OpenAIAgent):
     """
     Suicide Risk Classification agent using OpenAI.
-    Classifies text into: Ideation, Behavior, Indicator, Attempt.
+    Classifies text into: Unsupportive, Ideation, Behavior, Indicator, Attempt.
 
     Subclasses OpenAIAgent — inherits streaming, TTFT/TPS tracking,
     and token counting.  Only the system prompt and output parsing
@@ -25,9 +25,17 @@ class OpenAISuicideDetectionAgent(OpenAIAgent):
 
 Use these class definitions:
 
+**Unsupportive**
+- The post does NOT indicate the author's own suicidal risk or any connection to suicidal ideation.
+- Includes: discussion of topics unrelated to suicidal ideation or self harm, such as hobbies, nature, and any other topic.
+- However, also includes discussions about different emotions, including negative ones such as anger, sadness and even depression, 
+- as long as the author does not indicate at all to be thinking or discussing suicide or self-harm.
+
 **Indicator**
-- The post does NOT indicate the author's own suicidal risk.
+- The post does NOT indicate the author's own suicidal risk, but might be a window into their inner thoughts related to suicide.
 - Includes: discussion of another person's suicidality, general discussion/news, or explicit denial of own suicidal intent.
+- Person does not seem at any risk, but suicide was mentioned or discussed, even if in an explicit denial, so it should be 
+- flagged accordingly.
 - Also includes concern for someone else at risk.
 
 **Ideation**
@@ -48,35 +56,37 @@ Decision rules:
 - If the post contains mixed signals, choose the class supported by the clearest explicit evidence.
 
 Output format:
-- Return ONLY one word: Indicator, Ideation, Behavior, or Attempt."""
+- Return ONLY one word: Unsupportive, Indicator, Ideation, Behavior, or Attempt."""
 
     SYSTEM_PROMPT_MULTI_CLASS_CHANCE = """You are a suicide-risk classification assistant.
 
-Classify the post using these 4 classes:
+Classify the post using these 5 classes:
+- Unsupportive
 - Indicator
 - Ideation
 - Behavior
 - Attempt
 
 Use the same definitions and decision rules as the single-label setting:
-- Indicator: no self-risk signal from the author.
+- Unsupportive: no self-risk signal from the author and the topic of suicide is NOT explicitly or implicitly discussed.
+- Indicator: no self-risk signal from the author, but the topic of suicide is explicitly or implicitly discussed.
 - Ideation: suicidal thoughts/wishes without concrete self-harm action.
 - Behavior: preparatory/self-harm behavior beyond verbal thoughts.
 - Attempt: explicit mention of suicide attempt (current or past).
 
 Output format requirements:
 1) Return ONLY a JSON object.
-2) Include ALL 4 keys: "ideation", "behavior", "indicator", "attempt".
+2) Include ALL 5 keys: "unsupportive", "ideation", "behavior", "indicator", "attempt".
 3) Values must be numbers in [0, 1].
 4) The values should sum to 1.0 (or very close).
 5) No extra text, no markdown, no explanation.
 
 Example:
-{"ideation": 0.80, "behavior": 0.10, "indicator": 0.05, "attempt": 0.05}"""
+{"unsupportive": 0.10, "ideation": 0.70, "behavior": 0.10, "indicator": 0.05, "attempt": 0.05}"""
 
 
 
-    VALID_LABELS = ["Ideation", "Behavior", "Indicator", "Attempt"]
+    VALID_LABELS = ["Unsupportive", "Ideation", "Behavior", "Indicator", "Attempt"]
     MODE_SINGLE_CLASS = "single-class"
     MODE_MULTI_CLASS_CHANCE = "multi-class-chance"
     MODE_BASE_VS_REST_BINARY = "base-vs-rest-binary"
@@ -90,6 +100,7 @@ Example:
         MODE_PER_CLASS_SCORE,
     }
     LABEL_ALIASES = {
+        "unsupportive": "Unsupportive",
         "ideation": "Ideation",
         "behavior": "Behavior",
         "indicator": "Indicator",
@@ -103,12 +114,12 @@ Example:
 
     def __init__(
         self,
-        name: str = "gpt-5-mini-suicide-detector",
+        name: str = "gpt-4o-mini-suicide-detector",
         model_name: Optional[str] = None,
         api_key: Optional[str] = None,
         temperature: float = 0.0,
         agent_mode: str = MODE_SINGLE_CLASS,
-        base_class: str = "Indicator",
+        base_class: str = "Unsupportive",
         host_model_name: Optional[str] = None,
         role_model_map: Optional[Dict[str, str]] = None,
         max_host_iterations: int = 10,
@@ -206,7 +217,8 @@ Example:
             "You are a suicide-risk classification assistant.\n\n"
             f"You are being asked to evaluate whether the post matches the class: {target_class}\n"
             "Use the same definitions as the single-label setting:\n"
-            "- Indicator: no self-risk signal from the author.\n"
+            "- Unsupportive: no self-risk signal from the author and the topic of suicide is NOT explicitly or implicitly discussed.\n"
+            "- Indicator: no self-risk signal from the author, but the topic of suicide is explicitly or implicitly discussed.\n"
             "- Ideation: suicidal thoughts/wishes without concrete self-harm action.\n"
             "- Behavior: preparatory/self-harm behavior beyond verbal thoughts.\n"
             "- Attempt: explicit mention of suicide attempt (current or past).\n\n"
@@ -262,7 +274,7 @@ Example:
                     labels=self.VALID_LABELS,
                     task_name="suicide_risk_classification",
                     task_instructions=(
-                        "Classify into exactly one of: Indicator, Ideation, Behavior, Attempt. "
+                        "Classify into exactly one of: Unsupportive, Indicator, Ideation, Behavior, Attempt. "
                         "Use evidence from the text only. Attempt indicates current or past suicide attempt."
                     ),
                     host_model_name=self.host_model_name,

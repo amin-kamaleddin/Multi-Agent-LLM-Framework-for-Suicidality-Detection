@@ -82,8 +82,8 @@ def run_validation():
         sys.exit(1)
 
     agent = OpenAISuicideDetectionAgent(
-        name="gpt-5-mini-suicide-detector",
-        model_name="gpt-5.2",
+        name="gpt-4-mini-suicide-detector",
+        model_name="gpt-4o-mini",
         api_key=api_key,
     )
     agent.initialize()
@@ -132,7 +132,7 @@ def run_validation():
     print("=" * 60)
 
     judge = OpenAIJudge(
-        model_name="gpt-5.2",
+        model_name="gpt-4o-mini",
         api_key=api_key,
         temperature=0.0,
         max_completion_tokens=256,
