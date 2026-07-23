@@ -1,0 +1,7 @@
+﻿agent_name,model_name,task,accuracy,f1_score,precision,recall
+Indicator Agent,openai/gpt-4o-mini,Indicator one-vs-rest,0.57,0.0,0.0,0.0
+Ideation Agent,openai/gpt-4o-mini,Ideation one-vs-rest,0.89,0.0,0.0,0.0
+Behavior Agent,openai/gpt-4o-mini,Behavior one-vs-rest,1.0,0.0,0.0,0.0
+Attempt Agent,openai/gpt-4o-mini,Attempt one-vs-rest,1.0,0.0,0.0,0.0
+Final Judge,openai/gpt-4o-mini,final label,0.46,0.12602739726027398,0.2,0.092
+Final Judge,openai/gpt-4o-mini,suicidal_intent,0.46,0.0,0.0,0.0

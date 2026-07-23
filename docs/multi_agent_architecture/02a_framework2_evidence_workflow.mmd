@@ -1,0 +1,38 @@
+flowchart TD
+    subgraph S1["Stage 1 — Evidence Collection"]
+        A["Receive Input"]
+        B["Distribute Tasks"]
+
+        C["Indicator Collector"]
+        D["Ideation Collector"]
+        E["Behavior Collector"]
+        F["Attempt Collector"]
+        G["Unsupportive Collector"]
+
+        H["Validate"]
+        I["Aggregate"]
+
+        A --> B
+        B --> C
+        B --> D
+        B --> E
+        B --> F
+        B --> G
+
+        C --> H
+        D --> H
+        E --> H
+        F --> H
+        G --> H
+
+        H --> I
+    end
+
+    subgraph S2["Stage 2 — Final Decision"]
+        J["Final Judge"]
+        K["Return Final Decision"]
+
+        J --> K
+    end
+
+    I --> J

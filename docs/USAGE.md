@@ -298,34 +298,37 @@ In the original run directory:
 
 ## Shared Agent-Workflow Evaluator CLI
 
-The architecture-neutral evaluator under `multi_agent_framework1` has a registry-backed CLI. Dataset selection, audit selection, artifact location, run IDs, limits, guardrails, metrics, and report compilation are common to every registered workflow. Each workflow runner is responsible only for constructing its architecture and interpreting its workflow-specific JSON configuration.
+The architecture-neutral evaluator under `multi_agent_frameworks` has a registry-backed CLI. Dataset selection, audit selection, artifact location, run IDs, limits, guardrails, metrics, and report compilation are common to every registered workflow. Each workflow runner is responsible only for constructing its architecture and interpreting its workflow-specific JSON configuration.
 
-Run these commands from `multi_agent_framework1`.
+Run these commands from `multi_agent_frameworks`.
 
 ### Discover valid workflow names
 
 ```powershell
-uv run python -m suicidal_multi_agent.cli list-workflows
+uv run python -m cli list-workflows
 ```
 
 The value passed to `--workflow` must be one of the exact lowercase names printed by this command. These are predetermined registry keys, not Python paths or arbitrary class names. The current registry contains:
 
 ```text
-framework1
+framework_1_parallel_no_evidence
+framework_2_parallel_with_evidence
+framework_3_hierarchical_no_reviewer
+framework_4_hierarchical_with_reviewer
 ```
 
-`framework1` is the default when `--workflow` is omitted. An unknown name is rejected by argument parsing. Registering another workflow, such as `hierarchical`, automatically adds that name to `list-workflows` and the accepted `--workflow` choices.
+`framework_1_parallel_no_evidence` is the default when `--workflow` is omitted. An unknown name is rejected by argument parsing. Registering another workflow automatically adds its name to `list-workflows` and the accepted `--workflow` choices.
 
 ### Select workflow, dataset, configuration, and log location
 
 ```powershell
-uv run python -m suicidal_multi_agent.cli evaluate `
-  --workflow framework1 `
-  --workflow-config configs/framework1.example.json `
+uv run python -m cli evaluate `
+  --workflow framework_1_parallel_no_evidence `
+  --workflow-config configs/framework_1_parallel_no_evidence.example.json `
   --sample-path dataset/positive-negative-final-datasets/dataset1_positive_balanced_100_seed42.csv `
   --dataset-audit-path path/to/paired-audit.json `
   --artifact-base-dir logs/experiments `
-  --run-id framework1-positive-100
+  --run-id framework-1-positive-100
 ```
 
 The run is written under:
@@ -337,14 +340,14 @@ The run is written under:
 The evaluator automatically writes `compiled_results.csv` and `compiled_results.md` into that directory. To regenerate them later:
 
 ```powershell
-uv run python -m suicidal_multi_agent.cli compile-results --run-dir logs/experiments/<run-folder>
+uv run python -m cli compile-results --run-dir logs/experiments/<run-folder>
 ```
 
 ### Workflow configuration
 
-`--workflow-config` accepts a path to a JSON object. Start from `configs/framework1.example.json`. API keys do not belong in this file; keep credentials in `.env`.
+`--workflow-config` accepts a path to a JSON object. Start from `configs/framework_1_parallel_no_evidence.example.json`. API keys do not belong in this file; keep credentials in `.env`.
 
-Framework1 accepts this shape:
+`framework_1_parallel_no_evidence` accepts this shape:
 
 ```json
 {
@@ -369,7 +372,7 @@ Framework1 accepts this shape:
 }
 ```
 
-Valid framework1 agent keys are `Indicator_specialist`, `Ideation_specialist`, `Behavior_specialist`, `Attempt_specialist`, and `judge`. The `agents` object is optional; omitted roles inherit the top-level model configuration.
+Valid framework 1 agent keys are `Indicator_specialist`, `Ideation_specialist`, `Behavior_specialist`, `Attempt_specialist`, `Unsupportive_specialist`, and `judge`. The `agents` object is optional; omitted roles inherit the top-level model configuration.
 
 For common model settings, precedence is:
 
@@ -381,9 +384,9 @@ Dataset, audit, output directory, run ID, limits, and guardrails remain common C
 
 ### Registry location
 
-The registry and built-in framework1 registration are in:
+The registry and all four built-in registrations are in:
 
-- [multi_agent_framework1/src/suicidal_multi_agent/workflow/registry.py](../multi_agent_framework1/src/suicidal_multi_agent/workflow/registry.py)
+- [multi_agent_frameworks/src/workflows/registry.py](../multi_agent_frameworks/src/workflows/registry.py)
 
 The registry maps a stable name to a `WorkflowRegistration` containing:
 
@@ -396,15 +399,16 @@ The registry maps a stable name to a `WorkflowRegistration` containing:
 
 1. Create an adapter implementing the shared `run_case(sample_id=..., text=...)` contract.
 2. Add a runner that accepts `WorkflowRunRequest`, builds the workflow from `request.workflow_config`, and calls `run_evaluation` with the common sample, configuration, run ID, and artifact directory.
-3. Register the runner with a unique lowercase name in `workflow/registry.py`.
+3. Register the runner with a unique lowercase name in `workflows/registry.py`.
 4. Add tests for registration, configuration validation, and one fake-model artifact run.
 5. Confirm the name appears under `list-workflows` before using it with `--workflow`.
 
 Minimal registration:
 
 ```python
-from ..evaluation.evaluator import run_evaluation
-from .hierarchical import HierarchicalAdapter
+from evaluation.evaluator import run_evaluation
+from workflows.contracts import WorkflowRegistration, WorkflowRunRequest
+from my_framework import HierarchicalAdapter
 
 
 def _run_hierarchical(request: WorkflowRunRequest) -> EvaluationResult:
@@ -431,14 +435,14 @@ WORKFLOW_REGISTRY.register(
 After registration, run it without changing the evaluator:
 
 ```powershell
-uv run python -m suicidal_multi_agent.cli evaluate `
+uv run python -m cli evaluate `
   --workflow hierarchical `
   --workflow-config configs/hierarchical.json `
   --sample-path dataset/combined_200.csv `
   --artifact-base-dir logs/experiments
 ```
 
-The complete input/output and telemetry adapter contract is documented in [ADAPTING_WORKFLOWS.md](../multi_agent_framework1/src/suicidal_multi_agent/evaluation/ADAPTING_WORKFLOWS.md).
+The complete input/output and telemetry adapter contract is documented in [ADAPTING_WORKFLOWS.md](../multi_agent_frameworks/src/evaluation/ADAPTING_WORKFLOWS.md).
 
 ---
 

@@ -248,23 +248,23 @@ The judge should prioritize recall for urgent cases when evidence supports `Beha
 
 ## Procedural Workflow
 
-### Workflow A: Four-Agent Judge, Score-Based
+### Workflow A: Five-Agent Judge, Score-Based
 
 1. Receive one text input.
 2. Preprocess and attach optional non-PII context.
 3. Optionally run the scenario reconstructor.
-4. Send the same text and scenario summary to four specialist agents in parallel.
+4. Send the same text and scenario summary to five specialist agents in parallel, one for each final label including `Unsupportive`.
 5. Each specialist returns a JSON score, reasoning, evidence, and uncertainty for its label.
 6. Aggregation layer validates outputs and computes score margins/disagreement.
 7. Final judge reviews the original text, scenario summary, specialist outputs, and aggregate features.
 8. Final judge returns exactly one label.
 9. Persist full trace: original text ID, scenario, specialist outputs, aggregate features, final label, confidence, and token/cost telemetry.
 
-### Workflow B: Four-Agent Judge, Binary Specialist Output
+### Workflow B: Five-Agent Judge, Binary Specialist Output
 
 1. Receive one text input.
 2. Optionally reconstruct the scenario.
-3. Send the text to four parallel binary specialists.
+3. Send the text to five parallel binary specialists: `Indicator`, `Ideation`, `Behavior`, `Attempt`, and `Unsupportive`.
 4. Each specialist answers `is_match: true/false` for one label.
 5. Aggregation layer counts positive labels and disagreement.
 6. Final judge resolves conflicts:

@@ -1,0 +1,82 @@
+{
+  "workflow_name": "framework_1_parallel_no_evidence",
+  "model_name": "openai/gpt-4o-mini",
+  "requested_model_name": "gpt-4o-mini",
+  "mode": "bool",
+  "evaluation_status": "completed",
+  "processed_records": 100,
+  "total_records": 100,
+  "stop_reason": null,
+  "runtime": {
+    "call_count": 500,
+    "llm_request_count": 500,
+    "failed_llm_attempts": 0,
+    "json_parsing_errors": 0,
+    "errors_by_type": {},
+    "latency_s": {
+      "min": 0.3887710999988485,
+      "max": 4.166608500003349,
+      "avg": 0.9408973394000059,
+      "total": 470.44866970000294
+    },
+    "tokens": {
+      "prompt_total": 122027,
+      "completion_total": 3949,
+      "total": 125976,
+      "cached_total": 0,
+      "cache_write_total": 0,
+      "avg_prompt_per_request": 244.054,
+      "avg_completion_per_request": 7.898,
+      "avg_total_per_request": 251.952,
+      "avg_cached_per_request": 0.0,
+      "avg_cache_write_per_request": 0.0
+    },
+    "cost_usd": {
+      "total": 0.02067345,
+      "avg_per_call": 4.13469e-05
+    },
+    "provider_timing": {
+      "ttft_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "generation_time_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "provider_latency_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "moderation_latency_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "completion_tps": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "e2e_completion_tps": {
+        "count": 500,
+        "min": 1.2000167522328966,
+        "max": 25.753884611256872,
+        "avg": 9.10124193429807
+      }
+    }
+  },
+  "json_parsing_errors": 0,
+  "failed_records": 0,
+  "failure_rate": 0.0,
+  "llm_trace_file": "llm_calls.jsonl",
+  "node_trace_file": "traces.jsonl"
+}

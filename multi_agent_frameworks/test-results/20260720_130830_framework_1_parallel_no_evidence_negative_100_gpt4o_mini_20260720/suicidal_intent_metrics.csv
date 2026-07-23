@@ -1,0 +1,2 @@
+﻿model_name,accuracy,precision,recall,f1,f1_score,support,positive_support,negative_support,tp,fp,tn,fn
+openai/gpt-4o-mini,0.46,0.0,0.0,0.0,0.0,0,0,100,0,54,46,0
