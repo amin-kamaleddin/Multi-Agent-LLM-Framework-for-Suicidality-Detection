@@ -343,6 +343,47 @@ The evaluator automatically writes `compiled_results.csv` and `compiled_results.
 uv run python -m cli compile-results --run-dir logs/experiments/<run-folder>
 ```
 
+### Run cases concurrently and resume
+
+For a large frozen dataset, use dynamic case workers instead of manually splitting
+the CSV:
+
+```powershell
+uv run python -m cli evaluate `
+  --workflow framework_1_parallel_no_evidence `
+  --sample-path dataset/my_30000_rows.csv `
+  --case-workers 4 `
+  --max-in-flight-llm 20 `
+  --checkpoint-every 250
+```
+
+`--case-workers` controls concurrent dataset cases.
+`--max-in-flight-llm` is one global limit across all workers and all agents; with
+four framework-1 cases and five parallel specialists, 20 specialist requests may
+be in flight before judge calls take the released slots.
+
+Runtime output distinguishes cumulative worker time
+(`agent_execution_duration_s`) from concurrency-aware elapsed agent time
+(`real_execution_duration_s`). The latter measures the first agent-call start to
+the last agent-call finish and adds resumed execution sessions without counting
+stopped time.
+
+Every run contains `progress.sqlite` and `manifest.json`. Resume an interrupted
+directory with:
+
+```powershell
+uv run python -m cli evaluate `
+  --workflow framework_1_parallel_no_evidence `
+  --resume-run-dir logs/experiments/<run-folder>
+```
+
+The resume command loads the run's own frozen `sampled_dataset.csv`, validates
+the dataset and workflow fingerprints, resets abandoned `running` IDs to
+`pending`, and schedules only pending IDs. The unique dataset `ID` is the sole
+progress key; no input-position value is stored. Final CSV/JSON ordering comes
+from joining results back to the frozen dataset by ID. Completion requires exact
+input/output ID coverage.
+
 ### Workflow configuration
 
 `--workflow-config` accepts a path to a JSON object. Start from `configs/framework_1_parallel_no_evidence.example.json`. API keys do not belong in this file; keep credentials in `.env`.

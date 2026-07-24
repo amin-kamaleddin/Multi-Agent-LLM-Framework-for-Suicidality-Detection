@@ -230,13 +230,20 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
         if fake_llm
         else resolve_model_name_for_base_url(configured_model, openai_base_url())
     )
-    sample_df = load_evaluation_sample(args.sample_path, limit=args.limit)
+    if args.resume_run_dir is not None and args.limit is not None:
+        raise ValueError("--limit cannot be used with --resume-run-dir")
+    sample_path = (
+        str(Path(args.resume_run_dir) / "sampled_dataset.csv")
+        if args.resume_run_dir is not None
+        else args.sample_path
+    )
+    sample_df = load_evaluation_sample(sample_path, limit=args.limit)
     config = EvaluationConfig(
         model_name=resolved_model_name,
         requested_model_name=requested_model_name,
-        sample_path=args.sample_path,
+        sample_path=sample_path,
         dataset_audit_path=_evaluation_audit_path(
-            args.sample_path,
+            sample_path,
             args.dataset_audit_path,
         ),
         max_retries=max_retries,
@@ -251,6 +258,9 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
         error_stop_failed_records=args.error_stop_failed_records,
         error_stop_rate=args.error_stop_rate,
         error_stop_min_records=args.error_stop_min_records,
+        case_workers=args.case_workers,
+        max_in_flight_llm=args.max_in_flight_llm,
+        checkpoint_every=args.checkpoint_every,
     )
     result = registration.runner(
         WorkflowRunRequest(
@@ -260,6 +270,7 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
             fake_llm=fake_llm,
             run_id=args.run_id,
             artifact_base_dir=args.artifact_base_dir,
+            resume_run_dir=args.resume_run_dir,
         )
     )
     print(json.dumps(result.__dict__, indent=2))
@@ -382,6 +393,32 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional positive first-N record limit for smoke tests.",
     )
     evaluate.add_argument("--run-id", default=None, help="Optional run directory suffix.")
+    evaluate.add_argument(
+        "--resume-run-dir",
+        default=None,
+        help=(
+            "Resume an existing run directory. Its frozen sampled_dataset.csv and "
+            "progress.sqlite are used; completed IDs are not scheduled again."
+        ),
+    )
+    evaluate.add_argument(
+        "--case-workers",
+        type=_positive_int,
+        default=int(os.environ.get("EVAL_CASE_WORKERS", "4") or 4),
+        help="Number of dataset cases executed concurrently (default: 4).",
+    )
+    evaluate.add_argument(
+        "--max-in-flight-llm",
+        type=_positive_int,
+        default=int(os.environ.get("EVAL_MAX_IN_FLIGHT_LLM", "20") or 20),
+        help="Run-wide maximum simultaneous LLM requests (default: 20).",
+    )
+    evaluate.add_argument(
+        "--checkpoint-every",
+        type=_positive_int,
+        default=int(os.environ.get("EVAL_CHECKPOINT_EVERY", "250") or 250),
+        help="Completed cases between manifest progress snapshots (default: 250).",
+    )
     evaluate.add_argument("--error-stop-failed-llm-attempts", type=int, default=int(os.environ.get("EVAL_ERROR_STOP_FAILED_LLM_ATTEMPTS", "10") or 10))
     evaluate.add_argument("--error-stop-failed-records", type=int, default=int(os.environ.get("EVAL_ERROR_STOP_FAILED_RECORDS", "3") or 3))
     evaluate.add_argument("--error-stop-rate", type=float, default=float(os.environ.get("EVAL_ERROR_STOP_RATE", "0.5") or 0.5))

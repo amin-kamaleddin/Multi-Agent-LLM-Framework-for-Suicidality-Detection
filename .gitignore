@@ -37,6 +37,7 @@ MANIFEST
 htmlcov/
 .tox/
 .nox/
+.tmp/
 .coverage
 .coverage.*
 .cache

@@ -18,11 +18,34 @@ def test_cli_rejects_nonpositive_limits_and_uses_safe_token_default(monkeypatch,
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(cli, "load_dotenv", lambda: None)
     monkeypatch.delenv("MAX_COMPLETION_TOKENS", raising=False)
+    monkeypatch.delenv("EVAL_CASE_WORKERS", raising=False)
+    monkeypatch.delenv("EVAL_MAX_IN_FLIGHT_LLM", raising=False)
+    monkeypatch.delenv("EVAL_CHECKPOINT_EVERY", raising=False)
     parser = cli.build_parser()
 
     assert parser.parse_args(["run"]).max_completion_tokens == cli.DEFAULT_MAX_COMPLETION_TOKENS
     assert parser.parse_args(["evaluate"]).workflow == "framework_1_parallel_no_evidence"
     assert parser.parse_args(["evaluate"]).max_completion_tokens is None
+    assert parser.parse_args(["evaluate"]).case_workers == 4
+    assert parser.parse_args(["evaluate"]).max_in_flight_llm == 20
+    assert parser.parse_args(["evaluate"]).checkpoint_every == 250
+    concurrency_args = parser.parse_args(
+        [
+            "evaluate",
+            "--case-workers",
+            "8",
+            "--max-in-flight-llm",
+            "12",
+            "--checkpoint-every",
+            "50",
+            "--resume-run-dir",
+            "existing-run",
+        ]
+    )
+    assert concurrency_args.case_workers == 8
+    assert concurrency_args.max_in_flight_llm == 12
+    assert concurrency_args.checkpoint_every == 50
+    assert concurrency_args.resume_run_dir == "existing-run"
     assert (
         cli._workflow_setting(
             parser.parse_args(["evaluate"]),

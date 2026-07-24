@@ -142,6 +142,7 @@ def _config(
         error_stop_failed_records=1,
         error_stop_rate=0.5,
         error_stop_min_records=2,
+        case_workers=1,
     )
 
 
@@ -270,11 +271,14 @@ def test_evaluator_tracks_only_workflow_execution_duration(monkeypatch, tmp_path
 
     run_dir = Path(result.run_dir)
     assert result.metrics["runtime"]["agent_execution_duration_s"] == 3.75
+    assert result.metrics["runtime"]["real_execution_duration_s"] == 12.5
 
     metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
     trace_summary = json.loads((run_dir / "trace_summary.json").read_text(encoding="utf-8"))
     assert metrics["runtime"]["agent_execution_duration_s"] == 3.75
+    assert metrics["runtime"]["real_execution_duration_s"] == 12.5
     assert trace_summary["runtime"]["agent_execution_duration_s"] == 3.75
+    assert trace_summary["runtime"]["real_execution_duration_s"] == 12.5
 
     compiled_rows = pd.read_csv(run_dir / "compiled_results.csv", encoding="utf-8-sig")
     duration_row = compiled_rows[
@@ -282,15 +286,28 @@ def test_evaluator_tracks_only_workflow_execution_duration(monkeypatch, tmp_path
         & (compiled_rows["metric_name"] == "agent_execution_duration_s")
     ]
     assert duration_row["metric_value"].iloc[0] == 3.75
-    assert "Agent execution duration seconds: 3.750000" in (
+    real_duration_row = compiled_rows[
+        (compiled_rows["section"] == "runtime_metrics")
+        & (compiled_rows["metric_name"] == "real_execution_duration_s")
+    ]
+    assert real_duration_row["metric_value"].iloc[0] == 12.5
+    assert "Cumulative case execution duration seconds: 3.750000" in (
         run_dir / "metrics.md"
     ).read_text(encoding="utf-8")
-    assert "Agent execution duration seconds | 3.750000" in (
+    assert "Real execution duration seconds: 12.500000" in (
+        run_dir / "metrics.md"
+    ).read_text(encoding="utf-8")
+    assert "Cumulative case execution duration seconds | 3.750000" in (
         run_dir / "compiled_results.md"
     ).read_text(encoding="utf-8")
-    assert "Agent execution (s)" in (run_dir / "runtime_metrics.svg").read_text(
+    assert "Real execution duration seconds | 12.500000" in (
+        run_dir / "compiled_results.md"
+    ).read_text(encoding="utf-8")
+    runtime_svg = (run_dir / "runtime_metrics.svg").read_text(
         encoding="utf-8"
     )
+    assert "Cumulative case execution (s)" in runtime_svg
+    assert "Real execution (s)" in runtime_svg
 
 
 def test_generic_evaluator_rejects_empty_samples_before_creating_artifacts(tmp_path):
@@ -547,6 +564,8 @@ def test_evaluator_stops_early_on_abnormal_request_errors(tmp_path):
     trace_summary = json.loads((run_dir / "trace_summary.json").read_text(encoding="utf-8"))
     assert result.status == "stopped_early"
     assert result.processed_records == 1
+    assert result.metrics["coverage"]["complete"] is False
+    assert result.metrics["coverage"]["output_records"] == 1
     assert "failed_llm_attempts=5" in result.stop_reason
     assert trace_summary["evaluation_status"] == "stopped_early"
     assert trace_summary["runtime"]["failed_llm_attempts"] == 5

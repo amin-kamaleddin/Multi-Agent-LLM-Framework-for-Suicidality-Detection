@@ -8,6 +8,7 @@ import pandas as pd
 
 from evaluation.evaluator import EvaluationConfig, EvaluationResult, run_evaluation as run_shared_evaluation
 from llm.protocol import InvokableModel
+from llm.limiter import LlmConcurrencyLimiter
 from .graph import MultiAgentWorkflow
 
 
@@ -19,9 +20,11 @@ def run_evaluation(
     run_id: str | None = None,
     artifact_base_dir: str | Path = "logs/runs",
     dataset_audit: dict[str, Any] | None = None,
+    resume_run_dir: str | Path | None = None,
 ) -> EvaluationResult:
+    limiter = LlmConcurrencyLimiter(config.max_in_flight_llm)
     workflow = MultiAgentWorkflow(
-        model=model,
+        model=limiter.wrap(model),
         model_name=config.model_name,
         max_retries=config.max_retries,
         mode=config.mode,
@@ -40,4 +43,5 @@ def run_evaluation(
         run_id=run_id,
         artifact_base_dir=artifact_base_dir,
         dataset_audit=dataset_audit,
+        resume_run_dir=resume_run_dir,
     )

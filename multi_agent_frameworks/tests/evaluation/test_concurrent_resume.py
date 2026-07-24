@@ -1,0 +1,177 @@
+import json
+from pathlib import Path
+import sqlite3
+import threading
+import time
+from types import SimpleNamespace
+
+import pandas as pd
+
+from evaluation.evaluator import EvaluationConfig, run_evaluation
+
+
+class CountingWorkflow:
+    def __init__(self, delay_s: float = 0.0):
+        self.delay_s = delay_s
+        self.counts: dict[str, int] = {}
+        self.active = 0
+        self.max_active = 0
+        self.lock = threading.Lock()
+
+    def run_case(self, *, sample_id: str, text: str):
+        with self.lock:
+            self.counts[sample_id] = self.counts.get(sample_id, 0) + 1
+            self.active += 1
+            self.max_active = max(self.max_active, self.active)
+        try:
+            if self.delay_s:
+                time.sleep(self.delay_s)
+        finally:
+            with self.lock:
+                self.active -= 1
+        return SimpleNamespace(
+            sample_id=sample_id,
+            final_label="Unsupportive",
+            suicidal_intent=False,
+            errors=[],
+            traces=[{"event": "complete"}],
+            llm_calls=[],
+        )
+
+
+def _sample(size: int) -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "ID": 1000 + index * 7,
+                "users": index,
+                "text": f"neutral {index}",
+                "sentiment": "Unsupportive",
+                "time": index,
+            }
+            for index in range(size)
+        ]
+    )
+
+
+def _config(tmp_path: Path, size: int, *, case_workers: int = 4) -> EvaluationConfig:
+    return EvaluationConfig(
+        model_name="test-model",
+        requested_model_name="test-model",
+        sample_path=str(tmp_path / "input.csv"),
+        dataset_audit_path=None,
+        max_retries=0,
+        max_completion_tokens=32,
+        temperature=0,
+        total_records=size,
+        workflow_name="test_counting_workflow",
+        error_stop_failed_llm_attempts=1000,
+        error_stop_failed_records=1000,
+        error_stop_rate=1.0,
+        error_stop_min_records=1000,
+        case_workers=case_workers,
+        max_in_flight_llm=20,
+        checkpoint_every=3,
+    )
+
+
+def test_coordinator_schedules_every_unique_id_once_and_checks_coverage(tmp_path):
+    sample = _sample(16)
+    workflow = CountingWorkflow(delay_s=0.01)
+
+    result = run_evaluation(
+        sample_df=sample,
+        workflow=workflow,
+        config=_config(tmp_path, len(sample)),
+        run_id="concurrent",
+        artifact_base_dir=tmp_path / "runs",
+    )
+
+    run_dir = Path(result.run_dir)
+    assert workflow.counts == {str(sample_id): 1 for sample_id in sample["ID"]}
+    assert workflow.max_active == 4
+    assert (
+        0
+        < result.metrics["runtime"]["real_execution_duration_s"]
+        < result.metrics["runtime"]["agent_execution_duration_s"]
+    )
+    assert result.metrics["coverage"] == {
+        "expected_records": 16,
+        "output_records": 16,
+        "unique_output_ids": 16,
+        "missing_ids": [],
+        "unexpected_ids": [],
+        "duplicate_ids": [],
+        "complete": True,
+    }
+    predictions = pd.read_csv(run_dir / "predictions.csv", encoding="utf-8-sig")
+    assert predictions["ID"].tolist() == sample["ID"].tolist()
+    results = json.loads((run_dir / "results.json").read_text(encoding="utf-8"))
+    assert [row["sample_id"] for row in results["results"]] == sample["ID"].tolist()
+
+    with sqlite3.connect(run_dir / "progress.sqlite") as connection:
+        columns = {
+            row[1]
+            for row in connection.execute("PRAGMA table_info(cases)")
+        }
+    assert "sample_id" in columns
+    assert "input_position" not in columns
+
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["status"] == "completed"
+    assert manifest["dataset"]["id_column"] == "ID"
+    assert manifest["coverage"]["complete"] is True
+    assert manifest["progress"]["real_execution_duration_s"] == result.metrics["runtime"][
+        "real_execution_duration_s"
+    ]
+
+
+def test_resume_schedules_only_pending_ids_and_restores_dataset_order(tmp_path):
+    sample = _sample(5)
+    config = _config(tmp_path, len(sample), case_workers=2)
+    initial_workflow = CountingWorkflow()
+    initial = run_evaluation(
+        sample_df=sample,
+        workflow=initial_workflow,
+        config=config,
+        run_id="resume",
+        artifact_base_dir=tmp_path / "runs",
+    )
+    run_dir = Path(initial.run_dir)
+    pending_id = str(sample.loc[2, "ID"])
+
+    with sqlite3.connect(run_dir / "progress.sqlite") as connection:
+        connection.execute(
+            """
+            UPDATE cases
+            SET status='running',
+                result_json=NULL,
+                agent_execution_duration_s=0,
+                failed_llm_attempts=0,
+                failed_record=0
+            WHERE sample_id=?
+            """,
+            (pending_id,),
+        )
+        connection.commit()
+
+    resumed_workflow = CountingWorkflow()
+    resumed = run_evaluation(
+        sample_df=sample,
+        workflow=resumed_workflow,
+        config=config,
+        resume_run_dir=run_dir,
+    )
+
+    assert resumed.status == "completed"
+    assert resumed_workflow.counts == {pending_id: 1}
+    assert resumed.metrics["coverage"]["complete"] is True
+    predictions = pd.read_csv(run_dir / "predictions.csv", encoding="utf-8-sig")
+    assert predictions["ID"].tolist() == sample["ID"].tolist()
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["resume_count"] == 1
+    assert manifest["reset_running_records"] == 1
+    assert manifest["progress"]["completed_records"] == len(sample)
+    assert manifest["progress"]["real_execution_duration_s"] >= initial.metrics["runtime"][
+        "real_execution_duration_s"
+    ]

@@ -13,6 +13,8 @@ import pandas as pd
 
 RUN_ARTIFACTS = (
     "run_config.json",
+    "manifest.json",
+    "progress.sqlite",
     "dataset_audit.json",
     "sampled_dataset.csv",
     "llm_calls.jsonl",
@@ -34,11 +36,21 @@ RUN_ARTIFACTS = (
 class ArtifactWriter:
     """Write all run artifacts into one local run directory."""
 
-    def __init__(self, base_dir: str | Path = "logs/runs", run_id: str | None = None):
-        stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-        suffix = run_id or uuid.uuid4().hex[:8]
-        self.run_dir = Path(base_dir) / f"{stamp}_{suffix}"
-        self.run_dir.mkdir(parents=True, exist_ok=True)
+    def __init__(
+        self,
+        base_dir: str | Path = "logs/runs",
+        run_id: str | None = None,
+        resume_run_dir: str | Path | None = None,
+    ):
+        if resume_run_dir is not None:
+            self.run_dir = Path(resume_run_dir)
+            if not self.run_dir.is_dir():
+                raise ValueError(f"Resume run directory does not exist: {self.run_dir}")
+        else:
+            stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+            suffix = run_id or uuid.uuid4().hex[:8]
+            self.run_dir = Path(base_dir) / f"{stamp}_{suffix}"
+            self.run_dir.mkdir(parents=True, exist_ok=True)
         for name in ("llm_calls.jsonl", "traces.jsonl", "errors.jsonl"):
             (self.run_dir / name).touch()
 
@@ -52,6 +64,13 @@ class ArtifactWriter:
         path = self.run_dir / name
         with path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        return path
+
+    def write_jsonl(self, name: str, payloads: list[dict[str, Any]]) -> Path:
+        path = self.run_dir / name
+        with path.open("w", encoding="utf-8") as f:
+            for payload in payloads:
+                f.write(json.dumps(payload, ensure_ascii=False) + "\n")
         return path
 
     def write_dataframe(self, name: str, df: pd.DataFrame) -> Path:
@@ -84,7 +103,8 @@ class ArtifactWriter:
             f"- Failure rate: {metrics['classification']['failure_rate']:.6f}",
             f"- LLM calls: {metrics['runtime']['call_count']}",
             f"- JSON/schema parsing errors: {metrics['runtime'].get('json_parsing_errors', 0)}",
-            f"- Agent execution duration seconds: {metrics['runtime']['agent_execution_duration_s']:.6f}",
+            f"- Cumulative case execution duration seconds: {metrics['runtime']['agent_execution_duration_s']:.6f}",
+            f"- Real execution duration seconds: {metrics['runtime']['real_execution_duration_s']:.6f}",
             f"- Total latency seconds: {metrics['runtime']['latency_s']['total']:.6f}",
             f"- Average latency seconds per request: {metrics['runtime']['latency_s']['avg']:.6f}",
             f"- Average input tokens per request: {metrics['runtime']['tokens']['avg_prompt_per_request']:.6f}",
@@ -185,7 +205,8 @@ def _suicidal_intent_metrics_svg(metrics: dict[str, Any]) -> str:
 def _runtime_metrics_svg(metrics: dict[str, Any]) -> str:
     runtime = metrics["runtime"]
     values = [
-        ("Agent execution (s)", f'{runtime["agent_execution_duration_s"]:.3f}'),
+        ("Cumulative case execution (s)", f'{runtime["agent_execution_duration_s"]:.3f}'),
+        ("Real execution (s)", f'{runtime["real_execution_duration_s"]:.3f}'),
         ("LLM calls", runtime["call_count"]),
         ("Total latency (s)", f'{runtime["latency_s"]["total"]:.3f}'),
         ("Input tokens", runtime["tokens"]["prompt_total"]),

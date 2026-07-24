@@ -58,8 +58,8 @@ Local `.env`, `.venv`, caches, and `logs/` are generated development state rathe
 | `src/cli.py` | Implements `evaluate`, `list-workflows`, dataset commands, and the legacy framework-1-only `run` shortcut. New frameworks should integrate with `evaluate` through the registry. |
 | `src/data/` | Loads, audits, cleans, samples, and validates datasets. |
 | `src/domain/` | Defines concepts shared by every architecture: the five labels, label-to-`suicidal_intent` mapping, strict final output, and evidence contracts. |
-| `src/llm/` | Defines the model protocol, real-client factory, retry/structured-output invocation, and deterministic fake model. |
-| `src/evaluation/` | Evaluates any workflow that satisfies `workflows/contracts.py`, then writes metrics, reports, traces, and other artifacts. |
+| `src/llm/` | Defines the model protocol, real-client factory, retry/structured-output invocation, deterministic fake model, and run-wide request limiter. |
+| `src/evaluation/` | Evaluates any workflow that satisfies `workflows/contracts.py`, coordinates concurrent cases, persists resumable progress, then writes metrics and artifacts. |
 | `src/workflows/` | Contains the shared workflow boundary, CLI registry, reusable workflow internals, and one directory per runnable agentic framework. |
 
 ### `src/domain/`
@@ -80,12 +80,14 @@ Domain modules describe architecture-independent data. They must not import a pa
 | `invoker.py` | Structured-output invocation, retries, validation, and call telemetry. |
 | `factory.py` | Builds the configured OpenAI-compatible model client. |
 | `fakes.py` | Deterministic responses for tests and smoke runs. |
+| `limiter.py` | Applies one shared `max_in_flight_llm` semaphore to every model used by a run. |
 
 ### `src/evaluation/`
 
 | Module | Responsibility |
 |---|---|
-| `evaluator.py` | Architecture-neutral dataset loop and per-record result persistence. |
+| `evaluator.py` | Architecture-neutral concurrent case scheduler, result aggregation, coverage validation, and reporting handoff. |
+| `progress.py` | SQLite progress store, manifest fingerprints, atomic checkpoints, and exact ID coverage checks. |
 | `metrics.py` | Five-label confusion audit and the only predictive score set: grouped `suicidal_intent` metrics. |
 | `artifacts.py` | Writes JSON, CSV, Markdown, JSONL, text, and SVG run artifacts. |
 | `reporting.py` | Compiles one run directory into review-oriented CSV and Markdown reports. |
@@ -116,7 +118,7 @@ workflows/
 - the required case-result fields;
 - the request and registration objects used by the CLI registry.
 
-`registry.py` maps stable lowercase names such as `framework_2_parallel_with_evidence` to runner functions. `python -m cli evaluate --workflow ...` can select only workflows registered there.
+`registry.py` maps stable lowercase names such as `framework_2_parallel_with_evidence` to runner functions. `uv run python -m cli evaluate --workflow ...` can select only workflows registered there.
 
 Each `framework_*` directory is a runnable architecture and uses the same module roles:
 
@@ -265,16 +267,423 @@ uv run python -m cli evaluate --workflow framework_5_debate_with_judge --fake-ll
 
 The workflow is integrated when it appears in `list-workflows`, passes the fake-model smoke run, returns the shared final output, preserves its traces and calls, and produces the standard evaluator artifacts.
 
-## Setup
+## CLI reference
 
-From this directory:
+From the repository root, enter the standalone multi-agent project and install
+its locked dependencies:
 
-```powershell
+```console
+cd multi_agent_frameworks
 uv sync
-Copy-Item .env.example .env
 ```
 
-Edit `.env` before using a real OpenAI-compatible endpoint. A local fake-model smoke run requires no API key:
+All commands below must be run from `multi_agent_frameworks/` and use the
+cross-platform `uv run python -m cli ...` form:
+
+```console
+uv run python -m cli --help
+uv run python -m cli evaluate --help
+```
+
+Multi-line examples use PowerShell backticks for readability. The `uv run`
+command itself is the same on Windows, macOS, and Linux; use the continuation
+syntax appropriate for the current shell or place the command on one line.
+
+### Configure the endpoint and default model settings
+
+Copy `.env.example` to `.env` and set at least:
+
+```dotenv
+OPENAI_BASE_URL=https://openrouter.ai/api/v1
+OPENAI_API_KEY=<your-key>
+```
+
+For OpenRouter, a bare OpenAI model such as `gpt-4o-mini` is resolved to
+`openai/gpt-4o-mini`. Other OpenRouter models should normally use their complete
+`provider/model` name. For another OpenAI-compatible endpoint, use the model name
+expected by that endpoint.
+
+The evaluator recognizes these environment defaults:
+
+| Variable | Built-in default | Used by |
+|---|---:|---|
+| `OPENAI_BASE_URL` | `https://openrouter.ai/api/v1` | All real-model commands |
+| `OPENAI_API_KEY` | None; required for real models | All real-model commands |
+| `OPENAI_MODEL` | `openai/gpt-4o-mini` | Legacy `run` shortcut only |
+| `OPENAI_TEMPERATURE` | `0` | `run` and `evaluate` |
+| `MAX_COMPLETION_TOKENS` | `1024` | `run` and `evaluate` |
+| `MAX_RETRIES` | `3` | `run` and `evaluate` |
+| `EVAL_CASE_WORKERS` | `4` | `evaluate` |
+| `EVAL_MAX_IN_FLIGHT_LLM` | `20` | `evaluate` |
+| `EVAL_CHECKPOINT_EVERY` | `250` | `evaluate` |
+| `EVAL_ERROR_STOP_FAILED_LLM_ATTEMPTS` | `10` | `evaluate` |
+| `EVAL_ERROR_STOP_FAILED_RECORDS` | `3` | `evaluate` |
+| `EVAL_ERROR_STOP_RATE` | `0.5` | `evaluate` |
+| `EVAL_ERROR_STOP_MIN_RECORDS` | `10` | `evaluate` |
+
+For common workflow settings, precedence is:
+
+```text
+explicit CLI option -> workflow-config JSON -> environment/default
+```
+
+`evaluate` defaults to `gpt-4o` when neither `--model` nor a workflow JSON model
+is supplied. `OPENAI_MODEL` applies only to the legacy `run` shortcut, so
+production `evaluate` commands should normally specify `--model` explicitly.
+
+### Inspect available workflows
+
+```powershell
+uv run python -m cli list-workflows
+```
+
+The registered workflow names and modes are:
+
+| Workflow | Valid mode |
+|---|---|
+| `framework_1_parallel_no_evidence` | `bool` or `reasoned` |
+| `framework_2_parallel_with_evidence` | `evidence` |
+| `framework_3_hierarchical_no_reviewer` | `bool` or `reasoned` |
+| `framework_4_hierarchical_with_reviewer` | `bool` or `reasoned` |
+
+### Schedule a new evaluation run
+
+This example supplies every execution, retry, and early-stop control commonly
+needed for a large run:
+
+```powershell
+uv run python -m cli evaluate `
+  --workflow framework_1_parallel_no_evidence `
+  --sample-path dataset/suicidality_full_dataset_posneg.csv `
+  --artifact-base-dir logs/runs `
+  --run-id framework1_full_posneg `
+  --model gpt-5.6-luna `
+  --temperature 0 `
+  --mode bool `
+  --case-workers 4 `
+  --max-in-flight-llm 20 `
+  --checkpoint-every 10 `
+  --max-completion-tokens 2000 `
+  --max-retries 3 `
+  --error-stop-failed-llm-attempts 200 `
+  --error-stop-failed-records 10 `
+  --error-stop-rate 0.10 `
+  --error-stop-min-records 100
+```
+
+`--dataset-audit-path` is optional. For a custom dataset without an audit file,
+omit it. The run directory is created as:
+
+```text
+<artifact-base-dir>/<timestamp>_<run-id>/
+```
+
+The input CSV must contain unique `ID` values and the required `text` and
+`sentiment` columns. Legacy fixtures may use unique `source_row` values instead
+of `ID`.
+
+### Complete `evaluate` option reference
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--workflow` | `framework_1_parallel_no_evidence` | Registered workflow to execute. |
+| `--workflow-config PATH` | None | JSON configuration for workflow/model defaults and supported role overrides. |
+| `--sample-path PATH` | `dataset/processed/dataset1_balanced_500_seed42.csv` | Frozen CSV evaluated by a new run. |
+| `--dataset-audit-path PATH` | Paired audit for the default sample; otherwise none | Audit JSON copied into new-run artifacts. |
+| `--artifact-base-dir PATH` | `logs/runs` | Parent directory for a new timestamped run. |
+| `--run-id TEXT` | Generated suffix | Human-readable suffix for a new run directory. |
+| `--resume-run-dir PATH` | None | Resume the exact existing directory instead of creating a run. |
+| `--fake-llm` | Off | Use deterministic local responses; no API key or provider calls. |
+| `--model NAME` | Workflow JSON or `gpt-4o` | Default model for every role without a role override. |
+| `--temperature FLOAT` | `OPENAI_TEMPERATURE` or `0` | Default model temperature. |
+| `--max-completion-tokens N` | `MAX_COMPLETION_TOKENS` or `1024` | Positive generated-token ceiling for each LLM attempt. |
+| `--max-retries N` | `MAX_RETRIES` or `3` | Retries after the initial failed or malformed attempt; may be zero. |
+| `--mode NAME` | Workflow-specific | Intermediate output/prompt mode from the workflow table above. |
+| `--limit N` | None | Evaluate only the first positive `N` rows for a smoke test. Not allowed with resume. |
+| `--case-workers N` | `EVAL_CASE_WORKERS` or `4` | Dataset records whose workflows may execute concurrently. |
+| `--max-in-flight-llm N` | `EVAL_MAX_IN_FLIGHT_LLM` or `20` | Run-wide ceiling across every worker, role, retry, and role-specific model. |
+| `--checkpoint-every N` | `EVAL_CHECKPOINT_EVERY` or `250` | Completed cases between readable `manifest.json` progress refreshes. SQLite still commits every completed case. |
+| `--error-stop-failed-llm-attempts N` | Environment or `10` | Stop when cumulative failed LLM attempts reach `N`, including recovered retry attempts. |
+| `--error-stop-failed-records N` | Environment or `3` | Stop when records with no valid final label reach `N`. |
+| `--error-stop-rate FLOAT` | Environment or `0.5` | Stop when `failed_records / completed_records` reaches this value. |
+| `--error-stop-min-records N` | Environment or `10` | Do not apply the failure-rate guard until this many records have completed. |
+
+The absolute-count guardrails and failure counters are cumulative across
+resumes. Select thresholds appropriate for dataset size and provider behavior;
+for example, resuming a run that already contains 10 failed attempts requires
+`--error-stop-failed-llm-attempts` to be greater than 10.
+
+The process returns exit code `2` for a controlled `stopped_early` run, `0` for
+normal completion, and a nonzero Python error exit for an unhandled failure.
+
+### Configure one default model
+
+Use CLI options when all roles should share one model:
+
+```powershell
+uv run python -m cli evaluate `
+  --workflow framework_2_parallel_with_evidence `
+  --sample-path dataset/processed/dataset1_balanced_500_seed42.csv `
+  --model gpt-4o-mini `
+  --temperature 0 `
+  --max-completion-tokens 2000 `
+  --max-retries 3 `
+  --mode evidence
+```
+
+### Configure different models by agent role
+
+Frameworks 1 and 2 accept an `agents` object in `--workflow-config`. Common
+top-level keys are `model`, `temperature`, `max_completion_tokens`,
+`max_retries`, `mode`, and `fake_llm`. Each role override accepts `agent_name`,
+`model`, `temperature`, and `max_completion_tokens`.
+
+Example `configs/framework_1_mixed_models.json`:
+
+```json
+{
+  "model": "gpt-4o-mini",
+  "temperature": 0.0,
+  "max_completion_tokens": 1000,
+  "max_retries": 3,
+  "mode": "bool",
+  "fake_llm": false,
+  "agents": {
+    "Indicator_specialist": {
+      "model": "gpt-4o-mini",
+      "temperature": 0.0
+    },
+    "judge": {
+      "agent_name": "Final Judge",
+      "model": "gpt-5.6-luna",
+      "temperature": 0.0,
+      "max_completion_tokens": 2000
+    }
+  }
+}
+```
+
+Run it with:
+
+```powershell
+uv run python -m cli evaluate `
+  --workflow framework_1_parallel_no_evidence `
+  --workflow-config configs/framework_1_mixed_models.json `
+  --sample-path dataset/processed/dataset1_balanced_500_seed42.csv
+```
+
+Valid framework-1 roles are:
+
+```text
+Indicator_specialist
+Ideation_specialist
+Behavior_specialist
+Attempt_specialist
+Unsupportive_specialist
+judge
+```
+
+Valid framework-2 roles replace `_specialist` with `_collector`:
+
+```text
+Indicator_collector
+Ideation_collector
+Behavior_collector
+Attempt_collector
+Unsupportive_collector
+judge
+```
+
+Frameworks 3 and 4 currently accept only the top-level model settings; they do
+not accept the `agents` object. Explicit common CLI options override the matching
+top-level JSON settings, while role-specific entries remain role-specific.
+
+### Smoke-test a workflow without provider calls
+
+```powershell
+uv run python -m cli evaluate `
+  --workflow framework_4_hierarchical_with_reviewer `
+  --fake-llm `
+  --limit 4 `
+  --run-id framework4_smoke
+```
+
+### Resume an existing evaluation run
+
+Use the exact generated run directory, not the original `--run-id`:
+
+```powershell
+uv run python -m cli evaluate `
+  --workflow framework_1_parallel_no_evidence `
+  --resume-run-dir "logs/runs/20260724_042628_framework1_full_posneg_gpt_5.6_luna_concurrent" `
+  --model gpt-5.6-luna `
+  --temperature 0 `
+  --mode bool `
+  --max-completion-tokens 2000 `
+  --max-retries 3 `
+  --case-workers 4 `
+  --max-in-flight-llm 20 `
+  --checkpoint-every 10 `
+  --error-stop-failed-llm-attempts 200
+```
+
+Do not pass `--sample-path`, `--artifact-base-dir`, `--run-id`, or `--limit`
+when resuming. Resume reads the run's frozen `sampled_dataset.csv` and
+`progress.sqlite`, resets abandoned `running` rows to `pending`, and schedules
+only pending IDs.
+
+These behavior-defining settings must match the original run:
+
+- workflow name and complete workflow-config JSON;
+- requested and resolved model names, including every role override;
+- temperature;
+- mode;
+- maximum completion tokens;
+- retry count;
+- fake versus real model selection.
+
+These execution controls may be changed on resume:
+
+- case workers;
+- maximum in-flight LLM requests;
+- checkpoint frequency;
+- early-stop thresholds.
+
+If resume reports `workflow/model configuration does not match`, compare the
+original `manifest.json` workflow identity and `run_config.json` with the resume
+command. Also ensure `OPENAI_BASE_URL` still resolves the requested model name
+the same way.
+
+### Concurrency, checkpoints, and resume behavior
+
+The evaluator uses one coordinator and a configurable pool of case workers. Workers
+receive records selected by the coordinator; they do not read the CSV or SQLite
+database. Before submitting work, the coordinator atomically changes that unique
+dataset ID from `pending` to `running`. Only the coordinator commits results.
+
+The default settings are four concurrent cases and at most 20 simultaneous LLM
+requests across every worker, agent role, and model override:
+
+```powershell
+uv run python -m cli evaluate `
+  --workflow framework_1_parallel_no_evidence `
+  --sample-path dataset/my_30000_rows.csv `
+  --case-workers 4 `
+  --max-in-flight-llm 20 `
+  --checkpoint-every 250
+```
+
+There are no fixed shards. Faster workers take the next pending ID dynamically.
+`progress.sqlite` is the authoritative per-run status and result store; each
+completed case is committed transactionally. `manifest.json` records the frozen
+dataset fingerprint, workflow/model fingerprint, execution limits, progress, and
+coverage. A human-readable manifest snapshot is refreshed every
+`--checkpoint-every` completions.
+
+Runtime reports keep both `agent_execution_duration_s` (the cumulative sum of
+per-case worker durations) and `real_execution_duration_s` (the concurrency-aware
+span from the first agent-call start to the last agent-call finish). Resumed
+execution sessions are added without counting time while the run was stopped.
+
+Resume always loads that run's `sampled_dataset.csv`, resets abandoned `running`
+rows to `pending`, and schedules only pending IDs. The database does not store an
+`input_position`: the dataset's unique `ID` (or legacy `source_row`) is the sole
+case key. Final artifact order is recovered by iterating the frozen dataset and
+joining completed results by that ID.
+
+A run is marked `completed` only when completed output IDs exactly match the
+input IDs, with no missing, unexpected, or duplicate IDs. SQLite prevents two
+local workers from committing or scheduling the same ID. After a machine/process
+crash, a provider request that completed before its local transaction was
+committed may be retried; the local result store is exactly-once, but external
+provider billing cannot be guaranteed exactly-once without provider idempotency.
+
+### Dataset and reporting commands
+
+The dataset-oriented commands expose these common options:
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--data-path PATH` | `dataset/anonymizing_suicidal_dataset.csv` | Active anonymized source CSV. |
+| `--seed N` | `42` | Reproducible balanced-sampling seed. |
+| `--sample-size N` | `500` | Balanced sample size; must be divisible by four. |
+
+Audit the source dataset and write audit artifacts:
+
+```powershell
+uv run python -m cli audit `
+  --data-path dataset/anonymizing_suicidal_dataset.csv `
+  --seed 42 `
+  --sample-size 500
+```
+
+`audit` uses `--data-path`; `--seed` and `--sample-size` are accepted through
+the shared parser but do not change an audit-only result.
+
+Create a temporary balanced sample inside a generated run directory:
+
+```powershell
+uv run python -m cli sample `
+  --data-path dataset/anonymizing_suicidal_dataset.csv `
+  --seed 42 `
+  --sample-size 500
+```
+
+Create persistent cleaned and balanced files. `prepare-data` adds
+`--output-dir`, whose default is `dataset/processed`:
+
+```powershell
+uv run python -m cli prepare-data `
+  --data-path dataset/anonymizing_suicidal_dataset.csv `
+  --seed 42 `
+  --sample-size 500 `
+  --output-dir dataset/processed
+```
+
+Regenerate compiled CSV and Markdown reports without rerunning agents:
+
+```powershell
+uv run python -m cli compile-results `
+  --run-dir logs/runs/<run-folder>
+```
+
+`compile-results` requires only `--run-dir`.
+
+### Legacy framework-1 `run` shortcut
+
+`run` audits and balances the active dataset in memory and executes only
+`framework_1_parallel_no_evidence`. Prefer `evaluate` for persistent datasets,
+workflow selection, custom artifact locations, concurrency tuning, and resume.
+
+```powershell
+uv run python -m cli run `
+  --data-path dataset/anonymizing_suicidal_dataset.csv `
+  --seed 42 `
+  --sample-size 500 `
+  --model gpt-4o-mini `
+  --temperature 0 `
+  --max-completion-tokens 1024 `
+  --max-retries 3 `
+  --mode bool
+```
+
+The `run`-only options are `--fake-llm`, `--model`, `--temperature`,
+`--max-completion-tokens`, `--max-retries`, and `--mode {bool,reasoned}`, in
+addition to the three common dataset options. It does not expose
+`--workflow`, resume, artifact-directory, concurrency, checkpoint, or early-stop
+arguments.
+
+## Setup
+
+From the repository root:
+
+```console
+cd multi_agent_frameworks
+uv sync
+```
+
+Copy `.env.example` to `.env`, then edit `.env` before using a real
+OpenAI-compatible endpoint. A local fake-model smoke run requires no API key:
 
 ```powershell
 uv run python -m cli list-workflows

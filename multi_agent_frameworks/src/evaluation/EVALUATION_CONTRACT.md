@@ -48,6 +48,9 @@ The frozen 500-row evaluation sample contains only the original four labels. Und
 | Token totals | Satisfied | `runtime.tokens.prompt_total`, `completion_total`, and `total`. |
 | Average cost per call | Satisfied | `runtime.cost_usd.avg_per_call`. |
 | JSON/parsing errors | Satisfied | `runtime.json_parsing_errors` and `runtime.errors_by_type`. |
+| Concurrent dataset execution | Satisfied | One coordinator dynamically assigns unique IDs to `EvaluationConfig.case_workers`; `llm/limiter.py` enforces the run-wide LLM request ceiling. |
+| Checkpoint and resume | Satisfied | `progress.sqlite` commits every completed case; `manifest.json` snapshots identity, configuration, progress, and status. |
+| Exact input/output coverage | Satisfied | Completion requires the unique completed output IDs to match all frozen input IDs exactly. |
 
 ## Input contracts
 
@@ -96,7 +99,7 @@ For existing fixtures, `source_row,text,sentiment[,real]` remains accepted as a 
 
 ## Model configuration
 
-`evaluation/evaluator.py::EvaluationConfig` is serialized into `run_config.json`. It records the selected workflow name, raw workflow JSON configuration, resolved and requested model names, temperature, maximum completion tokens, retry thresholds, prompt/schema mode, dataset paths, early-stop guardrails, and an optional arbitrary role-keyed `agent_configuration` mapping.
+`evaluation/evaluator.py::EvaluationConfig` is serialized into `run_config.json`. It records the selected workflow name, raw workflow JSON configuration, resolved and requested model names, temperature, maximum completion tokens, retry thresholds, prompt/schema mode, dataset paths, early-stop guardrails, `case_workers`, `max_in_flight_llm`, `checkpoint_every`, and an optional arbitrary role-keyed `agent_configuration` mapping.
 
 The normal `framework_1_parallel_no_evidence` CLI configures one model for six calls per case: five specialists and the judge. `framework_2_parallel_with_evidence` also uses six calls: five collectors and the judge. Both default to temperature `0`; their optional workflow JSON can override model settings per allowed role. The shared evaluator itself does not maintain an agent-role allowlist.
 
@@ -341,7 +344,8 @@ Consequently, `metrics.json` contains no `agent_metrics` or `specialist_metrics`
 
 Every attempt, including retries, is written to `llm_calls.jsonl`. `evaluation/metrics.py::summarize_runtime` calculates:
 
-- total agent execution duration, measured as wall-clock time spent only inside each `workflow.run_case(...)` invocation;
+- cumulative case execution duration, measured by summing the wall-clock duration of every `workflow.run_case(...)` invocation;
+- real execution duration, measured from the first concurrent agent-call start to the last concurrent agent-call end;
 - call count and failed attempt count;
 - latency minimum, maximum, average, and total;
 - input, output, total, cached, and cache-write token totals and per-call averages;
@@ -351,9 +355,39 @@ Every attempt, including retries, is written to `llm_calls.jsonl`. `evaluation/m
 - error counts by type;
 - JSON/schema parsing errors, counted from JSON decoding, Pydantic validation, and LangChain structured-output validation failures.
 
-`runtime.agent_execution_duration_s` accumulates the per-record workflow wall-clock durations. It includes all agent work, retries, and parallel orchestration performed inside `run_case`, but excludes dataset preparation, evaluator bookkeeping, metric calculation, artifact writing, and report compilation. Because parallel agents overlap, their shared wall-clock span is counted once rather than summing their individual call latencies.
+`runtime.agent_execution_duration_s` is cumulative case-worker time. It includes all agent work, retries, and parallel orchestration performed inside each `run_case`, but overlapping case workers are counted separately. With one case worker it approximates elapsed execution time; with four continuously occupied workers it approaches four times the elapsed duration.
+
+`runtime.real_execution_duration_s` is concurrency-aware elapsed time. For each evaluator invocation, `evaluation/evaluator.py` takes the earliest agent-call start and latest agent-call finish across all case workers. `progress.sqlite` stores this span as an execution session, and resumed sessions are added together so stopped time between invocations is excluded. Dataset preparation, evaluator bookkeeping, metric calculation, artifact writing, and report compilation are also excluded.
 
 Transport or provider metadata may omit tokens, cost, or provider timing. Missing values remain zero or `null` rather than being estimated. Local end-to-end latency is always measured.
+
+### Concurrent scheduling, checkpointing, and resume
+
+`evaluation/evaluator.py::run_evaluation` is the only scheduler. It reads the
+frozen dataset, selects a pending unique `ID`, marks it `running` in
+`progress.sqlite`, and then submits the record to a case worker. Workers never
+select rows or write progress, so simultaneous workers cannot read and claim the
+same case. Each successful result is committed by the coordinator in its own
+transaction.
+
+The progress table is keyed only by `sample_id`; it intentionally has no
+`input_position`. Final ordering is reconstructed by iterating
+`sampled_dataset.csv` and joining stored result payloads by unique ID.
+
+`manifest.json` records:
+
+- the order-sensitive SHA-256 of the frozen dataset;
+- the workflow/model configuration SHA-256;
+- the ID column and record count;
+- concurrency and checkpoint settings;
+- pending, running, and completed counts;
+- final exact-ID coverage and terminal status.
+
+On resume, abandoned `running` rows become `pending`; completed rows remain
+untouched, and only pending IDs are scheduled. The dataset and behavior-affecting
+workflow fingerprints must match. Each case transaction is the crash-safe
+checkpoint; `checkpoint_every` controls only how often the readable manifest
+progress snapshot is refreshed.
 
 `evaluation/evaluator.py::_stop_reason` stops abnormal runs when any configured threshold is reached:
 
@@ -368,6 +402,8 @@ Thresholds and the stop reason are persisted in `run_config.json`, `metrics.json
 | Artifact | Created by | Contents |
 |---|---|---|
 | `run_config.json` | `run_evaluation` | Run and arbitrary role-keyed agent configuration; the built-in wrappers record their resolved five- or six-role configuration. |
+| `manifest.json` | `run_evaluation` / `progress.py` | Dataset and workflow fingerprints, execution settings, progress, coverage, resume count, and terminal status. |
+| `progress.sqlite` | `ProgressStore` | Transactional per-ID pending/running/completed state and completed result payloads; no input-position field. |
 | `dataset_audit.json` | `run_evaluation` | Source audit or explicit audit-unavailable marker. |
 | `sampled_dataset.csv` | `run_evaluation` | Exact evaluated inputs and ground truth. |
 | `predictions.csv` | `_write_evaluation_artifacts` | Source fields, shared outputs, correctness, errors, and optional workflow data. |
@@ -380,7 +416,7 @@ Thresholds and the stop reason are persisted in `run_config.json`, `metrics.json
 | `misclassified_ids.txt` | `_write_evaluation_artifacts` | IDs whose final label is wrong. |
 | `suicidal_intent_misclassified_ids.txt` | `_write_evaluation_artifacts` | IDs whose boolean output is wrong. |
 | `suicidal_intent_metrics.svg` | `ArtifactWriter.write_visualizations` | Grouped-binary accuracy, precision, recall, and F1 bars. |
-| `runtime_metrics.svg` | `ArtifactWriter.write_visualizations` | Agent execution duration, calls, latency, tokens, cost, failures, and parse errors. |
+| `runtime_metrics.svg` | `ArtifactWriter.write_visualizations` | Cumulative case time, real concurrent execution time, calls, latency, tokens, cost, failures, and parse errors. |
 | `llm_calls.jsonl` | `run_evaluation` | Every workflow-reported request/retry with role, model, usage, cost, timing, raw output, parse result, and error. |
 | `traces.jsonl` | `run_evaluation` | Workflow-supplied node events and durations. |
 | `errors.jsonl` | `run_evaluation` | Final unrecovered workflow-reported case errors. |

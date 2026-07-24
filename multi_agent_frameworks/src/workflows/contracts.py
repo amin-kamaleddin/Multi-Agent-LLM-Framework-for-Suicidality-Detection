@@ -33,6 +33,7 @@ class WorkflowRunRequest:
     fake_llm: bool
     run_id: str | None
     artifact_base_dir: str | Path
+    resume_run_dir: str | Path | None = None
 
 
 WorkflowRunner = Callable[[WorkflowRunRequest], Any]

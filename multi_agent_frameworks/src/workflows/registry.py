@@ -103,6 +103,7 @@ def _run_framework_1_parallel_no_evidence(request: WorkflowRunRequest) -> Evalua
         run_id=request.run_id,
         artifact_base_dir=request.artifact_base_dir,
         agent_models=agent_models or None,
+        resume_run_dir=request.resume_run_dir,
     )
 
 def _run_framework_3_hierarchical_no_reviewer(
@@ -139,6 +140,7 @@ def _run_framework_3_hierarchical_no_reviewer(
         config=request.config,
         run_id=request.run_id,
         artifact_base_dir=request.artifact_base_dir,
+        resume_run_dir=request.resume_run_dir,
     )
 
 
@@ -177,6 +179,7 @@ def _run_framework_4_hierarchical_with_reviewer(
         config=request.config,
         run_id=request.run_id,
         artifact_base_dir=request.artifact_base_dir,
+        resume_run_dir=request.resume_run_dir,
     )
 def _run_framework_2_parallel_with_evidence(request: WorkflowRunRequest) -> EvaluationResult:
     unknown_keys = sorted(set(request.workflow_config) - set(FRAMEWORK_2_PARALLEL_WITH_EVIDENCE_CONFIG_KEYS))
@@ -211,6 +214,7 @@ def _run_framework_2_parallel_with_evidence(request: WorkflowRunRequest) -> Eval
         run_id=request.run_id,
         artifact_base_dir=request.artifact_base_dir,
         agent_models=agent_models or None,
+        resume_run_dir=request.resume_run_dir,
     )
 
 

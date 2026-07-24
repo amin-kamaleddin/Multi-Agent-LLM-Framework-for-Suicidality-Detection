@@ -52,9 +52,11 @@ def test_runtime_summary_fixture():
             },
         ],
         agent_execution_duration_s=4.25,
+        real_execution_duration_s=2.75,
     )
 
     assert summary["agent_execution_duration_s"] == 4.25
+    assert summary["real_execution_duration_s"] == 2.75
     assert summary["call_count"] == 2
     assert summary["llm_request_count"] == 2
     assert summary["failed_llm_attempts"] == 1
