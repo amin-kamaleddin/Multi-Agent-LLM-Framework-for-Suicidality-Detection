@@ -664,7 +664,7 @@ if __name__ == "__main__":
     parser.add_argument("--max-workers", type=int, default=5)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--agent-mode", type=str, default="single-class")
-    parser.add_argument("--base-class", type=str, default="Indicator")
+    parser.add_argument("--base-class", type=str, default="Unsupportive")
     parser.add_argument("--host-model", type=str, default=None)
     parser.add_argument("--role-models-json", type=str, default=None)
     parser.add_argument("--max-host-iterations", type=int, default=10)

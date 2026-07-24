@@ -672,7 +672,7 @@ def run_main_eval(
     max_retries: int = 3,
     seed: int = 42,
     agent_mode: str = "single-class",
-    base_class: str = "Indicator",
+    base_class: str = "Unsupportive",
     host_model: Optional[str] = None,
     role_models_json: Optional[str] = None,
     max_host_iterations: int = 10,
@@ -924,7 +924,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--base-class",
         type=str,
-        default="Indicator",
+        default="Unsupportive",
         choices=["Unsupportive","Indicator", "Ideation", "Behavior", "Attempt"],
         help="Base class used by base-vs-rest-binary mode.",
     )

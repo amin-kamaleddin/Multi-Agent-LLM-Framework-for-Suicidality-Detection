@@ -110,7 +110,7 @@ def run_llm_judge_eval():
         criteria={
             "correctness": (
                 "Evaluate whether the agent's suicide risk classification is correct.\n"
-                "The four valid categories are: Indicator, Ideation, Behavior, Attempt.\n"
+                "The five valid categories are: Unsupportive, Indicator, Ideation, Behavior, Attempt.\n"
                 "Compare the agent's output to the ground truth label."
             ),
             "reasoning": (

@@ -54,7 +54,7 @@ if __name__ == "__main__":
     parser.add_argument("--max-workers", type=int, default=50, help="Parallel workers per model")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--agent-mode", type=str, default="single-class", help="Agent execution mode")
-    parser.add_argument("--base-class", type=str, default="Indicator", help="Base class for binary modes")
+    parser.add_argument("--base-class", type=str, default="Unsupportive", help="Base class for binary modes")
     parser.add_argument("--models-file", type=str, default="model_list.json", help="Model list filename in this directory")
     parser.add_argument("--data-path", type=str, default=r"C:\Users\Owner\Documents\UofT\LMP2392\old_repo\Suicide-Detection-Agent\src\example\suicide_detection\data\rsd_new_200_small_2.csv", help="Optional path to custom dataset CSV")
     parser.add_argument("--no-cache", action="store_true", help="Disable caching")
