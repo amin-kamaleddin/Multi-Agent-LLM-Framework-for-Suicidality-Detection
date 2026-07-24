@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
+import time
 from typing import Any, Callable
 
 import pandas as pd
@@ -137,12 +138,15 @@ def run_evaluation(
 
     rows: list[dict[str, Any]] = []
     all_calls: list[dict[str, Any]] = []
+    agent_execution_duration_s = 0.0
     stop_reason: str | None = None
 
     id_column = _sample_id_column(sample_df.columns)
     for position, record in enumerate(sample_df.to_dict(orient="records"), start=1):
         expected_sample_id = str(record[id_column])
+        case_started_at = time.perf_counter()
         result = workflow.run_case(sample_id=expected_sample_id, text=record["text"])
+        agent_execution_duration_s += time.perf_counter() - case_started_at
         if str(result.sample_id) != expected_sample_id:
             raise ValueError(
                 "Workflow result sample_id does not match the evaluated record: "
@@ -171,6 +175,7 @@ def run_evaluation(
             config=config,
             status=status,
             stop_reason=stop_reason,
+            agent_execution_duration_s=agent_execution_duration_s,
         )
         print(
             json.dumps(
@@ -197,6 +202,7 @@ def run_evaluation(
         config=config,
         status=final_status,
         stop_reason=stop_reason,
+        agent_execution_duration_s=agent_execution_duration_s,
     )
 
     return EvaluationResult(
@@ -217,6 +223,7 @@ def finalize_evaluation_artifacts(
     config: EvaluationConfig,
     status: str,
     stop_reason: str | None,
+    agent_execution_duration_s: float,
 ) -> dict[str, Any]:
     """Write the final evaluator artifacts and compile the review reports."""
     metrics = _write_evaluation_artifacts(
@@ -226,6 +233,7 @@ def finalize_evaluation_artifacts(
         config=config,
         status=status,
         stop_reason=stop_reason,
+        agent_execution_duration_s=agent_execution_duration_s,
     )
     metrics["compiled_reports"] = compile_run_results(writer.run_dir)
     metrics["artifact_status"] = writer.required_artifact_status()
@@ -333,6 +341,7 @@ def _write_evaluation_artifacts(
     config: EvaluationConfig,
     status: str,
     stop_reason: str | None,
+    agent_execution_duration_s: float,
 ) -> dict[str, Any]:
     predictions = pd.DataFrame(rows)
     writer.write_dataframe("predictions.csv", predictions)
@@ -346,7 +355,10 @@ def _write_evaluation_artifacts(
         [row["prediction"] for row in rows],
         model_name=judge_model_name,
     )
-    runtime = summarize_runtime(all_calls)
+    runtime = summarize_runtime(
+        all_calls,
+        agent_execution_duration_s=agent_execution_duration_s,
+    )
     metrics = {
         "workflow_name": config.workflow_name,
         "model_name": config.model_name,

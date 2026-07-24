@@ -50,9 +50,11 @@ def test_runtime_summary_fixture():
                 "e2e_completion_tps": 2.5,
                 "error": {"error_type": "ValidationError"},
             },
-        ]
+        ],
+        agent_execution_duration_s=4.25,
     )
 
+    assert summary["agent_execution_duration_s"] == 4.25
     assert summary["call_count"] == 2
     assert summary["llm_request_count"] == 2
     assert summary["failed_llm_attempts"] == 1

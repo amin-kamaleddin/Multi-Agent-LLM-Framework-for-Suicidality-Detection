@@ -64,6 +64,7 @@ def test_compile_run_results_writes_csv_and_markdown_tables(tmp_path):
     confusion_rows = rows[rows["section"] == "confusion_matrix"]
     assert set(confusion_rows["actual_label"].dropna()) == set(FINAL_LABELS)
     runtime_rows = rows[rows["section"] == "runtime_metrics"].set_index("metric_name")
+    assert "agent_execution_duration_s" in runtime_rows.index
     assert "avg_e2e_completion_tps" in runtime_rows.index
 
     predictions = pd.read_csv(Path(result.run_dir) / "predictions.csv", encoding="utf-8-sig")
@@ -80,6 +81,7 @@ def test_compile_run_results_writes_csv_and_markdown_tables(tmp_path):
     assert "| TP | 2 |" in markdown
     assert "Positive Support | Negative Support" in markdown
     assert "| Value | Accuracy" not in markdown
+    assert "Agent execution duration seconds" in markdown
     assert "Average end-to-end completion TPS" in markdown
     assert "reporting-model" in markdown
     assert "No provider cost was recorded" in markdown

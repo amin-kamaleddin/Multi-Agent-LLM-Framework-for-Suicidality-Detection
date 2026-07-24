@@ -247,6 +247,52 @@ def test_generic_evaluator_calculates_only_final_judge_metrics(tmp_path):
     assert set(run_config["agent_configuration"]) == {"router", "critic"}
 
 
+def test_evaluator_tracks_only_workflow_execution_duration(monkeypatch, tmp_path):
+    sample = pd.DataFrame(
+        [
+            {"ID": 10, "users": 2, "text": "indicator", "sentiment": "Indicator", "time": 100},
+            {"ID": 20, "users": 3, "text": "neutral", "sentiment": "Unsupportive", "time": 200},
+        ]
+    )
+    timer_values = iter([10.0, 11.25, 20.0, 22.5])
+    monkeypatch.setattr(
+        "evaluation.evaluator.time.perf_counter",
+        lambda: next(timer_values),
+    )
+
+    result = run_evaluation(
+        sample_df=sample,
+        workflow=GenericWorkflow(),
+        config=_config(tmp_path, total_records=2),
+        run_id="agent-execution-duration",
+        artifact_base_dir=tmp_path / "runs",
+    )
+
+    run_dir = Path(result.run_dir)
+    assert result.metrics["runtime"]["agent_execution_duration_s"] == 3.75
+
+    metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
+    trace_summary = json.loads((run_dir / "trace_summary.json").read_text(encoding="utf-8"))
+    assert metrics["runtime"]["agent_execution_duration_s"] == 3.75
+    assert trace_summary["runtime"]["agent_execution_duration_s"] == 3.75
+
+    compiled_rows = pd.read_csv(run_dir / "compiled_results.csv", encoding="utf-8-sig")
+    duration_row = compiled_rows[
+        (compiled_rows["section"] == "runtime_metrics")
+        & (compiled_rows["metric_name"] == "agent_execution_duration_s")
+    ]
+    assert duration_row["metric_value"].iloc[0] == 3.75
+    assert "Agent execution duration seconds: 3.750000" in (
+        run_dir / "metrics.md"
+    ).read_text(encoding="utf-8")
+    assert "Agent execution duration seconds | 3.750000" in (
+        run_dir / "compiled_results.md"
+    ).read_text(encoding="utf-8")
+    assert "Agent execution (s)" in (run_dir / "runtime_metrics.svg").read_text(
+        encoding="utf-8"
+    )
+
+
 def test_generic_evaluator_rejects_empty_samples_before_creating_artifacts(tmp_path):
     with pytest.raises(ValueError, match="at least one evaluation record"):
         run_evaluation(

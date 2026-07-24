@@ -84,6 +84,7 @@ class ArtifactWriter:
             f"- Failure rate: {metrics['classification']['failure_rate']:.6f}",
             f"- LLM calls: {metrics['runtime']['call_count']}",
             f"- JSON/schema parsing errors: {metrics['runtime'].get('json_parsing_errors', 0)}",
+            f"- Agent execution duration seconds: {metrics['runtime']['agent_execution_duration_s']:.6f}",
             f"- Total latency seconds: {metrics['runtime']['latency_s']['total']:.6f}",
             f"- Average latency seconds per request: {metrics['runtime']['latency_s']['avg']:.6f}",
             f"- Average input tokens per request: {metrics['runtime']['tokens']['avg_prompt_per_request']:.6f}",
@@ -184,6 +185,7 @@ def _suicidal_intent_metrics_svg(metrics: dict[str, Any]) -> str:
 def _runtime_metrics_svg(metrics: dict[str, Any]) -> str:
     runtime = metrics["runtime"]
     values = [
+        ("Agent execution (s)", f'{runtime["agent_execution_duration_s"]:.3f}'),
         ("LLM calls", runtime["call_count"]),
         ("Total latency (s)", f'{runtime["latency_s"]["total"]:.3f}'),
         ("Input tokens", runtime["tokens"]["prompt_total"]),
@@ -193,8 +195,10 @@ def _runtime_metrics_svg(metrics: dict[str, Any]) -> str:
         ("JSON/schema errors", runtime["json_parsing_errors"]),
         ("Failed attempts", runtime["failed_llm_attempts"]),
     ]
+    row_count = (len(values) + 3) // 4
+    height = 74 + row_count * 98
     elements = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="270" viewBox="0 0 900 270">',
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="900" height="{height}" viewBox="0 0 900 {height}">',
         '<rect width="100%" height="100%" fill="white"/>',
         '<text x="24" y="34" font-family="sans-serif" font-size="22" font-weight="bold">Runtime and guardrail metrics</text>',
     ]

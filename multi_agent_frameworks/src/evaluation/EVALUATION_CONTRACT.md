@@ -341,6 +341,7 @@ Consequently, `metrics.json` contains no `agent_metrics` or `specialist_metrics`
 
 Every attempt, including retries, is written to `llm_calls.jsonl`. `evaluation/metrics.py::summarize_runtime` calculates:
 
+- total agent execution duration, measured as wall-clock time spent only inside each `workflow.run_case(...)` invocation;
 - call count and failed attempt count;
 - latency minimum, maximum, average, and total;
 - input, output, total, cached, and cache-write token totals and per-call averages;
@@ -349,6 +350,8 @@ Every attempt, including retries, is written to `llm_calls.jsonl`. `evaluation/m
 - end-to-end completion throughput;
 - error counts by type;
 - JSON/schema parsing errors, counted from JSON decoding, Pydantic validation, and LangChain structured-output validation failures.
+
+`runtime.agent_execution_duration_s` accumulates the per-record workflow wall-clock durations. It includes all agent work, retries, and parallel orchestration performed inside `run_case`, but excludes dataset preparation, evaluator bookkeeping, metric calculation, artifact writing, and report compilation. Because parallel agents overlap, their shared wall-clock span is counted once rather than summing their individual call latencies.
 
 Transport or provider metadata may omit tokens, cost, or provider timing. Missing values remain zero or `null` rather than being estimated. Local end-to-end latency is always measured.
 
@@ -369,7 +372,7 @@ Thresholds and the stop reason are persisted in `run_config.json`, `metrics.json
 | `sampled_dataset.csv` | `run_evaluation` | Exact evaluated inputs and ground truth. |
 | `predictions.csv` | `_write_evaluation_artifacts` | Source fields, shared outputs, correctness, errors, and optional workflow data. |
 | `results.json` | `_complete_results_payload` | Complete nested per-record results plus all metrics. |
-| `metrics.json` | `_write_evaluation_artifacts` | Five-label confusion audit, grouped-binary metrics, and runtime metrics. |
+| `metrics.json` | `_write_evaluation_artifacts` | Five-label confusion audit, grouped-binary metrics, agent execution duration, and runtime metrics. |
 | `suicidal_intent_metrics.csv` | `_write_evaluation_artifacts` | One positive-oriented binary summary; negative rows are never reinterpreted as TP/FN. |
 | `metrics.md` | `ArtifactWriter.write_metrics_md` | Grouped-binary metrics plus runtime and guardrail summary. |
 | `compiled_results.csv` | `compile_run_results` | Long-form machine-readable report. |
@@ -377,7 +380,7 @@ Thresholds and the stop reason are persisted in `run_config.json`, `metrics.json
 | `misclassified_ids.txt` | `_write_evaluation_artifacts` | IDs whose final label is wrong. |
 | `suicidal_intent_misclassified_ids.txt` | `_write_evaluation_artifacts` | IDs whose boolean output is wrong. |
 | `suicidal_intent_metrics.svg` | `ArtifactWriter.write_visualizations` | Grouped-binary accuracy, precision, recall, and F1 bars. |
-| `runtime_metrics.svg` | `ArtifactWriter.write_visualizations` | Calls, latency, tokens, cost, failures, and parse errors. |
+| `runtime_metrics.svg` | `ArtifactWriter.write_visualizations` | Agent execution duration, calls, latency, tokens, cost, failures, and parse errors. |
 | `llm_calls.jsonl` | `run_evaluation` | Every workflow-reported request/retry with role, model, usage, cost, timing, raw output, parse result, and error. |
 | `traces.jsonl` | `run_evaluation` | Workflow-supplied node events and durations. |
 | `errors.jsonl` | `run_evaluation` | Final unrecovered workflow-reported case errors. |

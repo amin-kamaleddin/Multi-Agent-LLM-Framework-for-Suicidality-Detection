@@ -139,7 +139,11 @@ def compute_suicidal_intent_metrics(
     return metrics
 
 
-def summarize_runtime(llm_calls: list[dict[str, Any]]) -> dict[str, Any]:
+def summarize_runtime(
+    llm_calls: list[dict[str, Any]],
+    *,
+    agent_execution_duration_s: float = 0.0,
+) -> dict[str, Any]:
     """Summarize local runtime, token, cost, and optional provider timing telemetry."""
     latencies = [float(call.get("latency_s", 0.0)) for call in llm_calls]
     prompt_tokens = [int(call.get("prompt_tokens") or 0) for call in llm_calls]
@@ -181,6 +185,7 @@ def summarize_runtime(llm_calls: list[dict[str, Any]]) -> dict[str, Any]:
 
     request_count = len(llm_calls)
     return {
+        "agent_execution_duration_s": float(agent_execution_duration_s),
         "call_count": request_count,
         "llm_request_count": request_count,
         "failed_llm_attempts": len(failed_attempts),

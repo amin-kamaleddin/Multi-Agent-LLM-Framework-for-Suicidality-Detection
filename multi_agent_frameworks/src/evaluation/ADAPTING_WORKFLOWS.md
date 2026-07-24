@@ -159,7 +159,7 @@ On a failed attempt, preserve any provider usage that is available and set `erro
 }
 ```
 
-The shared evaluator calculates call count, failed-attempt count, latency, prompt/completion/total tokens, cost, throughput, and parsing failures from these records. Optional provider timing and cache-token fields are documented in [the full contract](EVALUATION_CONTRACT.md#runtime-metrics-and-guardrails). Missing provider metadata remains zero or null; the evaluator does not estimate it.
+The shared evaluator calculates call count, failed-attempt count, latency, prompt/completion/total tokens, cost, throughput, and parsing failures from these records. It also measures `runtime.agent_execution_duration_s` around each adapter `run_case` call, so adapters do not need to report total workflow duration themselves. Optional provider timing and cache-token fields are documented in [the full contract](EVALUATION_CONTRACT.md#runtime-metrics-and-guardrails). Missing provider metadata remains zero or null; the evaluator does not estimate it.
 
 `traces` is a list of workflow-defined execution events. For example, `{"event": "route_selected", "route": "high_risk"}` is written unchanged with the sample ID to `traces.jsonl`.
 
