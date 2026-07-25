@@ -113,6 +113,7 @@ _EvalRing/
 # but allow small example/fixture files if explicitly added
 !multi_agent_frameworks/dataset/positive-negative-final-datasets/dataset1_positive_balanced_100_seed42.csv
 !multi_agent_frameworks/dataset/positive-negative-final-datasets/negative_real_synthetic_balanced_100_seed42.csv
+!multi_agent_frameworks/dataset/suicidality_full_dataset_posneg.csv
 
 # Keep curated evaluation artifacts while runtime logs remain ignored.
 !multi_agent_frameworks/test-results/
