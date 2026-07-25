@@ -60,8 +60,16 @@ def write_manifest(path: str | Path, payload: dict[str, Any]) -> Path:
 class ProgressStore:
     """SQLite-backed source of truth for one evaluation run."""
 
-    def __init__(self, path: str | Path):
+    def __init__(self, path: str | Path, *, read_only: bool = False):
         self.path = Path(path)
+        if read_only:
+            if not self.path.is_file():
+                raise ValueError(f"Progress database does not exist: {self.path}")
+            self.connection = sqlite3.connect(
+                f"{self.path.resolve().as_uri()}?mode=ro",
+                uri=True,
+            )
+            return
         self.connection = sqlite3.connect(self.path)
         self.connection.execute("PRAGMA journal_mode=WAL")
         self.connection.execute("PRAGMA synchronous=FULL")

@@ -19,6 +19,7 @@ from evaluation.evaluator import (
     DEFAULT_EVALUATION_SAMPLE_PATH,
     EvaluationConfig,
     load_evaluation_sample,
+    snapshot_evaluation_results,
 )
 from evaluation.metrics import compute_final_label_confusion_matrix, summarize_runtime
 from evaluation.reporting import compile_run_results
@@ -283,6 +284,12 @@ def cmd_compile_results(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_snapshot_results(args: argparse.Namespace) -> int:
+    result = snapshot_evaluation_results(args.run_dir)
+    print(json.dumps(result.__dict__, indent=2))
+    return 0
+
+
 def cmd_list_workflows(_args: argparse.Namespace) -> int:
     print(json.dumps({"workflows": WORKFLOW_REGISTRY.describe()}, indent=2))
     return 0
@@ -434,6 +441,17 @@ def build_parser() -> argparse.ArgumentParser:
     compile_results = subparsers.add_parser("compile-results", help="Compile a run directory into CSV and Markdown summary tables.")
     compile_results.add_argument("--run-dir", required=True, help="Run directory containing evaluator artifacts.")
     compile_results.set_defaults(func=cmd_compile_results)
+
+    snapshot_results = subparsers.add_parser(
+        "snapshot-results",
+        help="Export current completed SQLite results without modifying an active run.",
+    )
+    snapshot_results.add_argument(
+        "--run-dir",
+        required=True,
+        help="Run directory containing sampled_dataset.csv and progress.sqlite.",
+    )
+    snapshot_results.set_defaults(func=cmd_snapshot_results)
     return parser
 
 

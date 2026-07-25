@@ -580,6 +580,26 @@ dataset fingerprint, workflow/model fingerprint, execution limits, progress, and
 coverage. A human-readable manifest snapshot is refreshed every
 `--checkpoint-every` completions.
 
+Completed row payloads are committed to `progress.sqlite`, but derived files
+such as `predictions.csv`, `llm_calls.jsonl`, metrics, and compiled reports are
+normally rebuilt only when an evaluator invocation finishes normally or reaches
+a controlled early-stop threshold. Ctrl+C preserves committed SQLite results
+but bypasses that final artifact pass.
+
+Export a consistent report snapshot at any time, including while an evaluator
+is running:
+
+```powershell
+uv run python -m cli snapshot-results `
+  --run-dir "logs/runs/<run-folder>"
+```
+
+Each invocation creates a timestamped directory under
+`logs/runs/<run-folder>/snapshots/`. The snapshot includes every row committed
+as `completed` when its read-only SQLite transaction begins. Currently running
+rows are excluded. The source run, its progress database, and its existing
+artifacts are not modified.
+
 Runtime reports keep both `agent_execution_duration_s` (the cumulative sum of
 per-case worker durations) and `real_execution_duration_s` (the concurrency-aware
 span from the first agent-call start to the last agent-call finish). Resumed
@@ -648,6 +668,12 @@ uv run python -m cli compile-results `
 ```
 
 `compile-results` requires only `--run-dir`.
+
+Unlike `compile-results`, `snapshot-results` reads the authoritative
+`progress.sqlite` and regenerates partial JSONL, prediction, metric,
+visualization, and compiled report artifacts. Snapshot metrics use
+`evaluation_status: "snapshot"` and report coverage against the full frozen
+dataset.
 
 ### Legacy framework-1 `run` shortcut
 

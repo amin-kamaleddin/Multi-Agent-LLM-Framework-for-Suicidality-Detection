@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 import json
 from pathlib import Path
 import time
@@ -86,6 +86,17 @@ class EvaluationResult:
     metrics: dict[str, Any]
 
 
+@dataclass(frozen=True)
+class EvaluationSnapshotResult:
+    """Summary for a read-only partial artifact snapshot."""
+
+    source_run_dir: str
+    snapshot_dir: str
+    source_status: str
+    processed_records: int
+    total_records: int
+
+
 def load_evaluation_sample(sample_path: str | Path, *, limit: int | None = None) -> pd.DataFrame:
     """Load and validate the frozen sampled dataset used for evaluation."""
     path = Path(sample_path)
@@ -119,6 +130,94 @@ def load_evaluation_sample(sample_path: str | Path, *, limit: int | None = None)
     if limit is not None:
         df = df.head(limit)
     return df.reset_index(drop=True)
+
+
+def snapshot_evaluation_results(
+    run_dir: str | Path,
+) -> EvaluationSnapshotResult:
+    """Export a consistent partial report without modifying an active run."""
+    source_run_dir = Path(run_dir)
+    if not source_run_dir.is_dir():
+        raise ValueError(f"Run directory does not exist: {source_run_dir}")
+
+    sample_path = source_run_dir / "sampled_dataset.csv"
+    config_path = source_run_dir / "run_config.json"
+    manifest_path = source_run_dir / "manifest.json"
+    progress_path = source_run_dir / "progress.sqlite"
+    for required_path in (sample_path, config_path, manifest_path, progress_path):
+        if not required_path.is_file():
+            raise ValueError(
+                f"Cannot snapshot run; required file is missing: {required_path}"
+            )
+
+    sample_df = load_evaluation_sample(sample_path)
+    id_column = _sample_id_column(sample_df.columns)
+    expected_ids = [str(value) for value in sample_df[id_column].tolist()]
+    config_payload = _read_json_object(config_path)
+    config_fields = {field.name for field in fields(EvaluationConfig)}
+    config_values = {
+        key: value
+        for key, value in config_payload.items()
+        if key in config_fields
+    }
+    config_values["sample_path"] = str(sample_path)
+    config_values["total_records"] = len(sample_df)
+    config = EvaluationConfig(**config_values)
+    source_manifest = load_manifest(manifest_path)
+
+    with ProgressStore(progress_path, read_only=True) as progress:
+        progress.connection.execute("BEGIN")
+        try:
+            rows, all_calls, traces, errors = _materialize_completed_results(
+                sample_df=sample_df,
+                id_column=id_column,
+                progress=progress,
+            )
+            progress_summary = progress.summary()
+            coverage = progress.coverage(
+                expected_ids,
+                output_ids=[str(row["sample_id"]) for row in rows],
+            )
+        finally:
+            progress.connection.rollback()
+
+    if not rows:
+        raise ValueError("Cannot snapshot run because it has no completed records")
+
+    writer = ArtifactWriter(base_dir=source_run_dir / "snapshots")
+    writer.write_jsonl("llm_calls.jsonl", all_calls)
+    writer.write_jsonl("traces.jsonl", traces)
+    writer.write_jsonl("errors.jsonl", errors)
+    metrics = finalize_evaluation_artifacts(
+        writer=writer,
+        rows=rows,
+        all_calls=all_calls,
+        config=config,
+        status="snapshot",
+        stop_reason=None,
+        agent_execution_duration_s=progress_summary["agent_execution_duration_s"],
+        real_execution_duration_s=progress_summary["real_execution_duration_s"],
+        coverage=coverage,
+    )
+    writer.write_json(
+        "snapshot_manifest.json",
+        {
+            "schema_version": "1.0",
+            "created_at": utc_now(),
+            "source_run_dir": str(source_run_dir.resolve()),
+            "source_status": str(source_manifest.get("status") or "unknown"),
+            "progress": progress_summary,
+            "coverage": coverage,
+            "compiled_reports": metrics["compiled_reports"],
+        },
+    )
+    return EvaluationSnapshotResult(
+        source_run_dir=str(source_run_dir),
+        snapshot_dir=str(writer.run_dir),
+        source_status=str(source_manifest.get("status") or "unknown"),
+        processed_records=len(rows),
+        total_records=len(sample_df),
+    )
 
 
 def run_evaluation(
@@ -647,6 +746,14 @@ def _materialize_completed_results(
         traces.extend(payload["traces"])
         errors.extend(payload["errors"])
     return rows, all_calls, traces, errors
+
+
+def _read_json_object(path: Path) -> dict[str, Any]:
+    with path.open(encoding="utf-8") as f:
+        payload = json.load(f)
+    if not isinstance(payload, dict):
+        raise ValueError(f"Expected a JSON object: {path}")
+    return payload
 
 
 def _workflow_identity(config: EvaluationConfig) -> dict[str, Any]:

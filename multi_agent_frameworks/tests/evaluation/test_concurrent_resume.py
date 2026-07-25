@@ -7,6 +7,7 @@ from types import SimpleNamespace
 
 import pandas as pd
 
+import cli
 from evaluation.evaluator import EvaluationConfig, run_evaluation
 
 
@@ -175,3 +176,68 @@ def test_resume_schedules_only_pending_ids_and_restores_dataset_order(tmp_path):
     assert manifest["progress"]["real_execution_duration_s"] >= initial.metrics["runtime"][
         "real_execution_duration_s"
     ]
+
+
+def test_snapshot_results_exports_completed_sqlite_rows_without_mutating_run(
+    tmp_path,
+    capsys,
+):
+    sample = _sample(5)
+    result = run_evaluation(
+        sample_df=sample,
+        workflow=CountingWorkflow(),
+        config=_config(tmp_path, len(sample)),
+        run_id="snapshot-source",
+        artifact_base_dir=tmp_path / "runs",
+    )
+    run_dir = Path(result.run_dir)
+    pending_id = str(sample.loc[2, "ID"])
+    original_predictions = (run_dir / "predictions.csv").read_bytes()
+    capsys.readouterr()
+
+    with sqlite3.connect(run_dir / "progress.sqlite") as connection:
+        connection.execute(
+            """
+            UPDATE cases
+            SET status='running', result_json=NULL
+            WHERE sample_id=?
+            """,
+            (pending_id,),
+        )
+        connection.commit()
+
+    assert (
+        cli.main(
+            [
+                "snapshot-results",
+                "--run-dir",
+                str(run_dir),
+            ]
+        )
+        == 0
+    )
+    command_result = json.loads(capsys.readouterr().out)
+    snapshot_dir = Path(command_result["snapshot_dir"])
+    snapshot_metrics = json.loads(
+        (snapshot_dir / "metrics.json").read_text(encoding="utf-8")
+    )
+    snapshot_predictions = pd.read_csv(
+        snapshot_dir / "predictions.csv",
+        encoding="utf-8-sig",
+    )
+    snapshot_manifest = json.loads(
+        (snapshot_dir / "snapshot_manifest.json").read_text(encoding="utf-8")
+    )
+
+    assert command_result["processed_records"] == 4
+    assert snapshot_metrics["evaluation_status"] == "snapshot"
+    assert snapshot_metrics["processed_records"] == 4
+    assert snapshot_metrics["total_records"] == 5
+    assert snapshot_metrics["coverage"]["missing_ids"] == [pending_id]
+    assert snapshot_predictions["ID"].tolist() == [
+        value for value in sample["ID"].tolist() if str(value) != pending_id
+    ]
+    assert snapshot_manifest["progress"]["completed_records"] == 4
+    assert (snapshot_dir / "compiled_results.csv").exists()
+    assert (snapshot_dir / "compiled_results.md").exists()
+    assert (run_dir / "predictions.csv").read_bytes() == original_predictions
