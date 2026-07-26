@@ -400,7 +400,7 @@ def _write_reports(
         f.write(f"**Agent:** {result.agent_name}\n")
         f.write(f"**Model:** {getattr(agent, 'model_name', 'N/A')}\n")
         f.write(f"**Task:** {result.task_name}\n")
-        f.write(f"**Dataset:** rsd_new_200_small_2.csv (n={len(all_cases)})\n")
+        f.write(f"**Dataset:** suicidality_full_dataset_posneg.csv (n={len(all_cases)})\n")
         f.write(f"**Duration:** {result.duration:.4f} s\n")
         f.write(f"**Agent Mode:** {agent_mode}\n")
         f.write(f"**Base Class:** {base_class}\n")
@@ -793,7 +793,7 @@ def run_main_eval(
         max_host_iterations=max_host_iterations,
     )
 
-    resolved_data_path = Path(data_path) if data_path else (current_file.parent / "data" / "rsd_new_200_small_2.csv")
+    resolved_data_path = Path(data_path) if data_path else (current_file.parent / "data" / "suicidality_full_dataset_posneg.csv")
 
     if not resolved_data_path.exists():
         print(f"Dataset file not found at: {resolved_data_path}")
@@ -1007,7 +1007,7 @@ if __name__ == "__main__":
         default=None,
         help="Optional path to rsd_15k.csv if not located at the default ./data/rsd_15k.csv.",
     )
-    parser.add_argument("--n-samples", type=int, default=50, help="Number of samples to evaluate (default: 50)")
+    parser.add_argument("--n-samples", type=int, default=29727, help="Number of samples to evaluate (default: 50)")
     parser.add_argument("--max-workers", type=int, default=5, help="Parallel workers (default: 5)")
     parser.add_argument("--max-retries", type=int, default=3, help="Retries per sample on failure (default: 3)")
     parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")

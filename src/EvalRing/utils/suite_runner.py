@@ -660,7 +660,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run EvalRing suite.")
     parser.add_argument("--eval-script", type=str, required=True, help="Path to evaluation main script")
     parser.add_argument("--models-file", type=str, required=True, help="Path to model list JSON")
-    parser.add_argument("--n-samples", type=int, default=1)
+    parser.add_argument("--n-samples", type=int, default=29727)
     parser.add_argument("--max-workers", type=int, default=5)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--agent-mode", type=str, default="single-class")

@@ -10,19 +10,19 @@ from run_model_suite import run_local_suite
 
 MODES = [
     "single-class",
-    "multi-class-chance",
-    "base-vs-rest-binary",
-    "per-class-score",
+    #"multi-class-chance",
+    #"base-vs-rest-binary",
+    #"per-class-score",
     # "multi-agent-host"
 ]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run all evaluation modes sequentially via python invocation.")
-    parser.add_argument("--n-samples", type=int, default=200)
+    parser.add_argument("--n-samples", type=int, default=29727)
     parser.add_argument("--max-workers", type=int, default=50)
     parser.add_argument("--models-file", type=str, default="model_list.json")
     parser.add_argument("--cache-mode", type=str, default="both", choices=["runs_only", "cache_file", "both"], help="Global cache operation mode")
-    parser.add_argument("--data-path", type=str, default=r"C:\Users\Owner\Documents\UofT\LMP2392\old_repo\Suicide-Detection-Agent\src\example\suicide_detection\data\rsd_new_200_small_2.csv", help="Optional path to custom dataset CSV")
+    parser.add_argument("--data-path", type=str, default=r"C:\Users\Owner\Documents\UofT\LMP2392\old_repo\Suicide-Detection-Agent\src\example\suicide_detection\data\suicidality_full_dataset_posneg.csv", help="Optional path to custom dataset CSV")
     args = parser.parse_args()
 
     print("=" * 80)
