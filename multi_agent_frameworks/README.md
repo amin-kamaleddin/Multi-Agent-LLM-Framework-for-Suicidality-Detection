@@ -2,7 +2,7 @@
 
 This package contains four LangGraph workflows and an architecture-neutral evaluator:
 
-- `framework_1_parallel_no_evidence`: five parallel binary or reasoned specialists, then a final judge
+- `framework_1_parallel_no_evidence`: five parallel boolean specialists, then a final judge
 - `framework_2_parallel_with_evidence`: five parallel non-decision-making evidence collectors, then a final judge
 - `framework_3_hierarchical_no_reviewer`: hierarchical routing followed by a final evaluator
 - `framework_4_hierarchical_with_reviewer`: hierarchical routing, an uncertainty gate, and an optional secondary reviewer
@@ -127,6 +127,7 @@ Each `framework_*` directory is a runnable architecture and uses the same module
 | `config.py` | Stable workflow name, default mode, and accepted JSON configuration keys. |
 | `schemas.py` | Intermediate agent outputs unique to this framework. The final output always uses `domain/final_output.py`. |
 | `prompts.py` | Framework prompt API. It may define prompts locally or re-export a shared implementation. |
+| `PROMPTS.md` | Fully formatted system and user messages for every LLM agent, with runtime input text represented by `{{INPUT_TEXT}}`. |
 | `graph.py` | Graph topology, nodes, routing, state, and the public workflow class. |
 | `evaluation.py` | Thin adapter that builds the graph and passes it to the shared evaluator. It may preserve framework-specific outputs but must not calculate intermediate-agent metrics. |
 | `__init__.py` | Small public export surface for the workflow name and class. |
@@ -136,7 +137,7 @@ Each `framework_*` directory is a runnable architecture and uses the same module
 `shared/` contains implementation details reused by at least two workflow architectures. It is not a fifth workflow and cannot be selected from the CLI.
 
 - `shared/parallel/graph.py` is the common LangGraph engine used by frameworks 1 and 2. It creates the parallel intermediate nodes, joins them at the judge, invokes models, validates structured outputs, and records traces and calls.
-- `shared/parallel/prompts.py` contains the prompt/mode catalogue consumed by that engine. Framework 1 selects the boolean or reasoned specialist modes; framework 2 selects the evidence mode.
+- `shared/parallel/prompts.py` contains the prompt/mode catalogue consumed by that engine. Framework 1 selects the boolean specialist mode; framework 2 selects the evidence mode.
 - `shared/hierarchical/schemas.py` contains the three routing-decision schemas whose meanings are identical in frameworks 3 and 4.
 
 Code belongs in `shared/` only when both its behavior and contract are genuinely identical across multiple frameworks. A prompt, schema, node, or routing rule used by one framework should remain in that framework's directory.
@@ -311,6 +312,7 @@ The evaluator recognizes these environment defaults:
 | `OPENAI_API_KEY` | None; required for real models | All real-model commands |
 | `OPENAI_MODEL` | `openai/gpt-4o-mini` | Legacy `run` shortcut only |
 | `OPENAI_TEMPERATURE` | `0` | `run` and `evaluate` |
+| `OPENAI_SERVICE_TIER` | `standard` | `evaluate`; direct OpenAI endpoints only |
 | `MAX_COMPLETION_TOKENS` | `1024` | `run` and `evaluate` |
 | `MAX_RETRIES` | `3` | `run` and `evaluate` |
 | `EVAL_CASE_WORKERS` | `4` | `evaluate` |
@@ -331,6 +333,19 @@ explicit CLI option -> workflow-config JSON -> environment/default
 is supplied. `OPENAI_MODEL` applies only to the legacy `run` shortcut, so
 production `evaluate` commands should normally specify `--model` explicitly.
 
+For a direct OpenAI endpoint, `evaluate` accepts `--service-tier standard` or
+`--service-tier flex`. `standard` sends the API value `service_tier=default`;
+`flex` sends `service_tier=flex`. Flex is rejected for OpenRouter and other
+OpenAI-compatible endpoints because it is an OpenAI processing tier, not a
+portable chat-completions option. Standard requests to compatible providers
+omit the OpenAI-specific field.
+
+OpenAI Batch is not a `service_tier` value. It is a separate asynchronous API
+that uploads a JSONL request file and returns results later. The current
+case-by-case LangGraph evaluator therefore supports Standard and Flex but not
+Batch; adding Batch requires a separate staged scheduler that batches each
+independent graph layer and reconnects results before downstream judge calls.
+
 ### Inspect available workflows
 
 ```powershell
@@ -341,7 +356,7 @@ The registered workflow names and modes are:
 
 | Workflow | Valid mode |
 |---|---|
-| `framework_1_parallel_no_evidence` | `bool` or `reasoned` |
+| `framework_1_parallel_no_evidence` | `bool` |
 | `framework_2_parallel_with_evidence` | `evidence` |
 | `framework_3_hierarchical_no_reviewer` | `bool` or `reasoned` |
 | `framework_4_hierarchical_with_reviewer` | `bool` or `reasoned` |
@@ -359,10 +374,12 @@ uv run python -m cli evaluate `
   --run-id framework1_full_posneg `
   --model gpt-5.6-luna `
   --temperature 0 `
+  --service-tier standard `
   --mode bool `
   --case-workers 4 `
   --max-in-flight-llm 20 `
   --checkpoint-every 10 `
+  --stop-after-tokens 1000000 `
   --max-completion-tokens 2000 `
   --max-retries 3 `
   --error-stop-failed-llm-attempts 200 `
@@ -399,10 +416,12 @@ of `ID`.
 | `--max-completion-tokens N` | `MAX_COMPLETION_TOKENS` or `1024` | Positive generated-token ceiling for each LLM attempt. |
 | `--max-retries N` | `MAX_RETRIES` or `3` | Retries after the initial failed or malformed attempt; may be zero. |
 | `--mode NAME` | Workflow-specific | Intermediate output/prompt mode from the workflow table above. |
+| `--service-tier NAME` | `OPENAI_SERVICE_TIER` or `standard` | Direct OpenAI processing tier: `standard` or `flex`. Standard maps to API `default`; Flex requires a direct OpenAI endpoint. |
 | `--limit N` | None | Evaluate only the first positive `N` rows for a smoke test. Not allowed with resume. |
 | `--case-workers N` | `EVAL_CASE_WORKERS` or `4` | Dataset records whose workflows may execute concurrently. |
 | `--max-in-flight-llm N` | `EVAL_MAX_IN_FLIGHT_LLM` or `20` | Run-wide ceiling across every worker, role, retry, and role-specific model. |
 | `--checkpoint-every N` | `EVAL_CHECKPOINT_EVERY` or `250` | Completed cases between readable `manifest.json` progress refreshes. SQLite still commits every completed case. |
+| `--stop-after-tokens N` | None | Stop scheduling new cases after at least `N` prompt plus completion tokens finish in the current invocation. The counter resets to zero on every resume. |
 | `--error-stop-failed-llm-attempts N` | Environment or `10` | Stop when cumulative failed LLM attempts reach `N`, including recovered retry attempts. |
 | `--error-stop-failed-records N` | Environment or `3` | Stop when records with no valid final label reach `N`. |
 | `--error-stop-rate FLOAT` | Environment or `0.5` | Stop when `failed_records / completed_records` reaches this value. |
@@ -435,7 +454,7 @@ uv run python -m cli evaluate `
 
 Frameworks 1 and 2 accept an `agents` object in `--workflow-config`. Common
 top-level keys are `model`, `temperature`, `max_completion_tokens`,
-`max_retries`, `mode`, and `fake_llm`. Each role override accepts `agent_name`,
+`max_retries`, `mode`, `service_tier`, and `fake_llm`. Each role override accepts `agent_name`,
 `model`, `temperature`, and `max_completion_tokens`.
 
 Example `configs/framework_1_mixed_models.json`:
@@ -447,6 +466,7 @@ Example `configs/framework_1_mixed_models.json`:
   "max_completion_tokens": 1000,
   "max_retries": 3,
   "mode": "bool",
+  "service_tier": "standard",
   "fake_llm": false,
   "agents": {
     "Indicator_specialist": {
@@ -524,6 +544,7 @@ uv run python -m cli evaluate `
   --case-workers 4 `
   --max-in-flight-llm 20 `
   --checkpoint-every 10 `
+  --stop-after-tokens 1000000 `
   --error-stop-failed-llm-attempts 200
 ```
 
@@ -538,6 +559,7 @@ These behavior-defining settings must match the original run:
 - requested and resolved model names, including every role override;
 - temperature;
 - mode;
+- service tier;
 - maximum completion tokens;
 - retry count;
 - fake versus real model selection.
@@ -547,7 +569,14 @@ These execution controls may be changed on resume:
 - case workers;
 - maximum in-flight LLM requests;
 - checkpoint frequency;
+- stop-after token threshold;
 - early-stop thresholds.
+
+`--stop-after-tokens` is intentionally session-scoped. A resumed invocation
+starts its counter at zero and excludes all token usage stored by earlier
+invocations of the same run. The cumulative token total in `metrics.json`
+continues to cover every completed request in the run, while
+`token_stop.current_session_total_tokens` reports only the latest invocation.
 
 If resume reports `workflow/model configuration does not match`, compare the
 original `manifest.json` workflow identity and `run_config.json` with the resume
@@ -579,6 +608,12 @@ completed case is committed transactionally. `manifest.json` records the frozen
 dataset fingerprint, workflow/model fingerprint, execution limits, progress, and
 coverage. A human-readable manifest snapshot is refreshed every
 `--checkpoint-every` completions.
+
+The token threshold is checked after a case finishes and its calls report token
+usage. Cases that were already in flight are allowed to finish, so the final
+current-invocation total can exceed `--stop-after-tokens`, especially with
+multiple case workers. Once the threshold is observed, no new cases are
+scheduled.
 
 Completed row payloads are committed to `progress.sqlite`, but derived files
 such as `predictions.csv`, `llm_calls.jsonl`, metrics, and compiled reports are
@@ -694,7 +729,7 @@ uv run python -m cli run `
 ```
 
 The `run`-only options are `--fake-llm`, `--model`, `--temperature`,
-`--max-completion-tokens`, `--max-retries`, and `--mode {bool,reasoned}`, in
+`--max-completion-tokens`, `--max-retries`, and `--mode bool`, in
 addition to the three common dataset options. It does not expose
 `--workflow`, resume, artifact-directory, concurrency, checkpoint, or early-stop
 arguments.

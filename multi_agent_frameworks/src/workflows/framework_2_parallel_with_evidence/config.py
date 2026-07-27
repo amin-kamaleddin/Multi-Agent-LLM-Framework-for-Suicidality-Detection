@@ -10,6 +10,7 @@ CONFIG_KEYS = (
     "max_completion_tokens",
     "max_retries",
     "mode",
+    "service_tier",
     "fake_llm",
     "agents",
 )

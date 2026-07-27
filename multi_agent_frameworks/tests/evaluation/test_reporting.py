@@ -71,6 +71,7 @@ def test_compile_run_results_writes_csv_and_markdown_tables(tmp_path):
     predictions = pd.read_csv(Path(result.run_dir) / "predictions.csv", encoding="utf-8-sig")
     assert "specialist_answers" in predictions.columns
     assert "indicator_answer" in predictions.columns
+    assert "indicator_reasoning" not in predictions.columns
 
     markdown = compiled_markdown.read_text(encoding="utf-8")
     assert "## Model Metrics" not in markdown
@@ -86,6 +87,7 @@ def test_compile_run_results_writes_csv_and_markdown_tables(tmp_path):
     assert "Real execution duration seconds" in markdown
     assert "Average end-to-end completion TPS" in markdown
     assert "reporting-model" in markdown
+    assert "Service tier: `standard`" in markdown
     assert "No provider cost was recorded" in markdown
     assert "before OpenRouter" not in markdown
 

@@ -9,27 +9,13 @@ from typing import Any, Callable
 from domain.evidence import EvidenceCollectorAnswer
 from domain.final_output import JudgeAnswer
 from domain.labels import FINAL_LABELS, LABEL_DEFINITIONS
-from workflows.framework_1_parallel_no_evidence.schemas import (
-    SpecialistAnswer,
-    SpecialistReasonedAnswer,
-)
+from workflows.framework_1_parallel_no_evidence.schemas import SpecialistAnswer
 
 
 # The five specialist prompts split the shared label definitions into one
 # binary true/false task per agent while keeping labels centralized in
 # core.labels.LABEL_DEFINITIONS.
-def _make_specialist_prompt(*, label_name: str, include_reasoning: bool) -> str:
-    output_shape = (
-        '{"answer": true, "reasoning": "1-3 sentence explanation including any supporting evidence"}'
-        if include_reasoning
-        else '{"answer": true}'
-    )
-    reasoning_rules = (
-        '\n- "reasoning" must be one to three sentences max.'
-        '\n- Include any supporting evidence inside "reasoning"; do not output a separate evidence key.'
-        if include_reasoning
-        else "\n- Do not include markdown, commentary, rationale, confidence, or extra keys."
-    )
+def _make_specialist_prompt(*, label_name: str) -> str:
     return f"""You are the {label_name} Agent for a suicide-risk classification task.
 
 Target label: {label_name}
@@ -48,24 +34,19 @@ Text to classify:
 
 Output format:
 Return only valid JSON with exactly these keys:
-{output_shape}
+{{"answer": true}}
 
 Rules:
 - "answer" must be true when the text matches {label_name}, otherwise false.
-- "answer" must be a JSON boolean, not a string.{reasoning_rules}"""
+- "answer" must be a JSON boolean, not a string.
+- Do not include markdown, commentary, rationale, confidence, or extra keys."""
 
 
-INDICATOR_SPECIALIST_PROMPT = _make_specialist_prompt(label_name="Indicator", include_reasoning=False)
-IDEATION_SPECIALIST_PROMPT = _make_specialist_prompt(label_name="Ideation", include_reasoning=False)
-BEHAVIOR_SPECIALIST_PROMPT = _make_specialist_prompt(label_name="Behavior", include_reasoning=False)
-ATTEMPT_SPECIALIST_PROMPT = _make_specialist_prompt(label_name="Attempt", include_reasoning=False)
-UNSUPPORTIVE_SPECIALIST_PROMPT = _make_specialist_prompt(label_name="Unsupportive", include_reasoning=False)
-
-INDICATOR_REASONED_SPECIALIST_PROMPT = _make_specialist_prompt(label_name="Indicator", include_reasoning=True)
-IDEATION_REASONED_SPECIALIST_PROMPT = _make_specialist_prompt(label_name="Ideation", include_reasoning=True)
-BEHAVIOR_REASONED_SPECIALIST_PROMPT = _make_specialist_prompt(label_name="Behavior", include_reasoning=True)
-ATTEMPT_REASONED_SPECIALIST_PROMPT = _make_specialist_prompt(label_name="Attempt", include_reasoning=True)
-UNSUPPORTIVE_REASONED_SPECIALIST_PROMPT = _make_specialist_prompt(label_name="Unsupportive", include_reasoning=True)
+INDICATOR_SPECIALIST_PROMPT = _make_specialist_prompt(label_name="Indicator")
+IDEATION_SPECIALIST_PROMPT = _make_specialist_prompt(label_name="Ideation")
+BEHAVIOR_SPECIALIST_PROMPT = _make_specialist_prompt(label_name="Behavior")
+ATTEMPT_SPECIALIST_PROMPT = _make_specialist_prompt(label_name="Attempt")
+UNSUPPORTIVE_SPECIALIST_PROMPT = _make_specialist_prompt(label_name="Unsupportive")
 
 
 EVIDENCE_TYPE_DEFINITIONS: dict[str, dict[str, str]] = {
@@ -204,39 +185,6 @@ LABEL_TO_AGENT_NAME: dict[str, str] = {
     config.label_name: config.agent_name for config in SPECIALIST_AGENT_PROMPTS.values()
 }
 
-REASONED_SPECIALIST_AGENT_PROMPTS: dict[str, SpecialistPromptConfig] = {
-    "Indicator Agent": SpecialistPromptConfig(
-        agent_name="Indicator Agent",
-        label_name="Indicator",
-        system_prompt=INDICATOR_REASONED_SPECIALIST_PROMPT,
-        output_format='{"answer": true|false, "reasoning": string}',
-    ),
-    "Ideation Agent": SpecialistPromptConfig(
-        agent_name="Ideation Agent",
-        label_name="Ideation",
-        system_prompt=IDEATION_REASONED_SPECIALIST_PROMPT,
-        output_format='{"answer": true|false, "reasoning": string}',
-    ),
-    "Behavior Agent": SpecialistPromptConfig(
-        agent_name="Behavior Agent",
-        label_name="Behavior",
-        system_prompt=BEHAVIOR_REASONED_SPECIALIST_PROMPT,
-        output_format='{"answer": true|false, "reasoning": string}',
-    ),
-    "Attempt Agent": SpecialistPromptConfig(
-        agent_name="Attempt Agent",
-        label_name="Attempt",
-        system_prompt=ATTEMPT_REASONED_SPECIALIST_PROMPT,
-        output_format='{"answer": true|false, "reasoning": string}',
-    ),
-    "Unsupportive Agent": SpecialistPromptConfig(
-        agent_name="Unsupportive Agent",
-        label_name="Unsupportive",
-        system_prompt=UNSUPPORTIVE_REASONED_SPECIALIST_PROMPT,
-        output_format='{"answer": true|false, "reasoning": string}',
-    ),
-}
-
 EVIDENCE_COLLECTOR_PROMPTS: dict[str, SpecialistPromptConfig] = {
     f"{label} Evidence Collector": SpecialistPromptConfig(
         agent_name=f"{label} Evidence Collector",
@@ -279,9 +227,9 @@ def judge_system_prompt() -> str:
         "Output format:\n"
         "Return only valid JSON with exactly this shape:\n"
         '{"label_name": "<label_name>", "suicidal_intent": true}\n'
-        "Set suicidal_intent to true for Indicator, Ideation, Behavior, or Attempt, "
-        "and false for Unsupportive. Treat this boolean as membership in the dataset's four-label "
-        "positive class, not as a separate clinical inference about the author's intent."
+        "Treat this boolean as indicating whether the example belongs to the dataset's positive class that expresses suicide-related content."
+        "Set suicidal_intent to true for Indicator, Ideation, Behavior, or Attempt, that indicates suicide-related content. "
+        "Set false for Unsupportive that expresses no suicide-related content. "
     )
 
 
@@ -298,35 +246,6 @@ def judge_user_prompt(text: str, specialist_answers: dict[str, bool]) -> str:
 def judge_user_prompt_from_outputs(text: str, specialist_outputs: dict[str, dict[str, Any]]) -> str:
     answers = {label: bool(specialist_outputs[label]["answer"]) for label in FINAL_LABELS}
     return judge_user_prompt(text, answers)
-
-
-def reasoned_judge_system_prompt() -> str:
-    definitions = "\n".join(f"- {label}: {LABEL_DEFINITIONS[label]}" for label in FINAL_LABELS)
-    return (
-        "You are the final judge for a five-label suicide-risk classification task.\n"
-        "Use the original text plus the five specialist answers and rationales to choose exactly one final label.\n\n"
-        "The five specialist agents run in parallel before you receive their outputs:\n"
-        f"Label definitions:\n{definitions}\n\n"
-        "Input format:\n"
-        "You receive the original text plus a JSON object keyed by all five specialist labels. "
-        "Each specialist object contains answer and reasoning.\n\n"
-        "Output format:\n"
-        "Return only valid JSON with exactly this shape:\n"
-        '{"label_name": "<label_name>", "suicidal_intent": true}\n'
-        "Set suicidal_intent to true for Indicator, Ideation, Behavior, or Attempt, "
-        "and false for Unsupportive. Treat this boolean as membership in the dataset's four-label "
-        "positive class, not as a separate clinical inference about the author's intent."
-    )
-
-
-def reasoned_judge_user_prompt(text: str, specialist_outputs: dict[str, dict[str, Any]]) -> str:
-    payload = {label: specialist_outputs[label] for label in FINAL_LABELS}
-    return (
-        "Original text:\n"
-        f"{text}\n\n"
-        "Specialist outputs:\n"
-        f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
-    )
 
 
 def evidence_judge_system_prompt() -> str:
@@ -351,7 +270,10 @@ def evidence_judge_system_prompt() -> str:
         "- Empty evidence means that collector found no supported item; it does not prove a label false.\n"
         "- Repeated evidence across packets is still one underlying text fact, not multiple votes.\n"
         "- Distinguish the subject, timing, thought, preparation/self-harm, and attempt status.\n"
-        "- Choose Unsupportive only when the text does not match any of the four suicide-risk labels.\n\n"
+        "- Choose Unsupportive only when the text does not meaningfully concern suicide, self-harm, "
+        "suicidal thinking, suicidal behavior, or suicide attempts.\n"
+        "- Suicide-related discussion, another person's suicidality, or an explicit denial of the "
+        "author's own suicidal intent supports Indicator rather than Unsupportive.\n\n"
         "Input format:\n"
         "You receive the original text plus a JSON object keyed by Indicator, Ideation, Behavior, "
         "Attempt, and Unsupportive. Each value contains only an evidence array.\n\n"
@@ -383,14 +305,6 @@ WORKFLOW_MODES: dict[str, WorkflowModeConfig] = {
         judge_system_prompt=judge_system_prompt,
         judge_user_prompt=judge_user_prompt_from_outputs,
     ),
-    "reasoned": WorkflowModeConfig(
-        name="reasoned",
-        specialist_prompts=REASONED_SPECIALIST_AGENT_PROMPTS,
-        specialist_schema=SpecialistReasonedAnswer,
-        judge_schema=JudgeAnswer,
-        judge_system_prompt=reasoned_judge_system_prompt,
-        judge_user_prompt=reasoned_judge_user_prompt,
-    ),
     "evidence": WorkflowModeConfig(
         name="evidence",
         specialist_prompts=EVIDENCE_COLLECTOR_PROMPTS,
@@ -404,7 +318,7 @@ WORKFLOW_MODES: dict[str, WorkflowModeConfig] = {
 }
 
 WORKFLOW_MODE_NAMES = tuple(WORKFLOW_MODES)
-FRAMEWORK_1_PARALLEL_NO_EVIDENCE_MODE_NAMES = ("bool", "reasoned")
+FRAMEWORK_1_PARALLEL_NO_EVIDENCE_MODE_NAMES = ("bool",)
 
 
 def get_workflow_mode(mode: str | WorkflowModeConfig) -> WorkflowModeConfig:

@@ -28,7 +28,11 @@ LABEL_DEFINITIONS: Final[dict[str, str]] = {
         "The post mentions a suicide attempt, current or past. A past attempt should "
         "still be labeled Attempt."
     ),
-    "Unsupportive": "The text does not match any of the four suicide-risk labels.",
+    "Unsupportive": (
+        "The text does not concern suicide, self-harm, suicidal "
+        "thinking, suicidal behavior, or suicide attempts. "
+        "Do not infer from negative emotions alone without any clear evidence of suicidal thoughts."
+    ),
 }
 
 

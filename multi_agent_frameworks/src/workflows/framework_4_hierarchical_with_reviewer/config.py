@@ -2,4 +2,13 @@
 
 WORKFLOW_NAME = "framework_4_hierarchical_with_reviewer"
 DEFAULT_MODE = "bool"
-CONFIG_KEYS = ("model", "temperature", "max_completion_tokens", "max_retries", "mode", "fake_llm")
+MODE_NAMES = ("bool", "reasoned")
+CONFIG_KEYS = (
+    "model",
+    "temperature",
+    "max_completion_tokens",
+    "max_retries",
+    "mode",
+    "service_tier",
+    "fake_llm",
+)

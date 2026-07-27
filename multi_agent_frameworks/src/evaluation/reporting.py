@@ -166,6 +166,12 @@ def _compiled_rows(
             "model_name": trace_summary["model_name"],
             "requested_model_name": trace_summary.get("requested_model_name"),
             "mode": trace_summary.get("mode") or metrics.get("mode"),
+            "service_tier": trace_summary.get("service_tier")
+            or metrics.get("service_tier"),
+            "stop_after_tokens": (metrics.get("token_stop") or {}).get("threshold"),
+            "current_session_total_tokens": (metrics.get("token_stop") or {}).get(
+                "current_session_total_tokens"
+            ),
             "evaluation_status": trace_summary["evaluation_status"],
             "processed_records": trace_summary["processed_records"],
             "total_records": trace_summary["total_records"],
@@ -199,6 +205,9 @@ def _compiled_markdown(
         f"- Model: `{metrics['model_name']}`",
         f"- Requested model: `{metrics.get('requested_model_name')}`",
         f"- Mode: `{metrics.get('mode', 'bool')}`",
+        f"- Service tier: `{metrics.get('service_tier', 'standard')}`",
+        f"- Stop-after token threshold: `{(metrics.get('token_stop') or {}).get('threshold')}`",
+        f"- Current invocation tokens: `{(metrics.get('token_stop') or {}).get('current_session_total_tokens')}`",
         f"- Evaluation status: `{metrics['evaluation_status']}`",
         f"- Stop reason: `{metrics.get('stop_reason')}`",
         "",

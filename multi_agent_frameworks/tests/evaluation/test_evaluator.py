@@ -25,26 +25,6 @@ class EvaluatorFakeModel:
         raise AssertionError("Unexpected evaluator prompt")
 
 
-class EvaluatorReasonedFakeModel:
-    def invoke(self, messages):
-        system = messages[0]["content"]
-        if "final judge" in system.lower():
-            assert "Specialist outputs" in messages[1]["content"]
-            assert '"reasoning"' in messages[1]["content"]
-            assert '"evidence"' not in messages[1]["content"]
-            return json.dumps({"label_name": "Attempt", "suicidal_intent": True})
-        for label in FINAL_LABELS:
-            if f"Target label: {label}" in system:
-                answer = label == "Attempt"
-                return json.dumps(
-                    {
-                        "answer": answer,
-                        "reasoning": f"{label} evaluator rationale",
-                    }
-                )
-        raise AssertionError("Unexpected evaluator prompt")
-
-
 class EvaluatorFailingModel:
     def invoke(self, messages):
         raise RuntimeError("synthetic transport failure")
@@ -386,6 +366,36 @@ def test_evaluator_writes_complete_artifacts_for_fake_model(tmp_path):
     assert not (run_dir / "model_metrics.csv").exists()
     assert not (run_dir / "label_metrics.csv").exists()
     assert (run_dir / "trace_summary.json").exists()
+    prompt_snapshot = json.loads(
+        (run_dir / "first_completion_input_prompts.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert prompt_snapshot["workflow_name"] == "framework_1_parallel_no_evidence"
+    assert prompt_snapshot["sample_id"] == "10"
+    assert {agent["role"] for agent in prompt_snapshot["agents"]} == {
+        "Indicator_specialist",
+        "Ideation_specialist",
+        "Behavior_specialist",
+        "Attempt_specialist",
+        "Unsupportive_specialist",
+        "judge",
+    }
+    assert all(
+        [message["role"] for message in agent["messages"]] == ["system", "user"]
+        for agent in prompt_snapshot["agents"]
+    )
+    specialist_agents = [
+        agent for agent in prompt_snapshot["agents"] if agent["role"] != "judge"
+    ]
+    judge_agent = next(
+        agent for agent in prompt_snapshot["agents"] if agent["role"] == "judge"
+    )
+    assert all(
+        "indicator text" in agent["messages"][1]["content"]
+        for agent in specialist_agents
+    )
+    assert "Specialist answers" in judge_agent["messages"][1]["content"]
     assert (run_dir / "llm_calls.jsonl").exists()
     assert (run_dir / "traces.jsonl").exists()
     assert (run_dir / "compiled_results.csv").exists()
@@ -398,6 +408,11 @@ def test_evaluator_writes_complete_artifacts_for_fake_model(tmp_path):
     assert not (run_dir / "classification_metrics.svg").exists()
     assert (run_dir / "suicidal_intent_metrics.svg").exists()
     assert (run_dir / "runtime_metrics.svg").exists()
+    persisted_calls = [
+        json.loads(line)
+        for line in (run_dir / "llm_calls.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    assert all("_input_messages" not in call for call in persisted_calls)
     assert result.metrics["compiled_reports"] == {
         "compiled_csv": str(run_dir / "compiled_results.csv"),
         "compiled_markdown": str(run_dir / "compiled_results.md"),
@@ -513,39 +528,6 @@ def test_framework_1_parallel_no_evidence_wrapper_rejects_unknown_roles(tmp_path
             config=config,
             artifact_base_dir=tmp_path / "runs",
         )
-
-
-def test_evaluator_writes_reasoned_specialist_outputs(tmp_path):
-    sample_df = _sample_df()
-    config = _config(tmp_path, model_name="reasoned-test-model", mode="reasoned")
-
-    result = run_framework_1_evaluation(
-        sample_df=sample_df,
-        model=EvaluatorReasonedFakeModel(),
-        config=config,
-        run_id="test-evaluator-reasoned",
-        artifact_base_dir=tmp_path / "runs",
-    )
-
-    run_dir = Path(result.run_dir)
-    assert result.status == "completed"
-
-    metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
-    assert metrics["mode"] == "reasoned"
-    assert metrics["compiled_reports"]["compiled_csv"].endswith("compiled_results.csv")
-
-    predictions = pd.read_csv(run_dir / "predictions.csv", encoding="utf-8-sig")
-    assert {
-        "specialist_outputs",
-        "attempt_reasoning",
-    } <= set(predictions.columns)
-    assert "attempt_evidence" not in predictions.columns
-    specialist_outputs = json.loads(predictions.loc[0, "specialist_outputs"])
-    assert specialist_outputs["Attempt"] == {
-        "answer": True,
-        "reasoning": "Attempt evaluator rationale",
-    }
-    assert predictions.loc[0, "attempt_reasoning"] == "Attempt evaluator rationale"
 
 
 def test_evaluator_stops_early_on_abnormal_request_errors(tmp_path):

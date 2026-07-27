@@ -11,8 +11,8 @@ class MultiAgentWorkflow(_ParallelWorkflow):
     """Five parallel label specialists followed by one final judge."""
 
     def __init__(self, *args: Any, mode: str = "bool", **kwargs: Any) -> None:
-        if mode not in {"bool", "reasoned"}:
-            raise ValueError("framework_1_parallel_no_evidence mode must be 'bool' or 'reasoned'")
+        if mode != "bool":
+            raise ValueError("framework_1_parallel_no_evidence mode must be 'bool'")
         super().__init__(*args, mode=mode, **kwargs)
 
 

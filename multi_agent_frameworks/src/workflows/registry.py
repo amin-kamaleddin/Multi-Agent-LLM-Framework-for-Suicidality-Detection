@@ -27,8 +27,10 @@ from workflows.framework_1_parallel_no_evidence.evaluation import run_evaluation
 from workflows.framework_2_parallel_with_evidence.config import CONFIG_KEYS as FRAMEWORK_2_PARALLEL_WITH_EVIDENCE_CONFIG_KEYS
 from workflows.framework_2_parallel_with_evidence.evaluation import run_evaluation as run_framework_2_evaluation
 from workflows.framework_3_hierarchical_no_reviewer.config import CONFIG_KEYS as FRAMEWORK_3_HIERARCHICAL_NO_REVIEWER_CONFIG_KEYS
+from workflows.framework_3_hierarchical_no_reviewer.config import MODE_NAMES as FRAMEWORK_3_HIERARCHICAL_NO_REVIEWER_MODE_NAMES
 from workflows.framework_3_hierarchical_no_reviewer.evaluation import run_evaluation as run_framework_3_evaluation
 from workflows.framework_4_hierarchical_with_reviewer.config import CONFIG_KEYS as FRAMEWORK_4_HIERARCHICAL_WITH_REVIEWER_CONFIG_KEYS
+from workflows.framework_4_hierarchical_with_reviewer.config import MODE_NAMES as FRAMEWORK_4_HIERARCHICAL_WITH_REVIEWER_MODE_NAMES
 from workflows.framework_4_hierarchical_with_reviewer.evaluation import run_evaluation as run_framework_4_evaluation
 
 
@@ -84,6 +86,7 @@ def _run_framework_1_parallel_no_evidence(request: WorkflowRunRequest) -> Evalua
             request.config.requested_model_name,
             request.config.temperature,
             request.config.max_completion_tokens,
+            service_tier=request.config.service_tier,
         )
     )
     agent_configuration, agent_models = _agent_overrides(
@@ -119,10 +122,10 @@ def _run_framework_3_hierarchical_no_reviewer(
             f"{unknown_keys}"
         )
 
-    if request.config.mode not in FRAMEWORK_1_PARALLEL_NO_EVIDENCE_MODE_NAMES:
+    if request.config.mode not in FRAMEWORK_3_HIERARCHICAL_NO_REVIEWER_MODE_NAMES:
         raise ValueError(
             f"framework_3_hierarchical_no_reviewer mode must be one of "
-            f"{list(FRAMEWORK_1_PARALLEL_NO_EVIDENCE_MODE_NAMES)}; got {request.config.mode!r}"
+            f"{list(FRAMEWORK_3_HIERARCHICAL_NO_REVIEWER_MODE_NAMES)}; got {request.config.mode!r}"
         )
 
     model = (
@@ -132,6 +135,7 @@ def _run_framework_3_hierarchical_no_reviewer(
             request.config.requested_model_name,
             request.config.temperature,
             request.config.max_completion_tokens,
+            service_tier=request.config.service_tier,
         )
     )
     return run_framework_3_evaluation(
@@ -158,10 +162,10 @@ def _run_framework_4_hierarchical_with_reviewer(
             f"{unknown_keys}"
         )
 
-    if request.config.mode not in FRAMEWORK_1_PARALLEL_NO_EVIDENCE_MODE_NAMES:
+    if request.config.mode not in FRAMEWORK_4_HIERARCHICAL_WITH_REVIEWER_MODE_NAMES:
         raise ValueError(
             f"framework_4_hierarchical_with_reviewer mode must be one of "
-            f"{list(FRAMEWORK_1_PARALLEL_NO_EVIDENCE_MODE_NAMES)}; got {request.config.mode!r}"
+            f"{list(FRAMEWORK_4_HIERARCHICAL_WITH_REVIEWER_MODE_NAMES)}; got {request.config.mode!r}"
         )
 
     model = (
@@ -171,6 +175,7 @@ def _run_framework_4_hierarchical_with_reviewer(
             request.config.requested_model_name,
             request.config.temperature,
             request.config.max_completion_tokens,
+            service_tier=request.config.service_tier,
         )
     )
     return run_framework_4_evaluation(
@@ -195,6 +200,7 @@ def _run_framework_2_parallel_with_evidence(request: WorkflowRunRequest) -> Eval
             request.config.requested_model_name,
             request.config.temperature,
             request.config.max_completion_tokens,
+            service_tier=request.config.service_tier,
         )
     )
     agent_configuration, agent_models = _agent_overrides(
@@ -272,7 +278,12 @@ def _agent_overrides(
         agent_models[role] = (
             DeterministicFakeModel()
             if request.fake_llm
-            else build_real_model(requested_model, temperature, max_completion_tokens)
+            else build_real_model(
+                requested_model,
+                temperature,
+                max_completion_tokens,
+                service_tier=config.service_tier,
+            )
         )
     return agent_configuration, agent_models
 

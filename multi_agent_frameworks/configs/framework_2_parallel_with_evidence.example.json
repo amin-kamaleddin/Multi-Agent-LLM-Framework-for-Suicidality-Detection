@@ -4,6 +4,7 @@
   "max_completion_tokens": 1024,
   "max_retries": 2,
   "mode": "evidence",
+  "service_tier": "standard",
   "fake_llm": false,
   "agents": {}
 }

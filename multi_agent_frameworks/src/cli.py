@@ -24,6 +24,7 @@ from evaluation.evaluator import (
 from evaluation.metrics import compute_final_label_confusion_matrix, summarize_runtime
 from evaluation.reporting import compile_run_results
 from llm.factory import (
+    OPENAI_SERVICE_TIERS,
     build_real_model,
     openai_base_url,
     resolve_model_name_for_base_url,
@@ -217,6 +218,14 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
     )
     registration = WORKFLOW_REGISTRY.get(args.workflow)
     mode = str(_workflow_setting(args, workflow_config, "mode", registration.default_mode))
+    service_tier = str(
+        _workflow_setting(
+            args,
+            workflow_config,
+            "service_tier",
+            os.environ.get("OPENAI_SERVICE_TIER", "standard") or "standard",
+        )
+    ).lower()
     fake_llm = _workflow_setting(args, workflow_config, "fake_llm", False)
     if not isinstance(fake_llm, bool):
         raise ValueError("workflow-config 'fake_llm' must be a JSON boolean")
@@ -224,6 +233,10 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
         raise ValueError("max_completion_tokens must be greater than zero")
     if max_retries < 0:
         raise ValueError("max_retries must be zero or greater")
+    if service_tier not in OPENAI_SERVICE_TIERS:
+        raise ValueError(
+            f"service_tier must be one of {list(OPENAI_SERVICE_TIERS)}; got {service_tier!r}"
+        )
 
     requested_model_name = "deterministic-fake-llm" if fake_llm else configured_model
     resolved_model_name = (
@@ -253,6 +266,7 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
         total_records=len(sample_df),
         limit=args.limit,
         mode=mode,
+        service_tier=service_tier,
         workflow_name=args.workflow,
         workflow_config=workflow_config,
         error_stop_failed_llm_attempts=args.error_stop_failed_llm_attempts,
@@ -262,6 +276,7 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
         case_workers=args.case_workers,
         max_in_flight_llm=args.max_in_flight_llm,
         checkpoint_every=args.checkpoint_every,
+        stop_after_tokens=args.stop_after_tokens,
     )
     result = registration.runner(
         WorkflowRunRequest(
@@ -394,6 +409,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Workflow-defined mode; overrides workflow-config.",
     )
     evaluate.add_argument(
+        "--service-tier",
+        choices=OPENAI_SERVICE_TIERS,
+        default=None,
+        help=(
+            "OpenAI request processing tier: standard maps to API service_tier=default; "
+            "flex maps to service_tier=flex and requires a direct OpenAI endpoint. "
+            "Overrides workflow-config and OPENAI_SERVICE_TIER."
+        ),
+    )
+    evaluate.add_argument(
         "--limit",
         type=_positive_int,
         default=None,
@@ -426,10 +451,55 @@ def build_parser() -> argparse.ArgumentParser:
         default=int(os.environ.get("EVAL_CHECKPOINT_EVERY", "250") or 250),
         help="Completed cases between manifest progress snapshots (default: 250).",
     )
-    evaluate.add_argument("--error-stop-failed-llm-attempts", type=int, default=int(os.environ.get("EVAL_ERROR_STOP_FAILED_LLM_ATTEMPTS", "10") or 10))
-    evaluate.add_argument("--error-stop-failed-records", type=int, default=int(os.environ.get("EVAL_ERROR_STOP_FAILED_RECORDS", "3") or 3))
-    evaluate.add_argument("--error-stop-rate", type=float, default=float(os.environ.get("EVAL_ERROR_STOP_RATE", "0.5") or 0.5))
-    evaluate.add_argument("--error-stop-min-records", type=int, default=int(os.environ.get("EVAL_ERROR_STOP_MIN_RECORDS", "10") or 10))
+    evaluate.add_argument(
+        "--stop-after-tokens",
+        type=_positive_int,
+        default=None,
+        help=(
+            "Stop scheduling new cases after this many prompt plus completion tokens "
+            "have completed in the current invocation. The counter resets on resume."
+        ),
+    )
+    evaluate.add_argument(
+        "--error-stop-failed-llm-attempts",
+        type=int,
+        default=int(os.environ.get("EVAL_ERROR_STOP_FAILED_LLM_ATTEMPTS", "10") or 10),
+        help=(
+            "Stop after this many cumulative failed LLM request attempts. Every failed "
+            "initial call or retry counts, including a failed attempt followed by a successful "
+            "retry. The count includes earlier invocations when resuming (default: 10)."
+        ),
+    )
+    evaluate.add_argument(
+        "--error-stop-failed-records",
+        type=int,
+        default=int(os.environ.get("EVAL_ERROR_STOP_FAILED_RECORDS", "3") or 3),
+        help=(
+            "Stop after this many cumulative completed dataset records have no valid final "
+            "label after their workflow retries are exhausted. One record counts at most once; "
+            "the count includes earlier invocations when resuming (default: 3)."
+        ),
+    )
+    evaluate.add_argument(
+        "--error-stop-rate",
+        type=float,
+        default=float(os.environ.get("EVAL_ERROR_STOP_RATE", "0.5") or 0.5),
+        help=(
+            "Stop when cumulative failed_records / completed_records is at least this fraction, "
+            "but only after --error-stop-min-records completed records. Counts include earlier "
+            "invocations when resuming (default: 0.5)."
+        ),
+    )
+    evaluate.add_argument(
+        "--error-stop-min-records",
+        type=int,
+        default=int(os.environ.get("EVAL_ERROR_STOP_MIN_RECORDS", "10") or 10),
+        help=(
+            "Minimum cumulative completed records required before --error-stop-rate is checked. "
+            "This does not delay the two absolute failed-attempt or failed-record thresholds "
+            "(default: 10)."
+        ),
+    )
     evaluate.set_defaults(func=cmd_evaluate)
 
     list_workflows = subparsers.add_parser(

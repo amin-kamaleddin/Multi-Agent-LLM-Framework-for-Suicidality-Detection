@@ -458,7 +458,7 @@ class MultiAgentWorkflow:
             and self._can_use_create_agent(model)
             and not self.mode_config.evidence_mode
         ):
-            return self._call_with_create_agent(
+            parsed, calls, errors = self._call_with_create_agent(
                 role=role,
                 messages=messages,
                 schema=schema,
@@ -466,14 +466,18 @@ class MultiAgentWorkflow:
                 model_name=model_name,
                 validator=validator,
             )
-        return self._call_and_parse_manually(
-            role=role,
-            messages=messages,
-            schema=schema,
-            model=model,
-            model_name=model_name,
-            validator=validator,
-        )
+        else:
+            parsed, calls, errors = self._call_and_parse_manually(
+                role=role,
+                messages=messages,
+                schema=schema,
+                model=model,
+                model_name=model_name,
+                validator=validator,
+            )
+        for call in calls:
+            call["_input_messages"] = [dict(message) for message in messages]
+        return parsed, calls, errors
 
     def _call_with_create_agent(
         self,

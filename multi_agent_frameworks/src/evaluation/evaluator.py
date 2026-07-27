@@ -61,6 +61,7 @@ class EvaluationConfig:
     total_records: int
     limit: int | None = None
     mode: str = "bool"
+    service_tier: str = "standard"
     workflow_name: str = "framework_1_parallel_no_evidence"
     workflow_config: dict[str, Any] | None = None
     agent_configuration: dict[str, dict[str, Any]] | None = None
@@ -71,6 +72,7 @@ class EvaluationConfig:
     case_workers: int = 4
     max_in_flight_llm: int = 20
     checkpoint_every: int = 250
+    stop_after_tokens: int | None = None
     command: str = "evaluate"
 
 
@@ -185,6 +187,12 @@ def snapshot_evaluation_results(
         raise ValueError("Cannot snapshot run because it has no completed records")
 
     writer = ArtifactWriter(base_dir=source_run_dir / "snapshots")
+    source_prompt_snapshot = source_run_dir / "first_completion_input_prompts.json"
+    if source_prompt_snapshot.is_file():
+        writer.write_json(
+            "first_completion_input_prompts.json",
+            _read_json_object(source_prompt_snapshot),
+        )
     writer.write_jsonl("llm_calls.jsonl", all_calls)
     writer.write_jsonl("traces.jsonl", traces)
     writer.write_jsonl("errors.jsonl", errors)
@@ -240,6 +248,8 @@ def run_evaluation(
         raise ValueError("max_in_flight_llm must be greater than zero")
     if config.checkpoint_every <= 0:
         raise ValueError("checkpoint_every must be greater than zero")
+    if config.stop_after_tokens is not None and config.stop_after_tokens <= 0:
+        raise ValueError("stop_after_tokens must be greater than zero when provided")
 
     id_column = _sample_id_column(sample_df.columns)
     records = sample_df.to_dict(orient="records")
@@ -281,6 +291,7 @@ def run_evaluation(
             "case_workers": config.case_workers,
             "max_in_flight_llm": config.max_in_flight_llm,
             "checkpoint_every": config.checkpoint_every,
+            "stop_after_tokens": config.stop_after_tokens,
         }
     else:
         manifest = {
@@ -304,6 +315,7 @@ def run_evaluation(
                 "case_workers": config.case_workers,
                 "max_in_flight_llm": config.max_in_flight_llm,
                 "checkpoint_every": config.checkpoint_every,
+                "stop_after_tokens": config.stop_after_tokens,
             },
             "progress_store": "progress.sqlite",
         }
@@ -322,6 +334,7 @@ def run_evaluation(
     stop_reason: str | None = None
     worker_error: BaseException | None = None
     completed_this_session = 0
+    session_total_tokens = 0
     rows: list[dict[str, Any]] = []
     all_calls: list[dict[str, Any]] = []
     coverage: dict[str, Any] = {}
@@ -344,6 +357,10 @@ def run_evaluation(
         )
         manifest["reset_running_records"] = reset_records
         manifest["progress"] = progress.summary()
+        manifest["token_stop"] = {
+            "threshold": config.stop_after_tokens,
+            "current_session_total_tokens": session_total_tokens,
+        }
         write_manifest(manifest_path, manifest)
 
         in_flight: dict[
@@ -393,6 +410,11 @@ def run_evaluation(
                                 "Workflow result sample_id does not match the evaluated record: "
                                 f"expected {expected_sample_id!r}, got {result.sample_id!r}"
                             )
+                        _write_first_completion_input_prompts(
+                            writer=writer,
+                            result=result,
+                            workflow_name=config.workflow_name,
+                        )
                         payload = _case_payload(
                             record=record,
                             result=result,
@@ -422,13 +444,24 @@ def run_evaluation(
                             failed_record=result.final_label not in FINAL_LABELS,
                         )
                         completed_this_session += 1
+                        session_total_tokens += _llm_call_total_tokens(
+                            payload["llm_calls"]
+                        )
                     except BaseException as exc:
                         progress.release(expected_sample_id)
                         if worker_error is None:
                             worker_error = exc
                     summary = progress.summary()
+                    manifest["token_stop"] = {
+                        "threshold": config.stop_after_tokens,
+                        "current_session_total_tokens": session_total_tokens,
+                    }
                     if worker_error is None and stop_reason is None:
-                        stop_reason = _stop_reason_from_summary(summary, config)
+                        stop_reason = _stop_reason_from_summary(
+                            summary,
+                            config,
+                            session_total_tokens=session_total_tokens,
+                        )
                     print(
                         json.dumps(
                             {
@@ -439,6 +472,7 @@ def run_evaluation(
                                 "failed_llm_attempts_total": summary[
                                     "failed_llm_attempts"
                                 ],
+                                "session_total_tokens": session_total_tokens,
                                 "stop_reason": stop_reason,
                             },
                             ensure_ascii=False,
@@ -497,6 +531,7 @@ def run_evaluation(
         agent_execution_duration_s=progress_summary["agent_execution_duration_s"],
         real_execution_duration_s=progress_summary["real_execution_duration_s"],
         coverage=coverage,
+        session_total_tokens=session_total_tokens,
     )
     manifest.update(
         {
@@ -505,6 +540,10 @@ def run_evaluation(
             "progress": progress_summary,
             "coverage": coverage,
             "stop_reason": stop_reason,
+            "token_stop": {
+                "threshold": config.stop_after_tokens,
+                "current_session_total_tokens": session_total_tokens,
+            },
         }
     )
     write_manifest(manifest_path, manifest)
@@ -530,6 +569,7 @@ def finalize_evaluation_artifacts(
     agent_execution_duration_s: float,
     real_execution_duration_s: float,
     coverage: dict[str, Any],
+    session_total_tokens: int | None = None,
 ) -> dict[str, Any]:
     """Write the final evaluator artifacts and compile the review reports."""
     metrics = _write_evaluation_artifacts(
@@ -542,6 +582,7 @@ def finalize_evaluation_artifacts(
         agent_execution_duration_s=agent_execution_duration_s,
         real_execution_duration_s=real_execution_duration_s,
         coverage=coverage,
+        session_total_tokens=session_total_tokens,
     )
     metrics["compiled_reports"] = compile_run_results(writer.run_dir)
     metrics["artifact_status"] = writer.required_artifact_status()
@@ -604,8 +645,6 @@ def _specialist_prediction_fields(
     }
     for label, column in SPECIALIST_ANSWER_COLUMNS.items():
         row[column] = specialist_answers[label]
-        output = specialist_outputs[label] if isinstance(specialist_outputs[label], dict) else {}
-        row[f"{label.lower()}_reasoning"] = output.get("reasoning")
     return row
 
 
@@ -706,7 +745,14 @@ def _case_payload(
             prediction_enricher=prediction_enricher,
         ),
         "llm_calls": [
-            {"sample_id": result.sample_id, **call}
+            {
+                "sample_id": result.sample_id,
+                **{
+                    key: value
+                    for key, value in call.items()
+                    if key != "_input_messages"
+                },
+            }
             for call in result.llm_calls
         ],
         "traces": [
@@ -718,6 +764,64 @@ def _case_payload(
             for error in result.errors
         ],
     }
+
+
+def _write_first_completion_input_prompts(
+    *,
+    writer: ArtifactWriter,
+    result: EvaluationCaseResult,
+    workflow_name: str,
+) -> None:
+    """Persist actual agent inputs once, without duplicating them per case."""
+    path = writer.run_dir / "first_completion_input_prompts.json"
+    if path.exists():
+        return
+
+    agents: list[dict[str, Any]] = []
+    seen_inputs: set[tuple[str, str]] = set()
+    for call in result.llm_calls:
+        messages = call.get("_input_messages")
+        role = call.get("role")
+        if not isinstance(role, str) or not isinstance(messages, list):
+            continue
+        normalized_messages = [
+            {
+                "role": str(message.get("role", "")),
+                "content": str(message.get("content", "")),
+            }
+            for message in messages
+            if isinstance(message, dict)
+        ]
+        serialized_messages = json.dumps(
+            normalized_messages,
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+        input_identity = (role, serialized_messages)
+        if not normalized_messages or input_identity in seen_inputs:
+            continue
+        seen_inputs.add(input_identity)
+        agents.append(
+            {
+                "role": role,
+                "model_name": call.get("model_name"),
+                "messages": normalized_messages,
+            }
+        )
+
+    writer.write_json(
+        "first_completion_input_prompts.json",
+        {
+            "schema_version": "1.0",
+            "workflow_name": workflow_name,
+            "sample_id": str(result.sample_id),
+            "final_output": {
+                "label_name": result.final_label,
+                "suicidal_intent": result.suicidal_intent,
+            },
+            "agents": agents,
+        },
+    )
 
 
 def _materialize_completed_results(
@@ -766,6 +870,7 @@ def _workflow_identity(config: EvaluationConfig) -> dict[str, Any]:
         "max_completion_tokens": config.max_completion_tokens,
         "temperature": config.temperature,
         "mode": config.mode,
+        "service_tier": config.service_tier,
         "workflow_config": config.workflow_config or {},
         "agent_configuration": config.agent_configuration or {},
     }
@@ -797,10 +902,20 @@ def _validate_resume_manifest(
 def _stop_reason_from_summary(
     summary: dict[str, Any],
     config: EvaluationConfig,
+    *,
+    session_total_tokens: int,
 ) -> str | None:
     processed_records = int(summary["completed_records"])
     failed_records = int(summary["failed_records"])
     failed_llm_attempts = int(summary["failed_llm_attempts"])
+    if (
+        config.stop_after_tokens is not None
+        and session_total_tokens >= config.stop_after_tokens
+    ):
+        return (
+            f"session_total_tokens={session_total_tokens} reached "
+            f"stop_after_tokens={config.stop_after_tokens}"
+        )
     if failed_llm_attempts >= config.error_stop_failed_llm_attempts:
         return (
             f"failed_llm_attempts={failed_llm_attempts} reached "
@@ -822,6 +937,22 @@ def _stop_reason_from_summary(
     return None
 
 
+def _llm_call_total_tokens(calls: list[dict[str, Any]]) -> int:
+    """Count tokens reported by LLM attempts in one completed case."""
+    total = 0
+    for call in calls:
+        reported_total = call.get("total_tokens")
+        if reported_total is None:
+            reported_total = (call.get("prompt_tokens") or 0) + (
+                call.get("completion_tokens") or 0
+            )
+        try:
+            total += max(0, int(reported_total))
+        except (TypeError, ValueError):
+            continue
+    return total
+
+
 def _write_evaluation_artifacts(
     *,
     writer: ArtifactWriter,
@@ -833,6 +964,7 @@ def _write_evaluation_artifacts(
     agent_execution_duration_s: float,
     real_execution_duration_s: float,
     coverage: dict[str, Any],
+    session_total_tokens: int | None,
 ) -> dict[str, Any]:
     predictions = pd.DataFrame(rows)
     writer.write_dataframe("predictions.csv", predictions)
@@ -856,11 +988,21 @@ def _write_evaluation_artifacts(
         "model_name": config.model_name,
         "requested_model_name": config.requested_model_name,
         "mode": config.mode,
+        "service_tier": config.service_tier,
         "evaluation_status": status,
         "stop_reason": stop_reason,
         "processed_records": len(rows),
         "total_records": config.total_records,
         "coverage": coverage,
+        "token_stop": {
+            "threshold": config.stop_after_tokens,
+            "current_session_total_tokens": session_total_tokens,
+            "reached": bool(
+                config.stop_after_tokens is not None
+                and session_total_tokens is not None
+                and session_total_tokens >= config.stop_after_tokens
+            ),
+        },
         "classification": classification,
         "suicidal_intent": suicidal_intent,
         "runtime": runtime,
@@ -885,11 +1027,13 @@ def _write_evaluation_artifacts(
             "model_name": config.model_name,
             "requested_model_name": config.requested_model_name,
             "mode": config.mode,
+            "service_tier": config.service_tier,
             "evaluation_status": status,
             "processed_records": len(rows),
             "total_records": config.total_records,
             "stop_reason": stop_reason,
             "coverage": coverage,
+            "token_stop": metrics["token_stop"],
             "runtime": runtime,
             "json_parsing_errors": runtime["json_parsing_errors"],
             "failed_records": classification["failed_records"],

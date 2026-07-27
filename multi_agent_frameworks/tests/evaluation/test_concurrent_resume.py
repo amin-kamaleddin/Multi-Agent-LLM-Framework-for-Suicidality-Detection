@@ -40,6 +40,23 @@ class CountingWorkflow:
         )
 
 
+class TokenCountingWorkflow(CountingWorkflow):
+    def run_case(self, *, sample_id: str, text: str):
+        result = super().run_case(sample_id=sample_id, text=text)
+        result.llm_calls = [
+            {
+                "role": "token_test",
+                "attempt": 1,
+                "model_name": "test-model",
+                "latency_s": 0.0,
+                "prompt_tokens": 7,
+                "completion_tokens": 3,
+                "total_tokens": 10,
+            }
+        ]
+        return result
+
+
 def _sample(size: int) -> pd.DataFrame:
     return pd.DataFrame(
         [
@@ -55,7 +72,13 @@ def _sample(size: int) -> pd.DataFrame:
     )
 
 
-def _config(tmp_path: Path, size: int, *, case_workers: int = 4) -> EvaluationConfig:
+def _config(
+    tmp_path: Path,
+    size: int,
+    *,
+    case_workers: int = 4,
+    stop_after_tokens: int | None = None,
+) -> EvaluationConfig:
     return EvaluationConfig(
         model_name="test-model",
         requested_model_name="test-model",
@@ -73,6 +96,7 @@ def _config(tmp_path: Path, size: int, *, case_workers: int = 4) -> EvaluationCo
         case_workers=case_workers,
         max_in_flight_llm=20,
         checkpoint_every=3,
+        stop_after_tokens=stop_after_tokens,
     )
 
 
@@ -139,6 +163,9 @@ def test_resume_schedules_only_pending_ids_and_restores_dataset_order(tmp_path):
         artifact_base_dir=tmp_path / "runs",
     )
     run_dir = Path(initial.run_dir)
+    original_prompt_snapshot = (
+        run_dir / "first_completion_input_prompts.json"
+    ).read_text(encoding="utf-8")
     pending_id = str(sample.loc[2, "ID"])
 
     with sqlite3.connect(run_dir / "progress.sqlite") as connection:
@@ -167,6 +194,9 @@ def test_resume_schedules_only_pending_ids_and_restores_dataset_order(tmp_path):
     assert resumed.status == "completed"
     assert resumed_workflow.counts == {pending_id: 1}
     assert resumed.metrics["coverage"]["complete"] is True
+    assert (
+        run_dir / "first_completion_input_prompts.json"
+    ).read_text(encoding="utf-8") == original_prompt_snapshot
     predictions = pd.read_csv(run_dir / "predictions.csv", encoding="utf-8-sig")
     assert predictions["ID"].tolist() == sample["ID"].tolist()
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
@@ -176,6 +206,60 @@ def test_resume_schedules_only_pending_ids_and_restores_dataset_order(tmp_path):
     assert manifest["progress"]["real_execution_duration_s"] >= initial.metrics["runtime"][
         "real_execution_duration_s"
     ]
+
+
+def test_token_stop_counter_resets_for_each_resume_invocation(tmp_path):
+    sample = _sample(5)
+    config = _config(
+        tmp_path,
+        len(sample),
+        case_workers=1,
+        stop_after_tokens=15,
+    )
+    initial_workflow = TokenCountingWorkflow()
+    initial = run_evaluation(
+        sample_df=sample,
+        workflow=initial_workflow,
+        config=config,
+        run_id="token-stop",
+        artifact_base_dir=tmp_path / "runs",
+    )
+
+    assert initial.status == "stopped_early"
+    assert initial.processed_records == 2
+    assert initial.stop_reason == (
+        "session_total_tokens=20 reached stop_after_tokens=15"
+    )
+    assert initial.metrics["runtime"]["tokens"]["total"] == 20
+    assert initial.metrics["token_stop"] == {
+        "threshold": 15,
+        "current_session_total_tokens": 20,
+        "reached": True,
+    }
+
+    resumed_workflow = TokenCountingWorkflow()
+    resumed = run_evaluation(
+        sample_df=sample,
+        workflow=resumed_workflow,
+        config=config,
+        resume_run_dir=initial.run_dir,
+    )
+
+    assert resumed.status == "stopped_early"
+    assert resumed.processed_records == 4
+    assert resumed.stop_reason == (
+        "session_total_tokens=20 reached stop_after_tokens=15"
+    )
+    assert resumed.metrics["runtime"]["tokens"]["total"] == 40
+    assert resumed.metrics["token_stop"] == {
+        "threshold": 15,
+        "current_session_total_tokens": 20,
+        "reached": True,
+    }
+    assert resumed_workflow.counts == {
+        str(sample.loc[2, "ID"]): 1,
+        str(sample.loc[3, "ID"]): 1,
+    }
 
 
 def test_snapshot_results_exports_completed_sqlite_rows_without_mutating_run(
@@ -238,6 +322,11 @@ def test_snapshot_results_exports_completed_sqlite_rows_without_mutating_run(
         value for value in sample["ID"].tolist() if str(value) != pending_id
     ]
     assert snapshot_manifest["progress"]["completed_records"] == 4
+    assert (
+        snapshot_dir / "first_completion_input_prompts.json"
+    ).read_text(encoding="utf-8") == (
+        run_dir / "first_completion_input_prompts.json"
+    ).read_text(encoding="utf-8")
     assert (snapshot_dir / "compiled_results.csv").exists()
     assert (snapshot_dir / "compiled_results.md").exists()
     assert (run_dir / "predictions.csv").read_bytes() == original_predictions

@@ -2,9 +2,11 @@ import json
 import time
 from types import SimpleNamespace
 
+import pytest
+
 from domain.final_output import JudgeAnswer
 from domain.labels import FINAL_LABELS, LABEL_DEFINITIONS
-from workflows.framework_1_parallel_no_evidence.schemas import SpecialistAnswer, SpecialistReasonedAnswer
+from workflows.framework_1_parallel_no_evidence.schemas import SpecialistAnswer
 from workflows.shared.parallel import MultiAgentWorkflow
 
 
@@ -50,6 +52,18 @@ def test_graph_runs_five_specialists_and_judge():
     assert len(specialist_traces) == 5
     assert {trace["parallel_group"] for trace in specialist_traces} == {"five_label_specialists"}
     assert all(trace["node_duration_s"] >= 0 for trace in specialist_traces)
+
+
+def test_framework_1_rejects_removed_reasoned_mode():
+    with pytest.raises(
+        ValueError,
+        match="framework_1_parallel_no_evidence mode must be 'bool'",
+    ):
+        from workflows.framework_1_parallel_no_evidence.graph import (
+            MultiAgentWorkflow as Framework1Workflow,
+        )
+
+        Framework1Workflow(model=FakeGraphModel(), mode="reasoned")
 
 
 class UnsupportiveSpecialistModel:
@@ -104,54 +118,6 @@ def test_graph_routes_optional_per_agent_models_and_names():
         for call in result.llm_calls
         if call["role"].endswith("_specialist")
     } == {"default-model"}
-
-
-class ReasonedFakeGraphModel:
-    def __init__(self):
-        self.calls = []
-
-    def invoke(self, messages):
-        self.calls.append(messages)
-        system = messages[0]["content"]
-        if "final judge" in system.lower():
-            assert "Specialist outputs" in messages[1]["content"]
-            assert '"reasoning"' in messages[1]["content"]
-            assert '"evidence"' not in messages[1]["content"]
-            return json.dumps({"label_name": "Behavior", "suicidal_intent": True})
-
-        for label in FINAL_LABELS:
-            if f"Target label: {label}" in system:
-                answer = label == "Behavior"
-                return json.dumps(
-                    {
-                        "answer": answer,
-                        "reasoning": f"{label} rationale",
-                    }
-                )
-        raise AssertionError("Unexpected prompt")
-
-
-def test_reasoned_mode_runs_same_graph_with_rich_specialist_outputs():
-    model = ReasonedFakeGraphModel()
-    workflow = MultiAgentWorkflow(model=model, max_retries=0, mode="reasoned")
-
-    result = workflow.run_case(sample_id="case-reasoned", text="test text")
-
-    assert result.final_label == "Behavior"
-    assert result.suicidal_intent is True
-    assert result.specialist_answers == {
-        "Indicator": False,
-        "Ideation": False,
-        "Behavior": True,
-        "Attempt": False,
-        "Unsupportive": False,
-    }
-    assert result.specialist_outputs["Behavior"] == {
-        "answer": True,
-        "reasoning": "Behavior rationale",
-    }
-    assert len(result.errors) == 0
-    assert len(model.calls) == 6
 
 
 class EvidenceFakeGraphModel:
@@ -491,14 +457,6 @@ class FakeStructuredAgent:
         self.invocations.append((self.schema, payload))
         if self.schema is SpecialistAnswer:
             return {"messages": [], "structured_response": {"answer": True}}
-        if self.schema is SpecialistReasonedAnswer:
-            return {
-                "messages": [],
-                "structured_response": {
-                    "answer": True,
-                    "reasoning": "Structured rationale",
-                },
-            }
         if self.schema is JudgeAnswer:
             return {
                 "messages": [],
@@ -601,30 +559,3 @@ def test_create_agent_retries_once_and_preserves_failed_response_usage(monkeypat
     assert calls[0]["total_tokens"] == 9
     assert calls[0]["cost"] == 0.003
     assert calls[0]["raw_output"] == "invalid structured output"
-
-
-def test_graph_uses_create_agent_path_with_reasoned_schema(monkeypatch):
-    invocations = []
-
-    def fake_get_structured_agent(self, *, model, system_prompt, schema):
-        assert model
-        assert system_prompt
-        return FakeStructuredAgent(schema, invocations)
-
-    monkeypatch.setattr(MultiAgentWorkflow, "_get_structured_agent", fake_get_structured_agent)
-
-    workflow = MultiAgentWorkflow(
-        model=BindableStructuredModel(),
-        model_name="structured-model",
-        max_retries=0,
-        mode="reasoned",
-    )
-
-    result = workflow.run_case(sample_id="case-7", text="test text")
-
-    assert result.final_label == "Indicator"
-    assert len(result.errors) == 0
-    assert result.specialist_outputs["Indicator"]["reasoning"] == "Structured rationale"
-    assert len(invocations) == 6
-    assert [schema for schema, _ in invocations].count(SpecialistReasonedAnswer) == 5
-    assert [schema for schema, _ in invocations].count(JudgeAnswer) == 1

@@ -99,7 +99,7 @@ For existing fixtures, `source_row,text,sentiment[,real]` remains accepted as a 
 
 ## Model configuration
 
-`evaluation/evaluator.py::EvaluationConfig` is serialized into `run_config.json`. It records the selected workflow name, raw workflow JSON configuration, resolved and requested model names, temperature, maximum completion tokens, retry thresholds, prompt/schema mode, dataset paths, early-stop guardrails, `case_workers`, `max_in_flight_llm`, `checkpoint_every`, and an optional arbitrary role-keyed `agent_configuration` mapping.
+`evaluation/evaluator.py::EvaluationConfig` is serialized into `run_config.json`. It records the selected workflow name, raw workflow JSON configuration, resolved and requested model names, temperature, OpenAI service tier, maximum completion tokens, retry thresholds, prompt/schema mode, dataset paths, early-stop guardrails, `case_workers`, `max_in_flight_llm`, `checkpoint_every`, the optional session-scoped `stop_after_tokens` threshold, and an optional arbitrary role-keyed `agent_configuration` mapping.
 
 The normal `framework_1_parallel_no_evidence` CLI configures one model for six calls per case: five specialists and the judge. `framework_2_parallel_with_evidence` also uses six calls: five collectors and the judge. Both default to temperature `0`; their optional workflow JSON can override model settings per allowed role. The shared evaluator itself does not maintain an agent-role allowlist.
 
@@ -166,17 +166,6 @@ The shared Pydantic contracts live in `domain/`; intermediate contracts and prom
 ```
 
 `answer` must be a JSON boolean. Extra keys are forbidden.
-
-### Specialist, reasoned mode
-
-```json
-{
-  "answer": true,
-  "reasoning": "One to three sentence explanation containing any supporting evidence."
-}
-```
-
-`reasoning` must be a nonblank string. Extra keys, including a separate `evidence` key, are forbidden.
 
 ### Evidence collector, framework_2_parallel_with_evidence
 
@@ -245,7 +234,7 @@ The strict JSON Schema is:
 - optional `agent_outputs`
 - `error`
 
-The framework 1 wrapper additionally preserves `specialist_answers`, `specialist_outputs`, and one `*_answer`/`*_reasoning` column per specialist. Framework 2 preserves `collector_outputs`; collector packets are stored but not interpreted as predictions and do not produce agent classification metrics.
+The framework 1 wrapper additionally preserves `specialist_answers`, `specialist_outputs`, and one `*_answer` column per specialist. Framework 2 preserves `collector_outputs`; collector packets are stored but not interpreted as predictions and do not produce agent classification metrics.
 
 `results.json` combines complete records and metrics:
 
@@ -389,11 +378,20 @@ workflow fingerprints must match. Each case transaction is the crash-safe
 checkpoint; `checkpoint_every` controls only how often the readable manifest
 progress snapshot is refreshed.
 
-`evaluation/evaluator.py::_stop_reason` stops abnormal runs when any configured threshold is reached:
+`evaluation/evaluator.py::_stop_reason_from_summary` stops runs when any configured threshold is reached:
 
+- current-invocation prompt plus completion tokens;
 - failed LLM attempts;
 - failed records;
 - failed-record rate after a minimum number of processed records.
+
+The token threshold is checked after a completed case reports all of its LLM
+attempts. Already-running cases finish, so concurrent execution may overshoot
+the requested threshold. Its counter starts at zero for every evaluator
+invocation, including resumes. `runtime.tokens.total` remains cumulative across
+the complete persisted run; `token_stop.current_session_total_tokens` contains
+only the latest invocation. The token threshold is deliberately excluded from
+the workflow fingerprint so it may be changed or omitted when resuming.
 
 Thresholds and the stop reason are persisted in `run_config.json`, `metrics.json`, and `trace_summary.json`. Full parse/transport error records are also written to `errors.jsonl`.
 
@@ -406,6 +404,7 @@ Thresholds and the stop reason are persisted in `run_config.json`, `metrics.json
 | `progress.sqlite` | `ProgressStore` | Transactional per-ID pending/running/completed state and completed result payloads; no input-position field. |
 | `dataset_audit.json` | `run_evaluation` | Source audit or explicit audit-unavailable marker. |
 | `sampled_dataset.csv` | `run_evaluation` | Exact evaluated inputs and ground truth. |
+| `first_completion_input_prompts.json` | `run_evaluation` | Application-level system and user messages for every agent invoked by the first completed case. Retry-identical inputs are included once, the file is not overwritten on resume, and prompt messages are not duplicated in per-row artifacts. |
 | `predictions.csv` | `_write_evaluation_artifacts` | Source fields, shared outputs, correctness, errors, and optional workflow data. |
 | `results.json` | `_complete_results_payload` | Complete nested per-record results plus all metrics. |
 | `metrics.json` | `_write_evaluation_artifacts` | Five-label confusion audit, grouped-binary metrics, agent execution duration, and runtime metrics. |

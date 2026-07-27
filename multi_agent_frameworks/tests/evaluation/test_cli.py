@@ -21,14 +21,24 @@ def test_cli_rejects_nonpositive_limits_and_uses_safe_token_default(monkeypatch,
     monkeypatch.delenv("EVAL_CASE_WORKERS", raising=False)
     monkeypatch.delenv("EVAL_MAX_IN_FLIGHT_LLM", raising=False)
     monkeypatch.delenv("EVAL_CHECKPOINT_EVERY", raising=False)
+    monkeypatch.delenv("OPENAI_SERVICE_TIER", raising=False)
     parser = cli.build_parser()
 
     assert parser.parse_args(["run"]).max_completion_tokens == cli.DEFAULT_MAX_COMPLETION_TOKENS
     assert parser.parse_args(["evaluate"]).workflow == "framework_1_parallel_no_evidence"
     assert parser.parse_args(["evaluate"]).max_completion_tokens is None
+    assert parser.parse_args(["evaluate"]).service_tier is None
+    assert parser.parse_args(["evaluate", "--service-tier", "flex"]).service_tier == "flex"
     assert parser.parse_args(["evaluate"]).case_workers == 4
     assert parser.parse_args(["evaluate"]).max_in_flight_llm == 20
     assert parser.parse_args(["evaluate"]).checkpoint_every == 250
+    assert parser.parse_args(["evaluate"]).stop_after_tokens is None
+    assert (
+        parser.parse_args(
+            ["evaluate", "--stop-after-tokens", "100000"]
+        ).stop_after_tokens
+        == 100000
+    )
     concurrency_args = parser.parse_args(
         [
             "evaluate",
@@ -69,7 +79,11 @@ def test_cli_rejects_nonpositive_limits_and_uses_safe_token_default(monkeypatch,
     with pytest.raises(SystemExit):
         parser.parse_args(["evaluate", "--limit", "-1"])
     with pytest.raises(SystemExit):
+        parser.parse_args(["evaluate", "--stop-after-tokens", "0"])
+    with pytest.raises(SystemExit):
         parser.parse_args(["evaluate", "--workflow", "missing-workflow"])
+    with pytest.raises(SystemExit):
+        parser.parse_args(["run", "--mode", "reasoned"])
 
 
 def test_list_workflows_reports_valid_cli_names(capsys):
@@ -81,6 +95,22 @@ def test_list_workflows_reports_valid_cli_names(capsys):
         "framework_3_hierarchical_no_reviewer",
         "framework_4_hierarchical_with_reviewer",
     ]
+
+
+def test_evaluate_help_defines_each_error_stop_guardrail(capsys):
+    parser = cli.build_parser()
+
+    with pytest.raises(SystemExit) as exc_info:
+        parser.parse_args(["evaluate", "--help"])
+
+    assert exc_info.value.code == 0
+    help_text = capsys.readouterr().out
+    normalized_help = " ".join(help_text.split())
+    assert "Every failed initial call or retry counts" in normalized_help
+    assert "One record counts at most once" in normalized_help
+    assert "failed_records / completed_records" in normalized_help
+    assert "does not delay the two absolute" in normalized_help
+    assert "includes earlier invocations when resuming" in normalized_help
 
 
 @pytest.mark.parametrize(
@@ -124,10 +154,21 @@ def test_hierarchical_workflow_fake_llm_smoke(tmp_path, workflow_name):
     run_dirs = list(artifact_dir.iterdir())
     assert len(run_dirs) == 1
     metrics = json.loads((run_dirs[0] / "metrics.json").read_text(encoding="utf-8"))
+    prompt_snapshot = json.loads(
+        (run_dirs[0] / "first_completion_input_prompts.json").read_text(
+            encoding="utf-8"
+        )
+    )
     assert metrics["evaluation_status"] == "completed"
     assert metrics["processed_records"] == 1
     assert metrics["classification"]["failed_records"] == 0
     assert metrics["runtime"]["failed_llm_attempts"] == 0
+    terminal_role = (
+        "evaluator_agent"
+        if workflow_name == "framework_3_hierarchical_no_reviewer"
+        else "judge_agent"
+    )
+    assert terminal_role in {agent["role"] for agent in prompt_snapshot["agents"]}
 
 
 def test_shared_cli_uses_registered_workflow_config_dataset_and_output_dir(tmp_path):
@@ -146,7 +187,8 @@ def test_shared_cli_uses_registered_workflow_config_dataset_and_output_dir(tmp_p
     workflow_config_path = tmp_path / "framework_1_parallel_no_evidence.json"
     workflow_config = {
         "fake_llm": True,
-        "mode": "reasoned",
+        "mode": "bool",
+        "service_tier": "standard",
         "max_completion_tokens": 64,
         "max_retries": 1,
         "agents": {
@@ -183,7 +225,8 @@ def test_shared_cli_uses_registered_workflow_config_dataset_and_output_dir(tmp_p
     metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
     assert run_config["workflow_name"] == "framework_1_parallel_no_evidence"
     assert run_config["workflow_config"] == workflow_config
-    assert run_config["mode"] == "reasoned"
+    assert run_config["mode"] == "bool"
+    assert run_config["service_tier"] == "standard"
     assert run_config["max_completion_tokens"] == 64
     assert run_config["agent_configuration"]["judge"]["model_name"] == "judge-fake"
     assert metrics["workflow_name"] == "framework_1_parallel_no_evidence"
@@ -229,6 +272,11 @@ def test_framework_2_parallel_with_evidence_cli_smoke_persists_evidence_without_
     run_config = json.loads((run_dir / "run_config.json").read_text(encoding="utf-8"))
     predictions = pd.read_csv(run_dir / "predictions.csv", encoding="utf-8-sig")
     collector_outputs = json.loads(predictions.loc[0, "collector_outputs"])
+    prompt_snapshot = json.loads(
+        (run_dir / "first_completion_input_prompts.json").read_text(
+            encoding="utf-8"
+        )
+    )
     assert run_config["mode"] == "evidence"
     assert set(collector_outputs) == {
         "Indicator",
@@ -239,3 +287,11 @@ def test_framework_2_parallel_with_evidence_cli_smoke_persists_evidence_without_
     }
     assert "specialist_answers" not in predictions.columns
     assert not (run_dir / "agent_metrics.csv").exists()
+    assert {agent["role"] for agent in prompt_snapshot["agents"]} == {
+        "Indicator_collector",
+        "Ideation_collector",
+        "Behavior_collector",
+        "Attempt_collector",
+        "Unsupportive_collector",
+        "judge",
+    }

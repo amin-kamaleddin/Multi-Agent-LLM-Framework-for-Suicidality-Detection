@@ -21,6 +21,7 @@ def test_builtin_registry_exposes_workflow_metadata():
         "max_completion_tokens",
         "max_retries",
         "mode",
+        "service_tier",
         "fake_llm",
         "agents",
     ]

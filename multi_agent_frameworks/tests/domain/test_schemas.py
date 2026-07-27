@@ -3,10 +3,7 @@ from pydantic import ValidationError
 
 from domain.evidence import EvidenceCollectorAnswer, validate_evidence_answer
 from domain.final_output import JudgeAnswer, extract_json_object
-from workflows.framework_1_parallel_no_evidence.schemas import (
-    SpecialistAnswer,
-    SpecialistReasonedAnswer,
-)
+from workflows.framework_1_parallel_no_evidence.schemas import SpecialistAnswer
 
 
 def test_specialist_answer_accepts_strict_json_bool_only():
@@ -21,46 +18,6 @@ def test_specialist_answer_rejects_extra_label_and_string_answer():
         SpecialistAnswer.model_validate({"answer": "true"})
     with pytest.raises(ValidationError):
         SpecialistAnswer.model_validate({"answer": "yes"})
-
-
-def test_reasoned_specialist_answer_accepts_bool_and_reasoning_string():
-    parsed = SpecialistReasonedAnswer.model_validate(
-        {
-            "answer": True,
-            "reasoning": "Sentence one. Sentence two. Sentence three. Sentence four.",
-        }
-    )
-
-    assert parsed.answer is True
-    assert parsed.reasoning == "Sentence one. Sentence two. Sentence three. Sentence four."
-
-
-def test_reasoned_specialist_answer_rejects_string_answer_and_extra_keys():
-    with pytest.raises(ValidationError):
-        SpecialistReasonedAnswer.model_validate(
-            {
-                "answer": "true",
-                "reasoning": "String booleans are invalid.",
-            }
-        )
-    with pytest.raises(ValidationError):
-        SpecialistReasonedAnswer.model_validate(
-            {
-                "answer": True,
-                "reasoning": "Extra labels stay invalid.",
-                "label_name": "Attempt",
-            }
-        )
-    with pytest.raises(ValidationError):
-        SpecialistReasonedAnswer.model_validate(
-            {
-                "answer": True,
-                "reasoning": "Evidence is included in reasoning.",
-                "evidence": ["separate evidence is not allowed"],
-            }
-        )
-    with pytest.raises(ValidationError):
-        SpecialistReasonedAnswer.model_validate({"answer": False, "reasoning": " "})
 
 
 def test_evidence_collector_answer_accepts_compact_five_field_items():

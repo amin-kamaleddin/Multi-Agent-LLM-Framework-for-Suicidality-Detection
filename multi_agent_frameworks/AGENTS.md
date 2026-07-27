@@ -52,12 +52,6 @@ Default specialist output schema (`--mode bool`):
 {"answer": true}
 ```
 
-Reasoned specialist output schema (`--mode reasoned`):
-
-```json
-{"answer": true, "reasoning": "1-3 sentence explanation including supporting evidence"}
-```
-
 Judge output schema:
 
 ```json
@@ -127,22 +121,10 @@ uv run python -m cli evaluate --workflow framework_1_parallel_no_evidence --work
 uv run python -m cli evaluate --workflow framework_2_parallel_with_evidence --workflow-config configs/framework_2_parallel_with_evidence.example.json --sample-path dataset/processed/dataset1_balanced_500_seed42.csv --artifact-base-dir logs/experiments --run-id framework_2_parallel_with_evidence_dataset1_500
 ```
 
-Run a fake-LLM smoke evaluation with specialist reasoning:
-
-```powershell
-uv run python -m cli evaluate --fake-llm --limit 4 --mode reasoned
-```
-
 Run the real 500-row `gpt-4o` evaluation:
 
 ```powershell
 uv run python -m cli evaluate --model gpt-4o --sample-path dataset/processed/dataset1_balanced_500_seed42.csv --dataset-audit-path dataset/processed/dataset1_audit.json --max-completion-tokens 1024 --run-id gpt4o_dataset1_500
-```
-
-Run the real 500-row `gpt-4o` evaluation with specialist reasoning:
-
-```powershell
-uv run python -m cli evaluate --model gpt-4o --mode reasoned --sample-path dataset/processed/dataset1_balanced_500_seed42.csv --dataset-audit-path dataset/processed/dataset1_audit.json --max-completion-tokens 1024 --run-id gpt4o_reasoned_dataset1_500
 ```
 
 Compile a completed run:
@@ -154,7 +136,9 @@ uv run python -m cli compile-results --run-dir logs/runs/<run_folder>
 ## Notes
 
 - The default maximum completion-token setting is 1024 to accommodate evidence packets. Override it only with a value supported by the selected model and provider.
-- `framework_1_parallel_no_evidence` runs preserve `specialist_answers` and full per-label `specialist_outputs` in `predictions.csv`. In `reasoned` mode they also include per-label `*_reasoning` columns. Intermediate outputs are retained for inspection but are not evaluated; metrics cover only the final judge.
+- `framework_1_parallel_no_evidence` is bool-only and preserves `specialist_answers`, full per-label `specialist_outputs`, and per-label `*_answer` columns in `predictions.csv`. Intermediate outputs are retained for inspection but are not evaluated; metrics cover only the final judge.
+- Direct OpenAI evaluations accept `--service-tier standard` or `--service-tier flex`. OpenAI Batch is a separate asynchronous API and is not a service-tier value in this evaluator.
+- `evaluate --stop-after-tokens N` stops new case scheduling after the current invocation reports at least `N` prompt plus completion tokens. Resuming the run starts a fresh token counter; cumulative runtime metrics still include earlier invocations.
 - `framework_2_parallel_with_evidence` runs contain `collector_outputs` and role-keyed `agent_outputs`. Collector outputs are never converted into predictions or one-vs-rest metrics; only the final judge is evaluated.
 - `run` and `evaluate` automatically write `compiled_results.csv` and `compiled_results.md` after final artifacts are complete. Use `compile-results` only to regenerate reports for an older run.
 - Real runs write artifacts under `logs/runs/` by default; `evaluate --artifact-base-dir` selects another base directory. These are local generated evidence and are not committed in this folder.

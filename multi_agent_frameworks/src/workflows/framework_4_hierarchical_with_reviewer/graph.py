@@ -223,6 +223,7 @@ class MultiAgentWorkflow:
                         "role": role,
                         "attempt": attempt,
                         "model_name": selected_model_name,
+                        "_input_messages": [dict(message) for message in messages],
                         "latency_s": latency_s,
                         "raw_output": raw,
                         "parsed": parsed.model_dump(),
@@ -245,7 +246,8 @@ class MultiAgentWorkflow:
                     {
                         "role": role,
                         "attempt": attempt,
-                        "model_name": self.model_name,
+                        "model_name": selected_model_name,
+                        "_input_messages": [dict(message) for message in messages],
                         "latency_s": latency_s,
                         "raw_output": raw,
                         **usage,
