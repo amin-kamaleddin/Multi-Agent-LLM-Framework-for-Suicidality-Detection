@@ -32,6 +32,11 @@ from workflows.framework_3_hierarchical_no_reviewer.evaluation import run_evalua
 from workflows.framework_4_hierarchical_with_reviewer.config import CONFIG_KEYS as FRAMEWORK_4_HIERARCHICAL_WITH_REVIEWER_CONFIG_KEYS
 from workflows.framework_4_hierarchical_with_reviewer.config import MODE_NAMES as FRAMEWORK_4_HIERARCHICAL_WITH_REVIEWER_MODE_NAMES
 from workflows.framework_4_hierarchical_with_reviewer.evaluation import run_evaluation as run_framework_4_evaluation
+from workflows.single_agent.config import (
+    CONFIG_KEYS as SINGLE_AGENT_CONFIG_KEYS,
+    MODE_NAMES as SINGLE_AGENT_MODE_NAMES,
+)
+from workflows.single_agent.evaluation import run_evaluation as run_single_agent_evaluation
 
 
 class WorkflowRegistry:
@@ -67,6 +72,37 @@ class WorkflowRegistry:
             }
             for registration in (self._registrations[name] for name in self.names())
         ]
+
+
+def _run_single_agent(request: WorkflowRunRequest) -> EvaluationResult:
+    unknown_keys = sorted(set(request.workflow_config) - set(SINGLE_AGENT_CONFIG_KEYS))
+    if unknown_keys:
+        raise ValueError(f"Unknown single_agent workflow-config keys: {unknown_keys}")
+    if request.config.mode not in SINGLE_AGENT_MODE_NAMES:
+        raise ValueError(
+            f"single_agent mode must be one of {list(SINGLE_AGENT_MODE_NAMES)}; "
+            f"got {request.config.mode!r}"
+        )
+
+    model = (
+        DeterministicFakeModel()
+        if request.fake_llm
+        else build_real_model(
+            request.config.requested_model_name,
+            request.config.temperature,
+            request.config.max_completion_tokens,
+            service_tier=request.config.service_tier,
+        )
+    )
+    return run_single_agent_evaluation(
+        sample_df=request.sample_df,
+        model=model,
+        config=request.config,
+        base_class=str(request.workflow_config.get("base_class", "Unsupportive")),
+        run_id=request.run_id,
+        artifact_base_dir=request.artifact_base_dir,
+        resume_run_dir=request.resume_run_dir,
+    )
 
 
 def _run_framework_1_parallel_no_evidence(request: WorkflowRunRequest) -> EvaluationResult:
@@ -289,6 +325,15 @@ def _agent_overrides(
 
 
 WORKFLOW_REGISTRY = WorkflowRegistry()
+WORKFLOW_REGISTRY.register(
+    WorkflowRegistration(
+        name="single_agent",
+        description="One model using an EvalRing-compatible classification mode.",
+        runner=_run_single_agent,
+        config_keys=SINGLE_AGENT_CONFIG_KEYS,
+        default_mode="single-class",
+    )
+)
 WORKFLOW_REGISTRY.register(
     WorkflowRegistration(
         name="framework_1_parallel_no_evidence",

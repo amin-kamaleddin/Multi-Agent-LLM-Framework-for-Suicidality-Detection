@@ -1,0 +1,10 @@
+{
+  "model": "gpt-4o-mini",
+  "temperature": 0.0,
+  "max_completion_tokens": 500,
+  "max_retries": 3,
+  "mode": "single-class",
+  "service_tier": "standard",
+  "fake_llm": false,
+  "base_class": "Unsupportive"
+}

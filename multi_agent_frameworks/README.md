@@ -1,19 +1,21 @@
-# Suicide-Risk Multi-Agent Evaluator
+# Suicide-Risk Agent Workflow Evaluator
 
-This package contains four LangGraph workflows and an architecture-neutral evaluator:
+This package contains one single-agent workflow, four LangGraph multi-agent workflows, and an architecture-neutral evaluator:
 
+- `single_agent`: one model using single-label, probability, per-class-score, or binary-tournament classification
 - `framework_1_parallel_no_evidence`: five parallel boolean specialists, then a final judge
 - `framework_2_parallel_with_evidence`: five parallel non-decision-making evidence collectors, then a final judge
 - `framework_3_hierarchical_no_reviewer`: hierarchical routing followed by a final evaluator
 - `framework_4_hierarchical_with_reviewer`: hierarchical routing, an uncertainty gate, and an optional secondary reviewer
 
-All four workflows accept the same input and return the same strict final JSON contract. The evaluator can also run any workflow that accepts one `sample_id` and text at a time and returns the shared final-result and telemetry fields.
+All five workflows accept the same input and return the same strict final JSON contract. The evaluator can also run any workflow that accepts one `sample_id` and text at a time and returns the shared final-result and telemetry fields.
 
 Start here:
 
 - [Adapting another workflow](src/evaluation/ADAPTING_WORKFLOWS.md) provides a copyable adapter and runner.
 - [Evaluation contract](src/evaluation/EVALUATION_CONTRACT.md) defines all input/output schemas, metrics, guardrails, and artifacts.
 - [Shared CLI usage](../docs/USAGE.md#shared-agent-workflow-evaluator-cli) explains workflow selection, JSON configuration, datasets, log directories, and registry extension.
+- [Single-agent example configuration](configs/single_agent.example.json) runs the one-request `single-class` mode by default.
 - [Framework 1 example configuration](configs/framework_1_parallel_no_evidence.example.json) can be copied and adjusted per run.
 - [Framework 2 example configuration](configs/framework_2_parallel_with_evidence.example.json) selects the evidence workflow.
 - [Framework guide](AGENTS.md) documents the built-in workflows and commands.
@@ -106,6 +108,7 @@ workflows/
 │   │   └── prompts.py
 │   └── hierarchical/
 │       └── schemas.py
+├── single_agent/
 ├── framework_1_parallel_no_evidence/
 ├── framework_2_parallel_with_evidence/
 ├── framework_3_hierarchical_no_reviewer/
@@ -356,6 +359,7 @@ The registered workflow names and modes are:
 
 | Workflow | Valid mode |
 |---|---|
+| `single_agent` | `single-class`, `multi-class-chance`, `per-class-score`, or `base-vs-rest-binary` |
 | `framework_1_parallel_no_evidence` | `bool` |
 | `framework_2_parallel_with_evidence` | `evidence` |
 | `framework_3_hierarchical_no_reviewer` | `bool` or `reasoned` |
@@ -748,6 +752,7 @@ OpenAI-compatible endpoint. A local fake-model smoke run requires no API key:
 
 ```powershell
 uv run python -m cli list-workflows
+uv run python -m cli evaluate --workflow single_agent --mode single-class --fake-llm --limit 4
 uv run python -m cli evaluate --workflow framework_1_parallel_no_evidence --fake-llm --limit 4
 uv run python -m cli evaluate --workflow framework_2_parallel_with_evidence --fake-llm --limit 4
 uv run python -m cli evaluate --workflow framework_3_hierarchical_no_reviewer --fake-llm --limit 4

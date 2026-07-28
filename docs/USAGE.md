@@ -311,6 +311,7 @@ uv run python -m cli list-workflows
 The value passed to `--workflow` must be one of the exact lowercase names printed by this command. These are predetermined registry keys, not Python paths or arbitrary class names. The current registry contains:
 
 ```text
+single_agent
 framework_1_parallel_no_evidence
 framework_2_parallel_with_evidence
 framework_3_hierarchical_no_reviewer
@@ -318,6 +319,20 @@ framework_4_hierarchical_with_reviewer
 ```
 
 `framework_1_parallel_no_evidence` is the default when `--workflow` is omitted. An unknown name is rejected by argument parsing. Registering another workflow automatically adds its name to `list-workflows` and the accepted `--workflow` choices.
+
+Run the single-agent workflow with one of its four modes:
+
+```powershell
+uv run python -m cli evaluate `
+  --workflow single_agent `
+  --mode single-class `
+  --workflow-config configs/single_agent.example.json `
+  --sample-path dataset/suicidality_full_dataset_posneg.csv `
+  --case-workers 50 `
+  --max-in-flight-llm 50
+```
+
+Valid single-agent modes are `single-class`, `multi-class-chance`, `per-class-score`, and `base-vs-rest-binary`. They make one, one, five, and four requests per record respectively. All requests are recorded separately in the standard runtime artifacts.
 
 ### Select workflow, dataset, configuration, and log location
 
@@ -425,7 +440,7 @@ Dataset, audit, output directory, run ID, limits, and guardrails remain common C
 
 ### Registry location
 
-The registry and all four built-in registrations are in:
+The registry and all five built-in registrations are in:
 
 - [multi_agent_frameworks/src/workflows/registry.py](../multi_agent_frameworks/src/workflows/registry.py)
 

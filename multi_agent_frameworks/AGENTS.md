@@ -1,6 +1,6 @@
 # Multi-Agent Frameworks
 
-This folder contains the four standalone multi-agent suicide-risk research workflows. Python modules are flattened directly under `src/`; there is no intermediate application package.
+This folder contains one single-agent and four standalone multi-agent suicide-risk research workflows. Python modules are flattened directly under `src/`; there is no intermediate application package.
 
 ## Purpose
 
@@ -66,7 +66,8 @@ Judge output schema:
 - `src/`: source package.
 - `src/domain/`: labels, evidence items, and the shared final judge contract.
 - `src/llm/`: model protocol, real-model factory, and deterministic smoke-test model.
-- `src/workflows/registry.py`: CLI registry for all four canonical framework names.
+- `src/workflows/registry.py`: CLI registry for all five canonical workflow names.
+- `src/workflows/single_agent/`: one-model EvalRing-compatible classification modes.
 - `src/workflows/framework_1_parallel_no_evidence/`: parallel decision-making specialists.
 - `src/workflows/framework_2_parallel_with_evidence/`: parallel evidence collectors.
 - `src/workflows/framework_3_hierarchical_no_reviewer/`: hierarchy without a secondary reviewer.
@@ -108,6 +109,7 @@ Run a fake-LLM smoke evaluation:
 
 ```powershell
 uv run python -m cli list-workflows
+uv run python -m cli evaluate --workflow single_agent --mode single-class --fake-llm --limit 4
 uv run python -m cli evaluate --workflow framework_1_parallel_no_evidence --fake-llm --limit 4
 uv run python -m cli evaluate --workflow framework_2_parallel_with_evidence --fake-llm --limit 4
 uv run python -m cli evaluate --workflow framework_3_hierarchical_no_reviewer --fake-llm --limit 4

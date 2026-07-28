@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 from domain.labels import FINAL_LABELS
 
@@ -12,6 +13,31 @@ class DeterministicFakeModel:
 
     def invoke(self, messages: list[dict[str, str]]) -> str:
         system = messages[0]["content"]
+        if system.startswith("Classify the post into exactly ONE class"):
+            return "Indicator"
+        if system.startswith("You are a suicide-risk classification assistant."):
+            score_match = re.search(
+                r'evaluate whether the post matches the class: (\w+)',
+                system,
+            )
+            if score_match:
+                label = score_match.group(1)
+                return json.dumps({label.lower(): 10 if label == "Indicator" else 1})
+            if 'Include ALL 5 keys' in system:
+                return json.dumps(
+                    {
+                        "unsupportive": 0.0,
+                        "ideation": 0.0,
+                        "behavior": 0.0,
+                        "indicator": 1.0,
+                        "attempt": 0.0,
+                    }
+                )
+        if system.startswith("You are a suicide-risk classifier."):
+            match = re.search(r"Compare the two classes: '([^']+)' vs '([^']+)'", system)
+            if match:
+                class_a, class_b = match.groups()
+                return "Indicator" if "Indicator" in (class_a, class_b) else class_a
         if "Perspective / Risk-Relevance Agent" in system:
             return json.dumps({"decision": "INDICATOR", "confidence": 0.95, "reasoning": "Synthetic fake-model perspective decision."})
         if "Ideation vs Action Agent" in system:

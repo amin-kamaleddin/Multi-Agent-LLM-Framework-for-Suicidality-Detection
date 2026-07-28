@@ -94,7 +94,62 @@ def test_list_workflows_reports_valid_cli_names(capsys):
         "framework_2_parallel_with_evidence",
         "framework_3_hierarchical_no_reviewer",
         "framework_4_hierarchical_with_reviewer",
+        "single_agent",
     ]
+
+
+@pytest.mark.parametrize(
+    ("mode", "expected_calls"),
+    [
+        ("single-class", 1),
+        ("multi-class-chance", 1),
+        ("per-class-score", 5),
+        ("base-vs-rest-binary", 4),
+    ],
+)
+def test_single_agent_cli_modes_use_shared_evaluator(tmp_path, mode, expected_calls):
+    sample_path = tmp_path / "sample.csv"
+    pd.DataFrame(
+        [
+            {
+                "ID": 19,
+                "users": 6,
+                "text": "A suicide-related discussion about another person.",
+                "sentiment": "Indicator",
+                "time": 125,
+            }
+        ]
+    ).to_csv(sample_path, index=False, encoding="utf-8-sig")
+    artifact_base_dir = tmp_path / "single-agent-runs"
+
+    exit_code = cli.main(
+        [
+            "evaluate",
+            "--workflow",
+            "single_agent",
+            "--fake-llm",
+            "--mode",
+            mode,
+            "--sample-path",
+            str(sample_path),
+            "--artifact-base-dir",
+            str(artifact_base_dir),
+            "--run-id",
+            mode,
+        ]
+    )
+
+    assert exit_code == 0
+    run_dir = next(artifact_base_dir.glob(f"*_{mode}"))
+    metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
+    prompt_snapshot = json.loads(
+        (run_dir / "first_completion_input_prompts.json").read_text(encoding="utf-8")
+    )
+    assert metrics["workflow_name"] == "single_agent"
+    assert metrics["mode"] == mode
+    assert metrics["runtime"]["call_count"] == expected_calls
+    assert metrics["classification"]["failed_records"] == 0
+    assert len(prompt_snapshot["agents"]) == expected_calls
 
 
 def test_evaluate_help_defines_each_error_stop_guardrail(capsys):
