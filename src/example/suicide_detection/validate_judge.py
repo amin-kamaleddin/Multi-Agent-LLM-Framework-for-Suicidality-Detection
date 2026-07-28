@@ -82,8 +82,8 @@ def run_validation():
         sys.exit(1)
 
     agent = OpenAISuicideDetectionAgent(
-        name="gpt-4-mini-suicide-detector",
-        model_name="gpt-4o-mini",
+        name="gpt-5-mini-suicide-detector",
+        model_name="gpt-5.6-luna",
         api_key=api_key,
     )
     agent.initialize()

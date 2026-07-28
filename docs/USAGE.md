@@ -75,7 +75,7 @@ The suicide detection runner supports multiple modes via `--agent-mode`.
 ### 3.1 `single-class`
 
 - Model returns one label directly.
-- Expected labels: `Indicator`, `Ideation`, `Behavior`, `Attempt`.
+- Expected labels: `Unsupportive`, `Indicator`, `Ideation`, `Behavior`, `Attempt`.
 
 ### 3.2 `multi-class-chance`
 

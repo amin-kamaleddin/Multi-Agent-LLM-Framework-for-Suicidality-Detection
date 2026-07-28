@@ -141,7 +141,7 @@ python src/example/suicide_detection/evaluate_rsd15k_main.py --n-samples 50 --ag
 Expected JSON style:
 
 ```json
-{"ideation": 0.80, "behavior": 0.10, "indicator": 0.05, "attempt": 0.05}
+{"unsupportive":0.1, "ideation": 0.70, "behavior": 0.10, "indicator": 0.05, "attempt": 0.05}
 ```
 
 ### 4.3 base-vs-rest-binary

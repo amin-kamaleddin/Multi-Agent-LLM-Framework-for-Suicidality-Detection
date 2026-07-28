@@ -21,7 +21,7 @@ class OpenAISuicideDetectionAgent(OpenAIAgent):
     are domain-specific.
     """
 
-    SYSTEM_PROMPT_SINGLE_CLASS = """Classify the post into exactly ONE class: Indicator, Ideation, Behavior, or Attempt.
+    SYSTEM_PROMPT_SINGLE_CLASS = """Classify the post into exactly ONE class: Unsupportive, Indicator, Ideation, Behavior, or Attempt.
 
 Use these class definitions:
 
@@ -289,7 +289,7 @@ Example:
                 token_usage = run.get("token_usage", {})
                 class_scores = run.get(
                     "class_scores",
-                    {label: (1.0 if label == "Indicator" else 0.0) for label in self.VALID_LABELS},
+                    {label: (1.0 if label == "Unsupportive" else 0.0) for label in self.VALID_LABELS},
                 )
                 return AgentResponse(
                     input_id="",

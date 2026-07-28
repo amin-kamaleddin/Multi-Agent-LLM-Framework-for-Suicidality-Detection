@@ -1,11 +1,11 @@
 {
-  "generated_at_utc": "2026-07-17T01:39:51.668856+00:00",
+  "generated_at_utc": "2026-07-28T22:51:17.264535+00:00",
   "source": "https://openrouter.ai/api/v1/models",
   "sort_key": "pricing.total_usd_per_1m_tokens (ascending)",
   "models": [
     {
-      "requested": "GPT-4o-mini",
-      "year": 2024,
+      "requested": "GPT-4-mini",
+      "year": 2026,
       "available": true,
       "exact_match": true,
       "openrouter_id": "openai/gpt-4o-mini",

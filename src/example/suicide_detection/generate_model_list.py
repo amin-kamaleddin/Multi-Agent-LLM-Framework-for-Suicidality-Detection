@@ -18,7 +18,8 @@ if __name__ == "__main__":
             #"Grok-4": ("x-ai/grok-4.1-fast", 2025),
             #"Sonnet-4.6": ("anthropic/claude-sonnet-4.6", 2025),
             #"GLM5": ("z-ai/glm-5", 2025),
-            "GPT-4o-mini": ("openai/gpt-4o-mini", 2024),
+            #"GPT-5.6 Luna": ("openai/gpt-5.6-luna", 2026),
+            "GPT-4-mini": ("openai/gpt-4o-mini", 2026),
             #"Gemini-3 Flash": ("google/gemini-3-flash-preview", 2024),
             #"Qwen3.5": ("qwen/qwen3.5-plus-02-15", 2024),
             #"GPT-3.5 turbo": ("openai/gpt-3.5-turbo", 2023),
@@ -33,7 +34,8 @@ if __name__ == "__main__":
             #"Grok-4": ("x-ai/grok-4.1-fast", 2025),
             # "Sonnet-4.6": ("anthropic/claude-sonnet-4.6", 2025),
             #"GLM5": ("z-ai/glm-5", 2025),
-            "GPT-4o": ("openai/gpt-4o", 2024),
+            "GPT-4-mini": ("openai/gpt-4o-mini", 2026),
+            #"GPT-5.6 Luna": ("openai/gpt-5.6-luna", 2026),
             #"Gemini-3 Flash": ("google/gemini-3-flash-preview", 2024),
             #"Qwen3.5": ("qwen/qwen3.5-plus-02-15", 2024),
             #"GPT-3.5 turbo": ("openai/gpt-3.5-turbo", 2023),
@@ -45,6 +47,7 @@ if __name__ == "__main__":
         }
     
     requested_mapping = {
-        "GPT-4o-mini": ("openai/gpt-4o-mini", 2024),
+        #"GPT-5.6 Luna": ("openai/gpt-5.6-luna", 2026),
+        "GPT-4-mini": ("openai/gpt-4o-mini", 2026),
     }
     generate_model_list(out_path, requested_mapping)

@@ -281,6 +281,72 @@ def _write_reports(
     total = len(y_true_all)
     accuracy = (correct / total) if total > 0 else 0.0
 
+    # ------------------------------------------------------------------
+    # Binary (Positive vs Negative) framing.
+    # Negative == the base_class (e.g. "Unsupportive"); Positive == every
+    # other risk label (Ideation / Behavior / Indicator / Attempt).
+    # A prediction that is not one of the 5 canonical labels (e.g. "Error")
+    # is never counted as a correct hit — it is booked as a miss so this
+    # binary "correct" stays consistent with the 5-class "correct".
+    # ------------------------------------------------------------------
+    negative_class = base_class
+    tp_bin = tn_bin = fp_bin = fn_bin = 0
+    for t, p in zip(y_true_all, y_pred_all):
+        t_pos = (t != negative_class)
+        if p not in LABELS:
+            # unrecognized / errored prediction -> a miss for whichever side is true
+            if t_pos:
+                fn_bin += 1
+            else:
+                fp_bin += 1
+            continue
+        p_pos = (p != negative_class)
+        if t_pos and p_pos:
+            tp_bin += 1
+        elif (not t_pos) and (not p_pos):
+            tn_bin += 1
+        elif (not t_pos) and p_pos:
+            fp_bin += 1
+        else:  # t_pos and not p_pos
+            fn_bin += 1
+
+    bin_total = tp_bin + tn_bin + fp_bin + fn_bin
+    accuracy_positive = ((tp_bin + tn_bin) / bin_total) if bin_total > 0 else 0.0
+
+    prec_pos = tp_bin / (tp_bin + fp_bin) if (tp_bin + fp_bin) > 0 else 0.0
+    rec_pos = tp_bin / (tp_bin + fn_bin) if (tp_bin + fn_bin) > 0 else 0.0
+    f1_pos = (2 * prec_pos * rec_pos / (prec_pos + rec_pos)) if (prec_pos + rec_pos) > 0 else 0.0
+
+    prec_neg = tn_bin / (tn_bin + fn_bin) if (tn_bin + fn_bin) > 0 else 0.0
+    rec_neg = tn_bin / (tn_bin + fp_bin) if (tn_bin + fp_bin) > 0 else 0.0
+    f1_neg = (2 * prec_neg * rec_neg / (prec_neg + rec_neg)) if (prec_neg + rec_neg) > 0 else 0.0
+
+    # Macro-average over the two classes, mirroring the 5-class aggregate formulas.
+    precision_positive = (prec_pos + prec_neg) / 2
+    recall_positive = (rec_pos + rec_neg) / 2
+    f1_positive = (f1_pos + f1_neg) / 2
+
+    # 2x2 confusion matrix (Rows = Actual, Columns = Predicted).
+    binary_confusion = {
+        "Positive": {"Positive": tp_bin, "Negative": fn_bin},
+        "Negative": {"Positive": fp_bin, "Negative": tn_bin},
+    }
+    binary_counts = {"TP": tp_bin, "TN": tn_bin, "FP": fp_bin, "FN": fn_bin}
+
+    # ------------------------------------------------------------------
+    # Per-class one-vs-rest accuracy: for each class C, binarize into
+    # C-vs-not-C and report (TP_C + TN_C) / N. Attached to each per_class row.
+    # ------------------------------------------------------------------
+    for row in per_class:
+        cls = row["class"]
+        tp_c = confusion[cls][cls]
+        support_c = sum(confusion[cls][p] for p in all_labels)   # actual == cls
+        pred_c = sum(confusion[a][cls] for a in all_labels)      # predicted == cls
+        fn_c = support_c - tp_c
+        fp_c = pred_c - tp_c
+        tn_c = total - tp_c - fn_c - fp_c
+        row["accuracy"] = ((tp_c + tn_c) / total) if total > 0 else 0.0
+
     if len(per_class) > 0:
         macro_precision = sum(r["precision"] for r in per_class) / len(per_class)
         macro_recall = sum(r["recall"] for r in per_class) / len(per_class)
@@ -313,6 +379,11 @@ def _write_reports(
         "total_tokens": sum(total_toks) if total_toks else 0,
         "avg_prompt_tokens": _mean(prompt_toks),
         "avg_completion_tokens": _mean(completion_toks),
+        # Binary (Positive vs Negative) aggregate metrics.
+        "accuracy_positive": accuracy_positive,
+        "precision_positive": precision_positive,
+        "recall_positive": recall_positive,
+        "f1_positive": f1_positive,
     }
 
     # Fetch dynamic pricing based on the used model name
@@ -329,7 +400,7 @@ def _write_reports(
         f.write(f"**Agent:** {result.agent_name}\n")
         f.write(f"**Model:** {getattr(agent, 'model_name', 'N/A')}\n")
         f.write(f"**Task:** {result.task_name}\n")
-        f.write(f"**Dataset:** rsd_new_200_small_2.csv (n={len(all_cases)})\n")
+        f.write(f"**Dataset:** suicidality_full_dataset_posneg.csv (n={len(all_cases)})\n")
         f.write(f"**Duration:** {result.duration:.4f} s\n")
         f.write(f"**Agent Mode:** {agent_mode}\n")
         f.write(f"**Base Class:** {base_class}\n")
@@ -382,14 +453,38 @@ def _write_reports(
         f.write("\n```\n\n")
 
         f.write("## Per-Class Metrics\n\n")
-        f.write("| Class | Precision | Recall | F1 | Support |\n|---|---|---|---|---|\n")
+        f.write("*Accuracy is one-vs-rest: (TP + TN) / N for each class treated as C-vs-not-C.*\n\n")
+        f.write("| Class | Precision | Recall | F1 | Accuracy | Support |\n|---|---|---|---|---|---|\n")
         for row in per_class:
-            f.write(f"| {row['class']} | {row['precision']:.4f} | {row['recall']:.4f} | {row['f1']:.4f} | {row['support']} |\n")
+            f.write(
+                f"| {row['class']} | {row['precision']:.4f} | {row['recall']:.4f} | "
+                f"{row['f1']:.4f} | {row.get('accuracy', 0.0):.4f} | {row['support']} |\n"
+            )
         f.write("\n")
 
         f.write("## Confusion Matrix\n\n")
         f.write("*Rows = Actual, Columns = Predicted*\n\n")
         _write_confusion_md(f, confusion, all_labels)
+        f.write("\n")
+
+        # ---- Binary (Positive vs Negative) section ----
+        f.write("## Binary Metrics (Positive vs Negative)\n\n")
+        f.write(
+            f"*Negative = `{negative_class}`; "
+            f"Positive = any of {', '.join(f'`{l}`' for l in all_labels if l != negative_class)}.*\n\n"
+        )
+        f.write(f"- **accuracy_positive**: {accuracy_positive:.6f}\n")
+        f.write(f"- **precision_positive**: {precision_positive:.6f}\n")
+        f.write(f"- **recall_positive**: {recall_positive:.6f}\n")
+        f.write(f"- **f1_positive**: {f1_positive:.6f}\n")
+        f.write(
+            f"- **counts**: TP={tp_bin} | TN={tn_bin} | FP={fp_bin} | FN={fn_bin}\n\n"
+        )
+        f.write("*precision/recall/f1 above are macro-averaged over the Positive and Negative classes.*\n\n")
+
+        f.write("## Binary Confusion Matrix\n\n")
+        f.write("*Rows = Actual, Columns = Predicted*\n\n")
+        _write_confusion_md(f, binary_confusion, ["Positive", "Negative"])
         f.write("\n")
 
     all_cases_path = eval_dir / "all_cases.txt"
@@ -485,6 +580,8 @@ def _write_reports(
         "error": error_counts,
         "per_class_metrics": per_class,
         "confusion_matrix": confusion,
+        "binary_confusion_matrix": binary_confusion,
+        "binary_counts": binary_counts,
         "total_cost_usd_estimate": cost_usd,
         "retry_history": retry_history,
     }
@@ -672,7 +769,7 @@ def run_main_eval(
     max_retries: int = 3,
     seed: int = 42,
     agent_mode: str = "single-class",
-    base_class: str = "Indicator",
+    base_class: str = "Unsupportive",
     host_model: Optional[str] = None,
     role_models_json: Optional[str] = None,
     max_host_iterations: int = 10,
@@ -696,7 +793,7 @@ def run_main_eval(
         max_host_iterations=max_host_iterations,
     )
 
-    resolved_data_path = Path(data_path) if data_path else (current_file.parent / "data" / "rsd_new_200_small_2.csv")
+    resolved_data_path = Path(data_path) if data_path else (current_file.parent / "data" / "suicidality_full_dataset_posneg.csv")
 
     if not resolved_data_path.exists():
         print(f"Dataset file not found at: {resolved_data_path}")
@@ -910,7 +1007,7 @@ if __name__ == "__main__":
         default=None,
         help="Optional path to rsd_15k.csv if not located at the default ./data/rsd_15k.csv.",
     )
-    parser.add_argument("--n-samples", type=int, default=50, help="Number of samples to evaluate (default: 50)")
+    parser.add_argument("--n-samples", type=int, default=29727, help="Number of samples to evaluate (default: 50)")
     parser.add_argument("--max-workers", type=int, default=5, help="Parallel workers (default: 5)")
     parser.add_argument("--max-retries", type=int, default=3, help="Retries per sample on failure (default: 3)")
     parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
@@ -924,7 +1021,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--base-class",
         type=str,
-        default="Indicator",
+        default="Unsupportive",
         choices=["Unsupportive","Indicator", "Ideation", "Behavior", "Attempt"],
         help="Base class used by base-vs-rest-binary mode.",
     )
