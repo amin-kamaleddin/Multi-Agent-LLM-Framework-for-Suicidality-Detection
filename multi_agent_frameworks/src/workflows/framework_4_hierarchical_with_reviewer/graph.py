@@ -28,12 +28,24 @@ from domain.labels import (
 from domain.final_output import extract_json_object
 from llm.invoker import response_text as _response_text, usage_summary as _usage
 from llm.protocol import InvokableModel
+# from .prompts import (
+#     BEHAVIOR_ATTEMPT_SYSTEM_PROMPT,
+#     IDEATION_ACTION_SYSTEM_PROMPT,
+#     JUDGE_SYSTEM_PROMPT,
+#     PERSPECTIVE_SYSTEM_PROMPT,
+#     SECONDARY_REVIEW_SYSTEM_PROMPT,
+#     judge_user_prompt,
+#     secondary_review_user_prompt,
+#     user_prompt,
+# )
 from .prompts import (
+    ADJUDICATOR_SYSTEM_PROMPT,
     BEHAVIOR_ATTEMPT_SYSTEM_PROMPT,
     IDEATION_ACTION_SYSTEM_PROMPT,
     JUDGE_SYSTEM_PROMPT,
     PERSPECTIVE_SYSTEM_PROMPT,
     SECONDARY_REVIEW_SYSTEM_PROMPT,
+    adjudicator_user_prompt,
     judge_user_prompt,
     secondary_review_user_prompt,
     user_prompt,
@@ -47,6 +59,26 @@ from .schemas import (
 )
 
 
+# class WorkflowState(TypedDict):
+#     sample_id: str
+#     text: str
+
+#     proposed_label: str
+#     final_label: str
+
+#     judge_label: str
+#     judge_confidence: float
+#     competing_label: str
+#     competing_confidence: float
+#     review_reasons: list[str]
+#     escalation_flag: bool
+
+#     specialist_answers: dict[str, bool]
+#     path: list[dict[str, Any]]
+#     errors: list[dict[str, Any]]
+#     traces: list[dict[str, Any]]
+#     llm_calls: list[dict[str, Any]]
+
 class WorkflowState(TypedDict):
     sample_id: str
     text: str
@@ -56,9 +88,15 @@ class WorkflowState(TypedDict):
 
     judge_label: str
     judge_confidence: float
+    judge_reasoning: str
     competing_label: str
     competing_confidence: float
     review_reasons: list[str]
+
+    reviewer_label: str
+    reviewer_confidence: float
+    reviewer_reasoning: str
+
     escalation_flag: bool
 
     specialist_answers: dict[str, bool]
@@ -109,9 +147,9 @@ class MultiAgentWorkflow:
         model: InvokableModel,
         model_name: str = "unknown",
         max_retries: int = 2,
-        confidence_threshold: float = 0.65,
-        margin_threshold: float = 0.10,
-        review_known_boundaries_only: bool = True,
+        confidence_threshold: float = 0.85,
+        margin_threshold: float = 0.25,
+        review_known_boundaries_only: bool = False,
         mode: str = "bool",
         models_by_role: dict[str, InvokableModel] | None = None,
         model_names_by_role: dict[str, str] | None = None,
@@ -139,8 +177,12 @@ class MultiAgentWorkflow:
         builder.add_node("perspective", self._perspective_node)
         builder.add_node("ideation_action", self._ideation_action_node)
         builder.add_node("behavior_attempt", self._behavior_attempt_node)
+        # builder.add_node("judge", self._judge_node)
+        # builder.add_node("secondary_review", self._secondary_review_node)
+        # builder.add_node("finalize", self._finalize_node)
         builder.add_node("judge", self._judge_node)
         builder.add_node("secondary_review", self._secondary_review_node)
+        builder.add_node("adjudicator", self._adjudicator_node)
         builder.add_node("finalize", self._finalize_node)
 
         builder.add_edge(START, "perspective")
@@ -174,7 +216,18 @@ class MultiAgentWorkflow:
             },
         )
 
-        builder.add_edge("secondary_review", "finalize")
+        # builder.add_edge("secondary_review", "finalize")
+        # builder.add_edge("finalize", END)
+        builder.add_conditional_edges(
+            "secondary_review",
+            self._route_after_secondary_review,
+            {
+                "adjudicator": "adjudicator",
+                "finalize": "finalize",
+            },
+        )
+
+        builder.add_edge("adjudicator", "finalize")
         builder.add_edge("finalize", END)
 
         return builder.compile()
@@ -481,9 +534,20 @@ class MultiAgentWorkflow:
             "reasoning": parsed.reasoning,
         }
 
+        # return {
+        #     "judge_label": parsed.label_name,
+        #     "judge_confidence": parsed.confidence,
+        #     "competing_label": parsed.competing_label,
+        #     "competing_confidence": parsed.competing_confidence,
+        #     "review_reasons": review_reasons,
+        #     "errors": [*state.get("errors", []), *errors],
+        #     "traces": [*state.get("traces", []), trace],
+        #     "llm_calls": [*state.get("llm_calls", []), *calls],
+        # }
         return {
             "judge_label": parsed.label_name,
             "judge_confidence": parsed.confidence,
+            "judge_reasoning": parsed.reasoning,
             "competing_label": parsed.competing_label,
             "competing_confidence": parsed.competing_confidence,
             "review_reasons": review_reasons,
@@ -497,7 +561,58 @@ class MultiAgentWorkflow:
             return "finalize"
         return "secondary_review" if state.get("review_reasons") else "finalize"
 
-    def _secondary_review_node(self, state: WorkflowState) -> dict[str, Any]:
+    # def _secondary_review_node(self, state: WorkflowState) -> dict[str, Any]:
+    #     parsed, calls, errors = self._call_llm(
+    #         role="secondary_review_agent",
+    #         system_prompt=SECONDARY_REVIEW_SYSTEM_PROMPT,
+    #         user_prompt_text=secondary_review_user_prompt(
+    #             text=state["text"],
+    #             judge_label=state["judge_label"],
+    #             judge_confidence=state["judge_confidence"],
+    #             competing_label=state["competing_label"],
+    #             competing_confidence=state["competing_confidence"],
+    #             review_reasons=state.get("review_reasons", []),
+    #             path=state.get("path", []),
+    #         ),
+    #         schema=ReviewDecision,
+    #     )
+
+    #     if parsed is None:
+    #         # Keep the judge label rather than throwing away an otherwise valid case.
+    #         trace = {
+    #             "event": "secondary_review_failed",
+    #             "fallback_label": state.get("judge_label") or "Error",
+    #         }
+    #         return {
+    #             "final_label": state.get("judge_label") or "Error",
+    #             "escalation_flag": True,
+    #             "errors": [*state.get("errors", []), *errors],
+    #             "traces": [*state.get("traces", []), trace],
+    #             "llm_calls": [*state.get("llm_calls", []), *calls],
+    #         }
+
+    #     trace = {
+    #         "event": "secondary_review_complete",
+    #         "original_judge_label": state["judge_label"],
+    #         "reviewed_label": parsed.label_name,
+    #         "confidence": parsed.confidence,
+    #         "escalation_flag": parsed.escalation_flag,
+    #         "review_reasons": state.get("review_reasons", []),
+    #         "reasoning": parsed.reasoning,
+    #     }
+
+    #     return {
+    #         "final_label": parsed.label_name,
+    #         "escalation_flag": parsed.escalation_flag,
+    #         "errors": [*state.get("errors", []), *errors],
+    #         "traces": [*state.get("traces", []), trace],
+    #         "llm_calls": [*state.get("llm_calls", []), *calls],
+    #     }
+
+    def _secondary_review_node(
+        self,
+        state: WorkflowState,
+    ) -> dict[str, Any]:
         parsed, calls, errors = self._call_llm(
             role="secondary_review_agent",
             system_prompt=SECONDARY_REVIEW_SYSTEM_PROMPT,
@@ -514,11 +629,102 @@ class MultiAgentWorkflow:
         )
 
         if parsed is None:
-            # Keep the judge label rather than throwing away an otherwise valid case.
+            # Preserve the valid Judge decision if the independent review fails.
             trace = {
                 "event": "secondary_review_failed",
                 "fallback_label": state.get("judge_label") or "Error",
             }
+
+            return {
+                "final_label": state.get("judge_label") or "Error",
+                "escalation_flag": True,
+                "errors": [*state.get("errors", []), *errors],
+                "traces": [*state.get("traces", []), trace],
+                "llm_calls": [*state.get("llm_calls", []), *calls],
+            }
+
+        agrees_with_judge = parsed.label_name == state["judge_label"]
+
+        trace = {
+            "event": "secondary_review_complete",
+            "original_judge_label": state["judge_label"],
+            "reviewed_label": parsed.label_name,
+            "confidence": parsed.confidence,
+            "agrees_with_judge": agrees_with_judge,
+            "escalation_flag": parsed.escalation_flag,
+            "review_reasons": state.get("review_reasons", []),
+            "reasoning": parsed.reasoning,
+        }
+
+        update: dict[str, Any] = {
+            "reviewer_label": parsed.label_name,
+            "reviewer_confidence": parsed.confidence,
+            "reviewer_reasoning": parsed.reasoning,
+            "escalation_flag": parsed.escalation_flag,
+            "errors": [*state.get("errors", []), *errors],
+            "traces": [*state.get("traces", []), trace],
+            "llm_calls": [*state.get("llm_calls", []), *calls],
+        }
+
+        # When both independent decisions agree, finalize that shared label
+        # without paying for an adjudicator call.
+        if agrees_with_judge:
+            update["final_label"] = parsed.label_name
+
+        return update
+
+    def _route_after_secondary_review(
+        self,
+        state: WorkflowState,
+    ) -> str:
+        # A reviewer failure already sets a fallback final label.
+        if state.get("final_label"):
+            return "finalize"
+
+        judge_label = state.get("judge_label")
+        reviewer_label = state.get("reviewer_label")
+
+        if (
+            judge_label
+            and reviewer_label
+            and judge_label != reviewer_label
+        ):
+            return "adjudicator"
+
+        return "finalize"
+
+    def _adjudicator_node(
+        self,
+        state: WorkflowState,
+    ) -> dict[str, Any]:
+        parsed, calls, errors = self._call_llm(
+            role="adjudicator_agent",
+            system_prompt=ADJUDICATOR_SYSTEM_PROMPT,
+            user_prompt_text=adjudicator_user_prompt(
+                text=state["text"],
+                path=state.get("path", []),
+                judge_label=state["judge_label"],
+                judge_confidence=state["judge_confidence"],
+                judge_reasoning=state.get("judge_reasoning", ""),
+                reviewer_label=state["reviewer_label"],
+                reviewer_confidence=state["reviewer_confidence"],
+                reviewer_reasoning=state.get(
+                    "reviewer_reasoning",
+                    "",
+                ),
+            ),
+            schema=ReviewDecision,
+        )
+
+        if parsed is None:
+            # Conservative deterministic fallback: preserve the Judge decision.
+            trace = {
+                "event": "adjudicator_failed",
+                "judge_label": state.get("judge_label"),
+                "reviewer_label": state.get("reviewer_label"),
+                "fallback_label": state.get("judge_label") or "Error",
+            }
+
             return {
                 "final_label": state.get("judge_label") or "Error",
                 "escalation_flag": True,
@@ -528,12 +734,12 @@ class MultiAgentWorkflow:
             }
 
         trace = {
-            "event": "secondary_review_complete",
-            "original_judge_label": state["judge_label"],
-            "reviewed_label": parsed.label_name,
+            "event": "adjudicator_complete",
+            "judge_label": state["judge_label"],
+            "reviewer_label": state["reviewer_label"],
+            "adjudicated_label": parsed.label_name,
             "confidence": parsed.confidence,
             "escalation_flag": parsed.escalation_flag,
-            "review_reasons": state.get("review_reasons", []),
             "reasoning": parsed.reasoning,
         }
 
@@ -556,6 +762,18 @@ class MultiAgentWorkflow:
         if final_label != "Error":
             final_label = canonicalize_label(final_label)
 
+        # trace = {
+        #     "event": "workflow_finalized",
+        #     "final_label": final_label,
+        #     "secondary_review_used": any(
+        #         item.get("event") in {
+        #             "secondary_review_complete",
+        #             "secondary_review_failed",
+        #         }
+        #         for item in state.get("traces", [])
+        #     ),
+        #     "escalation_flag": state.get("escalation_flag", False),
+        # }
         trace = {
             "event": "workflow_finalized",
             "final_label": final_label,
@@ -563,6 +781,13 @@ class MultiAgentWorkflow:
                 item.get("event") in {
                     "secondary_review_complete",
                     "secondary_review_failed",
+                }
+                for item in state.get("traces", [])
+            ),
+            "adjudicator_used": any(
+                item.get("event") in {
+                    "adjudicator_complete",
+                    "adjudicator_failed",
                 }
                 for item in state.get("traces", [])
             ),
@@ -615,6 +840,13 @@ class MultiAgentWorkflow:
                 f"{judge.competing_label}:{margin:.4f}"
             )
 
+        # proposed = state.get("proposed_label")
+
+        # if proposed and proposed != judge.label_name:
+        #     reasons.append(
+        #         f"judge_hierarchy_disagreement:{proposed}_vs_{judge.label_name}"
+        #     )
+
         return reasons
 
     def _failed_node_update(
@@ -662,6 +894,24 @@ class MultiAgentWorkflow:
             "llm_calls": [*state.get("llm_calls", []), *calls],
         }
 
+    # def run_case(self, *, sample_id: str, text: str) -> CaseResult:
+    #     initial_state: WorkflowState = {
+    #         "sample_id": sample_id,
+    #         "text": text,
+    #         "proposed_label": "",
+    #         "final_label": "",
+    #         "judge_label": "",
+    #         "judge_confidence": 0.0,
+    #         "competing_label": "",
+    #         "competing_confidence": 0.0,
+    #         "review_reasons": [],
+    #         "escalation_flag": False,
+    #         "specialist_answers": {},
+    #         "path": [],
+    #         "errors": [],
+    #         "traces": [],
+    #         "llm_calls": [],
+    #     }
     def run_case(self, *, sample_id: str, text: str) -> CaseResult:
         initial_state: WorkflowState = {
             "sample_id": sample_id,
@@ -670,9 +920,13 @@ class MultiAgentWorkflow:
             "final_label": "",
             "judge_label": "",
             "judge_confidence": 0.0,
+            "judge_reasoning": "",
             "competing_label": "",
             "competing_confidence": 0.0,
             "review_reasons": [],
+            "reviewer_label": "",
+            "reviewer_confidence": 0.0,
+            "reviewer_reasoning": "",
             "escalation_flag": False,
             "specialist_answers": {},
             "path": [],
