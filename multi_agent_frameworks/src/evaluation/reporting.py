@@ -15,12 +15,15 @@ def compile_run_results(run_dir: str | Path) -> dict[str, str]:
     path = Path(run_dir)
     metrics = _read_json(path / "metrics.json")
     trace_summary = _read_json(path / "trace_summary.json")
+    manifest_path = path / "manifest.json"
+    manifest = _read_json(manifest_path) if manifest_path.is_file() else {}
     predictions = pd.read_csv(path / "predictions.csv", encoding="utf-8-sig")
     llm_calls = _read_jsonl(path / "llm_calls.jsonl")
 
     compiled_rows = _compiled_rows(
         metrics=metrics,
         trace_summary=trace_summary,
+        manifest=manifest,
         predictions=predictions,
         llm_calls=llm_calls,
     )
@@ -33,6 +36,7 @@ def compile_run_results(run_dir: str | Path) -> dict[str, str]:
             run_dir=path,
             metrics=metrics,
             trace_summary=trace_summary,
+            manifest=manifest,
             predictions=predictions,
             llm_calls=llm_calls,
         ),
@@ -62,6 +66,7 @@ def _compiled_rows(
     *,
     metrics: dict[str, Any],
     trace_summary: dict[str, Any],
+    manifest: dict[str, Any],
     predictions: pd.DataFrame,
     llm_calls: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -70,6 +75,16 @@ def _compiled_rows(
     classification = metrics["classification"]
     suicidal_intent = metrics.get("suicidal_intent") or {}
     provider_timing = runtime.get("provider_timing", {})
+
+    for attempt in manifest.get("execution_attempts") or []:
+        rows.append(
+            {
+                "section": "execution_attempts",
+                "attempt_number": attempt.get("attempt_number"),
+                "start_date": attempt.get("start_date"),
+                "end_date": attempt.get("end_date"),
+            }
+        )
 
     binary_summary = suicidal_intent.get("binary_summary")
     if binary_summary:
@@ -186,6 +201,7 @@ def _compiled_markdown(
     run_dir: Path,
     metrics: dict[str, Any],
     trace_summary: dict[str, Any],
+    manifest: dict[str, Any],
     predictions: pd.DataFrame,
     llm_calls: list[dict[str, Any]],
 ) -> str:
@@ -222,6 +238,10 @@ def _compiled_markdown(
         f"| LLM requests | {runtime['llm_request_count']} |",
         f"| Failed LLM attempts | {runtime['failed_llm_attempts']} |",
         f"| JSON/schema parsing errors | {runtime.get('json_parsing_errors', 0)} |",
+        "",
+        "## Execution Attempts",
+        "",
+        _execution_attempts_table(manifest.get("execution_attempts") or []),
         "",
         "## Final-Label Confusion Matrix",
         "",
@@ -386,6 +406,21 @@ def _count_table(counts: pd.Series, label_name: str) -> str:
     lines = [f"| {label_name} | Count |", "|---|---:|"]
     for label, count in counts.items():
         lines.append(f"| {label} | {int(count)} |")
+    return "\n".join(lines)
+
+
+def _execution_attempts_table(attempts: list[dict[str, Any]]) -> str:
+    if not attempts:
+        return "Not available for this legacy or snapshot report."
+    lines = [
+        "| Attempt | Start Date (UTC) | End Date (UTC) |",
+        "|---:|---|---|",
+    ]
+    for attempt in attempts:
+        lines.append(
+            f"| {attempt.get('attempt_number')} | "
+            f"{attempt.get('start_date')} | {attempt.get('end_date')} |"
+        )
     return "\n".join(lines)
 
 

@@ -55,6 +55,7 @@ def test_compile_run_results_writes_csv_and_markdown_tables(tmp_path):
     rows = pd.read_csv(compiled_csv, encoding="utf-8-sig")
     assert {
         "confusion_matrix",
+        "execution_attempts",
         "suicidal_intent_metrics",
         "suicidal_intent_confusion_matrix",
         "runtime_metrics",
@@ -67,6 +68,15 @@ def test_compile_run_results_writes_csv_and_markdown_tables(tmp_path):
     assert "agent_execution_duration_s" in runtime_rows.index
     assert "real_execution_duration_s" in runtime_rows.index
     assert "avg_e2e_completion_tps" in runtime_rows.index
+    manifest = json.loads(
+        (Path(result.run_dir) / "manifest.json").read_text(encoding="utf-8")
+    )
+    attempt = manifest["execution_attempts"][0]
+    attempt_rows = rows[rows["section"] == "execution_attempts"]
+    assert len(attempt_rows) == 1
+    assert int(attempt_rows.iloc[0]["attempt_number"]) == 1
+    assert attempt_rows.iloc[0]["start_date"] == attempt["start_date"]
+    assert attempt_rows.iloc[0]["end_date"] == attempt["end_date"]
 
     predictions = pd.read_csv(Path(result.run_dir) / "predictions.csv", encoding="utf-8-sig")
     assert "specialist_answers" in predictions.columns
@@ -77,6 +87,10 @@ def test_compile_run_results_writes_csv_and_markdown_tables(tmp_path):
     assert "## Model Metrics" not in markdown
     assert "## Per-Label Metrics" not in markdown
     assert "## Final-Label Confusion Matrix" in markdown
+    assert "## Execution Attempts" in markdown
+    assert "| Attempt | Start Date (UTC) | End Date (UTC) |" in markdown
+    assert attempt["start_date"] in markdown
+    assert attempt["end_date"] in markdown
     assert "## Per-Agent Metrics" not in markdown
     assert "## Suicidal-Intent Positive-Class Grouping Metrics" in markdown
     assert "Positive: Indicator, Ideation, Behavior, Attempt" in markdown

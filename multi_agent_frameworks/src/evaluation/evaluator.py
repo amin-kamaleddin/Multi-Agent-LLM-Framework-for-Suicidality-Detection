@@ -271,6 +271,7 @@ def run_evaluation(
     manifest_path = writer.run_dir / "manifest.json"
     progress_path = writer.run_dir / "progress.sqlite"
     resumed = resume_run_dir is not None
+    attempt_start_date = utc_now()
 
     if resumed:
         if not progress_path.is_file():
@@ -286,7 +287,7 @@ def run_evaluation(
         )
         manifest["status"] = "running"
         manifest["resume_count"] = int(manifest.get("resume_count", 0)) + 1
-        manifest["last_resumed_at"] = utc_now()
+        manifest["last_resumed_at"] = attempt_start_date
         manifest["execution"] = {
             "case_workers": config.case_workers,
             "max_in_flight_llm": config.max_in_flight_llm,
@@ -298,7 +299,7 @@ def run_evaluation(
             "schema_version": "1.0",
             "run_id": writer.run_dir.name,
             "status": "running",
-            "created_at": utc_now(),
+            "created_at": attempt_start_date,
             "resume_count": 0,
             "dataset": {
                 "sha256": dataset_fingerprint,
@@ -329,6 +330,15 @@ def run_evaluation(
             ),
         )
         writer.write_dataframe("sampled_dataset.csv", sample_df)
+    execution_attempts = manifest.setdefault("execution_attempts", [])
+    if not isinstance(execution_attempts, list):
+        raise ValueError("Cannot resume: manifest execution_attempts must be a list")
+    current_attempt = {
+        "attempt_number": int(manifest["resume_count"]) + 1,
+        "start_date": attempt_start_date,
+        "end_date": None,
+    }
+    execution_attempts.append(current_attempt)
     write_manifest(manifest_path, manifest)
 
     stop_reason: str | None = None
@@ -339,7 +349,9 @@ def run_evaluation(
     all_calls: list[dict[str, Any]] = []
     coverage: dict[str, Any] = {}
 
-    with ProgressStore(progress_path) as progress:
+    progress: ProgressStore | None = None
+    try:
+        progress = ProgressStore(progress_path)
         progress.initialize(expected_ids)
         reset_records = progress.reset_running() if resumed else 0
         statuses = progress.statuses()
@@ -500,12 +512,31 @@ def run_evaluation(
             output_ids=[str(row["sample_id"]) for row in rows],
         )
         progress_summary = progress.summary()
-
-    if worker_error is not None:
+    except BaseException as exc:
+        attempt_end_date = utc_now()
+        current_attempt["end_date"] = attempt_end_date
         manifest.update(
             {
                 "status": "interrupted",
-                "interrupted_at": utc_now(),
+                "interrupted_at": attempt_end_date,
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+        )
+        if progress is not None:
+            manifest["progress"] = progress.summary()
+        write_manifest(manifest_path, manifest)
+        raise
+    finally:
+        if progress is not None:
+            progress.close()
+
+    if worker_error is not None:
+        attempt_end_date = utc_now()
+        current_attempt["end_date"] = attempt_end_date
+        manifest.update(
+            {
+                "status": "interrupted",
+                "interrupted_at": attempt_end_date,
                 "progress": progress_summary,
                 "coverage": coverage,
                 "error": f"{type(worker_error).__name__}: {worker_error}",
@@ -521,22 +552,12 @@ def run_evaluation(
     else:
         final_status = "incomplete"
 
-    final_metrics = finalize_evaluation_artifacts(
-        writer=writer,
-        rows=rows,
-        all_calls=all_calls,
-        config=config,
-        status=final_status,
-        stop_reason=stop_reason,
-        agent_execution_duration_s=progress_summary["agent_execution_duration_s"],
-        real_execution_duration_s=progress_summary["real_execution_duration_s"],
-        coverage=coverage,
-        session_total_tokens=session_total_tokens,
-    )
+    attempt_end_date = utc_now()
+    current_attempt["end_date"] = attempt_end_date
     manifest.update(
         {
             "status": final_status,
-            "finished_at": utc_now(),
+            "finished_at": attempt_end_date,
             "progress": progress_summary,
             "coverage": coverage,
             "stop_reason": stop_reason,
@@ -547,6 +568,34 @@ def run_evaluation(
         }
     )
     write_manifest(manifest_path, manifest)
+
+    try:
+        final_metrics = finalize_evaluation_artifacts(
+            writer=writer,
+            rows=rows,
+            all_calls=all_calls,
+            config=config,
+            status=final_status,
+            stop_reason=stop_reason,
+            agent_execution_duration_s=progress_summary["agent_execution_duration_s"],
+            real_execution_duration_s=progress_summary["real_execution_duration_s"],
+            coverage=coverage,
+            session_total_tokens=session_total_tokens,
+        )
+    except BaseException as exc:
+        attempt_end_date = utc_now()
+        current_attempt["end_date"] = attempt_end_date
+        manifest.update(
+            {
+                "status": "interrupted",
+                "interrupted_at": attempt_end_date,
+                "progress": progress_summary,
+                "coverage": coverage,
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+        )
+        write_manifest(manifest_path, manifest)
+        raise
 
     return EvaluationResult(
         run_dir=str(writer.run_dir),

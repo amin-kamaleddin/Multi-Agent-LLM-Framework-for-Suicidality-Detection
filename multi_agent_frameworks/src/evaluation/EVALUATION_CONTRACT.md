@@ -370,6 +370,8 @@ The progress table is keyed only by `sample_id`; it intentionally has no
 - the ID column and record count;
 - concurrency and checkpoint settings;
 - pending, running, and completed counts;
+- an append-only `execution_attempts` history with UTC ISO-8601 `start_date`
+  and `end_date` timestamps for every initial or resumed evaluator invocation;
 - final exact-ID coverage and terminal status.
 
 On resume, abandoned `running` rows become `pending`; completed rows remain
@@ -377,6 +379,15 @@ untouched, and only pending IDs are scheduled. The dataset and behavior-affectin
 workflow fingerprints must match. Each case transaction is the crash-safe
 checkpoint; `checkpoint_every` controls only how often the readable manifest
 progress snapshot is refreshed.
+
+An execution attempt is one call to the evaluator, not an individual LLM retry.
+The initial run is attempt 1 and each resume appends the next numbered entry.
+`start_date` is persisted before cases are scheduled; `end_date` is filled when
+that invocation completes, stops early, or exits through a handled interruption.
+For example, one stopped run followed by one resume has two entries and four
+timestamps. If the process is terminated in a way that prevents Python cleanup
+(for example, a forced process kill or power loss), that attempt's `end_date`
+remains `null` because no exact end timestamp is available.
 
 `evaluation/evaluator.py::_stop_reason_from_summary` stops runs when any configured threshold is reached:
 
@@ -400,7 +411,7 @@ Thresholds and the stop reason are persisted in `run_config.json`, `metrics.json
 | Artifact | Created by | Contents |
 |---|---|---|
 | `run_config.json` | `run_evaluation` | Run and arbitrary role-keyed agent configuration; the built-in wrappers record their resolved five- or six-role configuration. |
-| `manifest.json` | `run_evaluation` / `progress.py` | Dataset and workflow fingerprints, execution settings, progress, coverage, resume count, and terminal status. |
+| `manifest.json` | `run_evaluation` / `progress.py` | Dataset and workflow fingerprints, execution settings, per-invocation start/end timestamp history, progress, coverage, resume count, and terminal status. |
 | `progress.sqlite` | `ProgressStore` | Transactional per-ID pending/running/completed state and completed result payloads; no input-position field. |
 | `dataset_audit.json` | `run_evaluation` | Source audit or explicit audit-unavailable marker. |
 | `sampled_dataset.csv` | `run_evaluation` | Exact evaluated inputs and ground truth. |
@@ -410,8 +421,8 @@ Thresholds and the stop reason are persisted in `run_config.json`, `metrics.json
 | `metrics.json` | `_write_evaluation_artifacts` | Five-label confusion audit, grouped-binary metrics, agent execution duration, and runtime metrics. |
 | `suicidal_intent_metrics.csv` | `_write_evaluation_artifacts` | One positive-oriented binary summary; negative rows are never reinterpreted as TP/FN. |
 | `metrics.md` | `ArtifactWriter.write_metrics_md` | Grouped-binary metrics plus runtime and guardrail summary. |
-| `compiled_results.csv` | `compile_run_results` | Long-form machine-readable report. |
-| `compiled_results.md` | `compile_run_results` | Review-oriented complete Markdown report. |
+| `compiled_results.csv` | `compile_run_results` | Long-form machine-readable report, including one execution-attempt row per initial or resumed invocation. |
+| `compiled_results.md` | `compile_run_results` | Review-oriented complete Markdown report with an execution-attempt start/end timestamp table. |
 | `misclassified_ids.txt` | `_write_evaluation_artifacts` | IDs whose final label is wrong. |
 | `suicidal_intent_misclassified_ids.txt` | `_write_evaluation_artifacts` | IDs whose boolean output is wrong. |
 | `suicidal_intent_metrics.svg` | `ArtifactWriter.write_visualizations` | Grouped-binary accuracy, precision, recall, and F1 bars. |
