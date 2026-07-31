@@ -347,6 +347,42 @@ def _write_reports(
         tn_c = total - tp_c - fn_c - fp_c
         row["accuracy"] = ((tp_c + tn_c) / total) if total > 0 else 0.0
 
+    # ------------------------------------------------------------------
+    # Positive-class differentiation metrics: precision / recall / F1 for
+    # each of the 4 positive classes, computed ONLY over cases where BOTH
+    # the true label and the predicted label are one of the 4 positive
+    # classes. Cases involving `negative_class` (or an unrecognized
+    # prediction) on either side are excluded from this subset entirely --
+    # this isolates how well the agent tells Ideation / Behavior /
+    # Indicator / Attempt apart from each other, independent of the
+    # Unsupportive-vs-rest screening decision covered separately in the
+    # binary section.
+    # ------------------------------------------------------------------
+    positive_classes = [l for l in all_labels if l != negative_class]
+    pos_pairs = [
+        (t, p) for t, p in zip(y_true_all, y_pred_all)
+        if t in positive_classes and p in positive_classes
+    ]
+    pos_y_true = [t for t, _ in pos_pairs]
+    pos_y_pred = [p for _, p in pos_pairs]
+    n_excluded_positive_only = total - len(pos_pairs)
+
+    per_class_positive_only = _per_class_metrics(pos_y_true, pos_y_pred, positive_classes)
+    positive_confusion = _build_confusion_matrix(pos_y_true, pos_y_pred, positive_classes)
+
+    # Aggregate accuracy for this population: plain 4-label classification
+    # accuracy over the included (both-sides-positive) cases only.
+    accuracy_4class = (
+        sum(1 for t, p in pos_pairs if t == p) / len(pos_pairs) if pos_pairs else 0.0
+    )
+
+    if len(per_class_positive_only) > 0:
+        macro_precision_positive_only = sum(r["precision"] for r in per_class_positive_only) / len(per_class_positive_only)
+        macro_recall_positive_only = sum(r["recall"] for r in per_class_positive_only) / len(per_class_positive_only)
+        macro_f1_positive_only = sum(r["f1"] for r in per_class_positive_only) / len(per_class_positive_only)
+    else:
+        macro_precision_positive_only = macro_recall_positive_only = macro_f1_positive_only = 0.0
+
     if len(per_class) > 0:
         macro_precision = sum(r["precision"] for r in per_class) / len(per_class)
         macro_recall = sum(r["recall"] for r in per_class) / len(per_class)
@@ -384,6 +420,11 @@ def _write_reports(
         "precision_positive": precision_positive,
         "recall_positive": recall_positive,
         "f1_positive": f1_positive,
+        # Positive-class differentiation metrics (4-class subset, see above).
+        "accuracy_4class": accuracy_4class,
+        "precision_4class_macro": macro_precision_positive_only,
+        "recall_4class_macro": macro_recall_positive_only,
+        "f1_4class_macro": macro_f1_positive_only,
     }
 
     # Fetch dynamic pricing based on the used model name
@@ -465,6 +506,40 @@ def _write_reports(
         f.write("## Confusion Matrix\n\n")
         f.write("*Rows = Actual, Columns = Predicted*\n\n")
         _write_confusion_md(f, confusion, all_labels)
+        f.write("\n")
+
+        # ---- Positive-class differentiation section ----
+        f.write("## Positive-Class Differentiation Metrics\n\n")
+        f.write(
+            f"*Computed only over cases where BOTH the true label and the predicted label "
+            f"are one of the 4 positive classes ({', '.join(f'`{l}`' for l in positive_classes)}). "
+            f"Cases where either side is `{negative_class}` (or an unrecognized prediction) are "
+            f"excluded from this subset entirely — this isolates how well the agent tells the "
+            f"risk levels apart from each other, independent of the Unsupportive-vs-rest screening "
+            f"decision covered in the Binary Metrics section below.*\n\n"
+        )
+        f.write(
+            f"- **cases considered**: {len(pos_pairs)} of {total} total "
+            f"({n_excluded_positive_only} excluded because the true or predicted label was "
+            f"`{negative_class}` or unrecognized)\n\n"
+        )
+        f.write("| Class | Precision | Recall | F1 | Support (within this subset) |\n|---|---|---|---|---|\n")
+        for row in per_class_positive_only:
+            f.write(
+                f"| {row['class']} | {row['precision']:.4f} | {row['recall']:.4f} | "
+                f"{row['f1']:.4f} | {row['support']} |\n"
+            )
+        f.write("\n")
+        f.write(f"- **accuracy_4class**: {accuracy_4class:.6f}\n")
+        f.write(f"- **precision_4class_macro**: {macro_precision_positive_only:.6f}\n")
+        f.write(f"- **recall_4class_macro**: {macro_recall_positive_only:.6f}\n")
+        f.write(f"- **f1_4class_macro**: {macro_f1_positive_only:.6f}\n\n")
+        f.write("*precision/recall/f1 macros above are the unweighted mean across the 4 positive classes. "
+                "accuracy_4class is the plain 4-label classification accuracy over the included cases only.*\n\n")
+
+        f.write("### Positive-Class Confusion Matrix (4x4 subset)\n\n")
+        f.write("*Rows = Actual, Columns = Predicted — restricted to the 4 positive classes*\n\n")
+        _write_confusion_md(f, positive_confusion, positive_classes)
         f.write("\n")
 
         # ---- Binary (Positive vs Negative) section ----
@@ -580,6 +655,8 @@ def _write_reports(
         "error": error_counts,
         "per_class_metrics": per_class,
         "confusion_matrix": confusion,
+        "per_class_metrics_4class_only": per_class_positive_only,
+        "positive_class_confusion_matrix": positive_confusion,
         "binary_confusion_matrix": binary_confusion,
         "binary_counts": binary_counts,
         "total_cost_usd_estimate": cost_usd,
