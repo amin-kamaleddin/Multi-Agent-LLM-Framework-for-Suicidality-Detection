@@ -163,33 +163,29 @@ Rules:
 - Do not include extra keys.
 """.strip()
 
-# You are the Secondary Review Agent.
 
-# Goal:
-# Review only cases escalated because of low confidence or a small margin
-# between the top two candidate labels.
-
-# Ignore any previous classifications or confidence scores that may appear in the
-# context. They are provided only for logging and should not influence your
-# classification.
 
 SECONDARY_REVIEW_SYSTEM_PROMPT = f"""
-You are an Independent Clinical Review Agent.
+You are the Secondary Review Agent in a hierarchical suicide-risk
+classification system.
 
 Goal:
-Independently classify the case using ONLY:
+Review cases escalated because of low Judge confidence, a small confidence
+margin between the top two candidate labels, or another configured review
+condition.
+
+You will receive:
 
 - the original text
+- the Judge's selected label and confidence
+- the Judge's strongest competing label and confidence
+- the reason or reasons the case was sent for review
 - the hierarchical decision path
 
-Do NOT treat any previous model decision as correct.
-
-Your task is to independently determine the best final label before considering
-whether escalation is warranted.
-
-Reach your own classification independently before producing any reasoning.
-
-Base your decision solely on the original text and the hierarchical decision path.
+Critically evaluate the Judge's decision using the original text and the
+hierarchical path. The Judge's decision is useful context, but it is not
+automatically correct. Confirm it when it is best supported, or replace it
+when another valid label is better supported.
 
 Valid final labels:
 {", ".join(FINAL_LABELS)}
@@ -198,18 +194,22 @@ Return only valid JSON:
 {{
   "label_name": "<one valid label>",
   "confidence": 0.0,
-  "escalation_flag": true,
+  "escalation_flag": false,
   "reasoning": "brief explanation"
 }}
 
 Rules:
-- Focus on the ambiguity identified by the routing gate.
-- Distinguish UNSUPPORTIVE from INDICATOR carefully when either is a candidate:
-  UNSUPPORTIVE is unrelated to the suicide-risk task, while INDICATOR remains
-  meaningfully suicide-related.
-- Closely examine Indicator vs Ideation and Behavior vs Attempt when either
-  pair is supplied as the candidate boundary.
+- Focus especially on the ambiguity identified by the review trigger.
+- Compare the Judge's selected label against the competing label.
+- Do not change the Judge's label merely because the case was escalated.
 - Select the label best supported by the original text.
+- Use the hierarchical path as supporting evidence, not as unquestionable
+  truth.
+- Distinguish UNSUPPORTIVE from INDICATOR carefully:
+  UNSUPPORTIVE is not meaningfully suicide-related, while INDICATOR remains
+  suicide-related but does not describe the author's own suicide risk.
+- Closely examine Indicator vs Ideation and Behavior vs Attempt when either
+  pair is involved.
 - Set escalation_flag=true only when the evidence remains genuinely
   unresolved or safety-critical after review.
 - If uncertainty remains, choose the most defensible valid label and explain
@@ -220,54 +220,7 @@ Rules:
 """.strip()
 
 
-ADJUDICATOR_SYSTEM_PROMPT = f"""
-You are the Adjudicator Agent in a hierarchical suicide-risk classification
-system.
 
-Goal:
-Resolve a disagreement between the Judge Agent and an independent Clinical
-Review Agent.
-
-You will receive:
-
-- the original text
-- the hierarchical decision path
-- the Judge's label, confidence, and reasoning
-- the independent reviewer's label, confidence, and reasoning
-
-Evaluate both decisions critically. Do not automatically prefer the Judge,
-the reviewer, or the decision with the higher confidence. Select the label
-that is best supported by the original text and the task definitions.
-
-Valid final labels:
-{", ".join(FINAL_LABELS)}
-
-Return only valid JSON:
-{{
-  "label_name": "<one valid label>",
-  "confidence": 0.0,
-  "escalation_flag": false,
-  "reasoning": "brief explanation of why this label is better supported"
-}}
-
-Rules:
-- Base the decision primarily on evidence in the original text.
-- Use the hierarchical path as supporting context, not as unquestionable truth.
-- Compare the Judge's and reviewer's reasoning directly.
-- Do not choose a label merely because it has the higher reported confidence.
-- Distinguish UNSUPPORTIVE from INDICATOR carefully:
-  UNSUPPORTIVE is not meaningfully suicide-related, while INDICATOR is
-  suicide-related but does not describe the author's own suicide risk.
-- Distinguish Indicator from Ideation by determining whether the text reflects
-  the author's own suicidal thinking.
-- Distinguish Behavior from Attempt by determining whether an action was
-  undertaken with intent to die.
-- Set escalation_flag=true only when the disagreement remains genuinely
-  unresolved or safety-critical after adjudication.
-- Confidence must be between 0.0 and 1.0.
-- Do not include markdown.
-- Do not include extra keys.
-""".strip()
 
 
 def user_prompt(text: str) -> str:
@@ -288,27 +241,6 @@ def judge_user_prompt(
     )
 
 
-# def secondary_review_user_prompt(
-#     *,
-#     text: str,
-#     judge_label: str,
-#     judge_confidence: float,
-#     competing_label: str,
-#     competing_confidence: float,
-#     review_reasons: list[str],
-#     path: list[dict[str, Any]],
-# ) -> str:
-#     return (
-#         f"Original text:\n{text}\n\n"
-#         f"Judge label: {judge_label}\n"
-#         f"Judge confidence: {judge_confidence:.4f}\n"
-#         f"Competing label: {competing_label}\n"
-#         f"Competing confidence: {competing_confidence:.4f}\n"
-#         f"Review trigger(s): {', '.join(review_reasons)}\n\n"
-#         "Hierarchical path:\n"
-#         f"{json.dumps(path, ensure_ascii=False, indent=2)}"
-#     )
-
 def secondary_review_user_prompt(
     *,
     text: str,
@@ -321,32 +253,11 @@ def secondary_review_user_prompt(
 ) -> str:
     return (
         f"Original text:\n{text}\n\n"
+        f"Judge label: {judge_label}\n"
+        f"Judge confidence: {judge_confidence:.4f}\n"
+        f"Competing label: {competing_label}\n"
+        f"Competing confidence: {competing_confidence:.4f}\n"
+        f"Review trigger(s): {', '.join(review_reasons)}\n\n"
         "Hierarchical path:\n"
         f"{json.dumps(path, ensure_ascii=False, indent=2)}"
-    )
-
-def adjudicator_user_prompt(
-    *,
-    text: str,
-    path: list[dict[str, Any]],
-    judge_label: str,
-    judge_confidence: float,
-    judge_reasoning: str,
-    reviewer_label: str,
-    reviewer_confidence: float,
-    reviewer_reasoning: str,
-) -> str:
-    return (
-        f"Original text:\n{text}\n\n"
-        "Hierarchical path:\n"
-        f"{json.dumps(path, ensure_ascii=False, indent=2)}\n\n"
-        "Judge decision:\n"
-        f"- Label: {judge_label}\n"
-        f"- Confidence: {judge_confidence:.4f}\n"
-        f"- Reasoning: {judge_reasoning}\n\n"
-        "Independent reviewer decision:\n"
-        f"- Label: {reviewer_label}\n"
-        f"- Confidence: {reviewer_confidence:.4f}\n"
-        f"- Reasoning: {reviewer_reasoning}\n\n"
-        "Resolve the disagreement and select the best-supported final label."
     )
