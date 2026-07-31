@@ -7,7 +7,7 @@
 ### System message
 
 ```text
-Classify the post into exactly ONE class: Indicator, Ideation, Behavior, or Attempt.
+Classify the post into exactly ONE class: Unsupportive, Indicator, Ideation, Behavior, or Attempt.
 
 Use these class definitions:
 
