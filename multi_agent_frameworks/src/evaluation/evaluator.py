@@ -19,6 +19,7 @@ from workflows.contracts import Workflow as EvaluationWorkflow
 from .artifacts import ArtifactWriter
 from .metrics import (
     compute_final_label_confusion_matrix,
+    compute_positive_subclassification_metrics,
     compute_suicidal_intent_metrics,
     summarize_runtime,
 )
@@ -1027,6 +1028,10 @@ def _write_evaluation_artifacts(
         [row["prediction"] for row in rows],
         model_name=judge_model_name,
     )
+    positive_subclassification = compute_positive_subclassification_metrics(
+        [row["ground_truth"] for row in rows],
+        [row["prediction"] for row in rows],
+    )
     runtime = summarize_runtime(
         all_calls,
         agent_execution_duration_s=agent_execution_duration_s,
@@ -1054,9 +1059,14 @@ def _write_evaluation_artifacts(
         },
         "classification": classification,
         "suicidal_intent": suicidal_intent,
+        "positive_subclassification": positive_subclassification,
         "runtime": runtime,
     }
     writer.write_dataframe("suicidal_intent_metrics.csv", pd.DataFrame([suicidal_intent["binary_summary"]]))
+    writer.write_dataframe(
+        "positive_subclassification_metrics.csv",
+        pd.DataFrame([positive_subclassification["summary"]]),
+    )
     writer.write_json("metrics.json", metrics)
     writer.write_json("results.json", _complete_results_payload(rows, metrics))
     writer.write_text(

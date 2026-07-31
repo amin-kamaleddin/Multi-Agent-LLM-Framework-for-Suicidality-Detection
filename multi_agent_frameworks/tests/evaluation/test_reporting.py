@@ -58,12 +58,24 @@ def test_compile_run_results_writes_csv_and_markdown_tables(tmp_path):
         "execution_attempts",
         "suicidal_intent_metrics",
         "suicidal_intent_confusion_matrix",
+        "positive_subclassification_metrics",
+        "positive_subclassification_confusion_matrix",
+        "positive_subclassification_per_label",
         "runtime_metrics",
     } <= set(rows["section"])
     assert "model_metrics" not in set(rows["section"])
     assert "per_label_metrics" not in set(rows["section"])
     confusion_rows = rows[rows["section"] == "confusion_matrix"]
     assert set(confusion_rows["actual_label"].dropna()) == set(FINAL_LABELS)
+    positive_confusion_rows = rows[
+        rows["section"] == "positive_subclassification_confusion_matrix"
+    ]
+    assert set(positive_confusion_rows["actual_label"].dropna()) == {
+        "Indicator",
+        "Ideation",
+        "Behavior",
+        "Attempt",
+    }
     runtime_rows = rows[rows["section"] == "runtime_metrics"].set_index("metric_name")
     assert "agent_execution_duration_s" in runtime_rows.index
     assert "real_execution_duration_s" in runtime_rows.index
@@ -87,6 +99,11 @@ def test_compile_run_results_writes_csv_and_markdown_tables(tmp_path):
     assert "## Model Metrics" not in markdown
     assert "## Per-Label Metrics" not in markdown
     assert "## Final-Label Confusion Matrix" in markdown
+    assert "## Positive-Label Subclassification Metrics" in markdown
+    assert "### Positive-Label 4x4 Confusion Matrix" in markdown
+    assert "### Per-Label Calculations" in markdown
+    assert "Correct: included records on the diagonal" in markdown
+    assert "Support: all records represented in the 4x4 matrix" in markdown
     assert "## Execution Attempts" in markdown
     assert "| Attempt | Start Date (UTC) | End Date (UTC) |" in markdown
     assert attempt["start_date"] in markdown

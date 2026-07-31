@@ -139,6 +139,89 @@ def compute_suicidal_intent_metrics(
     return metrics
 
 
+def compute_positive_subclassification_metrics(
+    y_true_labels: list[str],
+    y_pred_labels: list[str],
+) -> dict[str, Any]:
+    """Evaluate phase classification where actual and predicted labels are positive."""
+    labels = list(VALID_LABELS)
+    matrix = {actual: {predicted: 0 for predicted in labels} for actual in labels}
+
+    for actual, predicted in zip(y_true_labels, y_pred_labels):
+        if actual not in matrix:
+            continue
+        if predicted in labels:
+            matrix[actual][predicted] += 1
+
+    support = sum(sum(row.values()) for row in matrix.values())
+    correct = sum(matrix[label][label] for label in labels)
+    per_label: dict[str, dict[str, float | int]] = {}
+    for label in labels:
+        tp = matrix[label][label]
+        fp = sum(matrix[actual][label] for actual in labels if actual != label)
+        fn = sum(
+            matrix[label][predicted]
+            for predicted in labels
+            if predicted != label
+        )
+        precision = tp / (tp + fp) if tp + fp else 0.0
+        recall = tp / (tp + fn) if tp + fn else 0.0
+        f1 = (
+            2 * precision * recall / (precision + recall)
+            if precision + recall
+            else 0.0
+        )
+        per_label[label] = {
+            "tp": tp,
+            "fp": fp,
+            "fn": fn,
+            "support": tp + fn,
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1,
+        }
+
+    label_count = len(labels)
+    macro_precision = sum(value["precision"] for value in per_label.values()) / label_count
+    macro_recall = sum(value["recall"] for value in per_label.values()) / label_count
+    macro_f1 = sum(value["f1_score"] for value in per_label.values()) / label_count
+    ground_truth_counts = {
+        label: sum(matrix[label].values())
+        for label in labels
+    }
+    missing_ground_truth_labels = [
+        label for label, count in ground_truth_counts.items() if count == 0
+    ]
+    summary = {
+        "accuracy": correct / support if support else 0.0,
+        "precision": macro_precision,
+        "recall": macro_recall,
+        "f1_score": macro_f1,
+        "support": support,
+        "correct": correct,
+        "averaging": "macro",
+    }
+    return {
+        **summary,
+        "summary": summary,
+        "labels": labels,
+        "confusion_matrix": matrix,
+        "per_label": per_label,
+        "ground_truth_counts": ground_truth_counts,
+        "has_all_ground_truth_labels": not missing_ground_truth_labels,
+        "metric_limitation": (
+            "No records have both a positive ground-truth label and a positive predicted label."
+            if not support
+            else (
+                "The following positive labels are absent from ground truth and contribute zero to the fixed four-label macro average: "
+                + ", ".join(missing_ground_truth_labels)
+                if missing_ground_truth_labels
+                else None
+            )
+        ),
+    }
+
+
 def summarize_runtime(
     llm_calls: list[dict[str, Any]],
     *,

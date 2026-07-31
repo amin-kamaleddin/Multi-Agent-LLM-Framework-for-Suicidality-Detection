@@ -17,20 +17,17 @@ is suicide-related without indicating the author's own risk, or is unrelated
 to the suicide-risk task.
 
 Available task labels:
-- Indicator: The post does not indicate the author's own suicidal risk. It may discuss another person's suicidality, general suicide-related topics, concern for someone else, or explicit denial of the author's own suicidal intent.
-- Ideation: The author expresses suicidal thoughts, wishes, or desire to die, but does not describe concrete self-harm or suicide action.
-- Behavior: The author describes preparatory or self-harm behavior beyond verbal thoughts, such as gathering means, writing notes, preparing for death, or self-inflicted harm without an explicit fatal attempt.
-- Attempt: The post mentions a suicide attempt, current or past. A past attempt should still be labeled Attempt.
+- Indicator: The post does NOT indicate the author's own suicidal risk, but might be a window into their inner thoughts related to suicide. Includes: discussion of another person's suicidality, general discussion/news, or explicit denial of own suicidal intent. Person does not seem at any risk, but suicide was mentioned or discussed, even if in an explicit denial, so it should be flagged accordingly. Also includes concern for someone else at risk.
+- Ideation: The author expresses suicidal thoughts, wishes, or desire to die/end life. Includes passive or active suicidal thinking, including hypothetical or unrealistic methods. No concrete self-harm/suicide action has been taken in the post.
+- Behavior: The author describes preparatory or self-harm behavior beyond verbal thoughts. Includes planning/preparation actions (for example, gathering means, writing notes, preparing for death). Includes non-suicidal self-harm when self-inflicted harm is described, even without explicit intent to die.
+- Attempt: The post mentions a suicide attempt (current or past). A past attempt should still be labeled Attempt, even if the current post does not express ongoing suicidal thoughts.
+- Unsupportive: The post does NOT indicate the author's own suicidal risk or any connection to suicidal ideation. Includes: discussion of topics unrelated to suicidal ideation or self harm, such as hobbies, nature, and any other topic. However, also includes discussions about different emotions, including negative ones such as anger, sadness and even depression, as long as the author does not indicate at all to be thinking or discussing suicide or self-harm.
 
 Decision options:
 - SELF_RISK: the author describes their own suicidal thoughts, self-harm,
   preparation, behavior, or attempt.
-- INDICATOR: the text is suicide-related, but does not indicate the author's
-  own suicidal risk. This includes discussion of another person, general
-  suicide-related discussion, concern for someone else, or explicit denial
-  of the author's own suicidal intent.
-- UNSUPPORTIVE: the text does not meaningfully concern suicide, self-harm,
-  suicidal thinking, suicidal behavior, or suicide attempts.
+- INDICATOR: The post does NOT indicate the author's own suicidal risk, but might be a window into their inner thoughts related to suicide. Includes: discussion of another person's suicidality, general discussion/news, or explicit denial of own suicidal intent. Person does not seem at any risk, but suicide was mentioned or discussed, even if in an explicit denial, so it should be flagged accordingly. Also includes concern for someone else at risk.
+- UNSUPPORTIVE: The post does NOT indicate the author's own suicidal risk or any connection to suicidal ideation. Includes: discussion of topics unrelated to suicidal ideation or self harm, such as hobbies, nature, and any other topic. However, also includes discussions about different emotions, including negative ones such as anger, sadness and even depression, as long as the author does not indicate at all to be thinking or discussing suicide or self-harm.
 
 IMPORTANT:
 This agent performs ONLY the FIRST decision in the hierarchy.
@@ -83,8 +80,7 @@ For a post concerning the author's own risk, determine whether it describes
 ideation only or an action pathway.
 
 Decision options:
-- IDEATION: suicidal thoughts, wishes, desire to die, or wanting life to end,
-  without concrete preparation, self-harm behavior, or an attempt.
+- IDEATION: The author expresses suicidal thoughts, wishes, or desire to die/end life. Includes passive or active suicidal thinking, including hypothetical or unrealistic methods. No concrete self-harm/suicide action has been taken in the post.
 - ACTION_PATHWAY: preparation, self-harm behavior, an attempt, or another
   concrete action beyond thoughts alone.
 
@@ -123,10 +119,8 @@ For a post on the action pathway, determine whether the best label is
 Behavior or Attempt.
 
 Decision options:
-- BEHAVIOR: preparation, self-harm, or suicidal behavior without a clear
-  suicide attempt.
-- ATTEMPT: a current or past suicide attempt, including an action undertaken
-  with intent to die.
+- BEHAVIOR: The author describes preparatory or self-harm behavior beyond verbal thoughts. Includes planning/preparation actions (for example, gathering means, writing notes, preparing for death). Includes non-suicidal self-harm when self-inflicted harm is described, even without explicit intent to die.
+- ATTEMPT: The post mentions a suicide attempt (current or past). A past attempt should still be labeled Attempt, even if the current post does not express ongoing suicidal thoughts.
 
 Return only valid JSON:
 {
