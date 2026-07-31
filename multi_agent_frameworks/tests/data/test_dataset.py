@@ -6,6 +6,7 @@ import pandas as pd
 from data.dataset import (
     audit_dataset,
     duplicate_normalized_text_count,
+    normalize_text,
     prepare_dataset_files,
     sample_balanced,
 )
@@ -78,8 +79,17 @@ def test_seeded_cohorts_preserve_canonical_rsd15k_fields_and_balances():
     expected_positive_metadata = raw.iloc[positive["ID"].tolist()][
         ["users", "text", "sentiment", "time"]
     ].reset_index(drop=True)
+    actual_positive_metadata = positive[
+        ["users", "text", "sentiment", "time"]
+    ].reset_index(drop=True)
+    actual_positive_metadata["text"] = actual_positive_metadata["text"].map(
+        normalize_text
+    )
+    expected_positive_metadata["text"] = expected_positive_metadata["text"].map(
+        normalize_text
+    )
     pd.testing.assert_frame_equal(
-        positive[["users", "text", "sentiment", "time"]].reset_index(drop=True),
+        actual_positive_metadata,
         expected_positive_metadata,
         check_dtype=False,
     )

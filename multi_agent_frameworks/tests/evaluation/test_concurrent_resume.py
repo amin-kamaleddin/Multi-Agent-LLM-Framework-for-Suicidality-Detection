@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 from pathlib import Path
 import sqlite3
@@ -6,6 +7,7 @@ import time
 from types import SimpleNamespace
 
 import pandas as pd
+import pytest
 
 import cli
 from evaluation.evaluator import EvaluationConfig, run_evaluation
@@ -55,6 +57,11 @@ class TokenCountingWorkflow(CountingWorkflow):
             }
         ]
         return result
+
+
+class InterruptingWorkflow:
+    def run_case(self, *, sample_id: str, text: str):
+        raise KeyboardInterrupt("test interruption")
 
 
 def _sample(size: int) -> pd.DataFrame:
@@ -146,6 +153,12 @@ def test_coordinator_schedules_every_unique_id_once_and_checks_coverage(tmp_path
     assert manifest["status"] == "completed"
     assert manifest["dataset"]["id_column"] == "ID"
     assert manifest["coverage"]["complete"] is True
+    assert len(manifest["execution_attempts"]) == 1
+    attempt = manifest["execution_attempts"][0]
+    assert attempt["attempt_number"] == 1
+    assert datetime.fromisoformat(attempt["start_date"]) <= datetime.fromisoformat(
+        attempt["end_date"]
+    )
     assert manifest["progress"]["real_execution_duration_s"] == result.metrics["runtime"][
         "real_execution_duration_s"
     ]
@@ -260,6 +273,75 @@ def test_token_stop_counter_resets_for_each_resume_invocation(tmp_path):
         str(sample.loc[2, "ID"]): 1,
         str(sample.loc[3, "ID"]): 1,
     }
+    manifest = json.loads(
+        (Path(resumed.run_dir) / "manifest.json").read_text(encoding="utf-8")
+    )
+    assert [attempt["attempt_number"] for attempt in manifest["execution_attempts"]] == [
+        1,
+        2,
+    ]
+    timestamps = [
+        datetime.fromisoformat(attempt[key])
+        for attempt in manifest["execution_attempts"]
+        for key in ("start_date", "end_date")
+    ]
+    assert timestamps == sorted(timestamps)
+    compiled_rows = pd.read_csv(
+        Path(resumed.run_dir) / "compiled_results.csv",
+        encoding="utf-8-sig",
+    )
+    compiled_attempts = compiled_rows[
+        compiled_rows["section"] == "execution_attempts"
+    ]
+    assert compiled_attempts["attempt_number"].astype(int).tolist() == [1, 2]
+    compiled_markdown = (
+        Path(resumed.run_dir) / "compiled_results.md"
+    ).read_text(encoding="utf-8")
+    for attempt in manifest["execution_attempts"]:
+        assert attempt["start_date"] in compiled_markdown
+        assert attempt["end_date"] in compiled_markdown
+
+
+def test_interrupted_and_resumed_run_records_four_attempt_timestamps(tmp_path):
+    sample = _sample(2)
+    config = _config(tmp_path, len(sample), case_workers=1)
+
+    with pytest.raises(KeyboardInterrupt, match="test interruption"):
+        run_evaluation(
+            sample_df=sample,
+            workflow=InterruptingWorkflow(),
+            config=config,
+            run_id="interrupted-timestamps",
+            artifact_base_dir=tmp_path / "runs",
+        )
+
+    run_dir = next((tmp_path / "runs").glob("*_interrupted-timestamps"))
+    interrupted_manifest = json.loads(
+        (run_dir / "manifest.json").read_text(encoding="utf-8")
+    )
+    assert interrupted_manifest["status"] == "interrupted"
+    assert interrupted_manifest["execution_attempts"][0]["end_date"] is not None
+
+    resumed = run_evaluation(
+        sample_df=sample,
+        workflow=CountingWorkflow(),
+        config=config,
+        resume_run_dir=run_dir,
+    )
+
+    assert resumed.status == "completed"
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert [attempt["attempt_number"] for attempt in manifest["execution_attempts"]] == [
+        1,
+        2,
+    ]
+    timestamps = [
+        datetime.fromisoformat(attempt[key])
+        for attempt in manifest["execution_attempts"]
+        for key in ("start_date", "end_date")
+    ]
+    assert len(timestamps) == 4
+    assert timestamps == sorted(timestamps)
 
 
 def test_snapshot_results_exports_completed_sqlite_rows_without_mutating_run(

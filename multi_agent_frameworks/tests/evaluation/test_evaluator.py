@@ -209,6 +209,10 @@ def test_generic_evaluator_calculates_only_final_judge_metrics(tmp_path):
     assert result.metrics["classification"]["confusion_matrix"]["Indicator"]["Indicator"] == 1
     assert result.metrics["classification"]["confusion_matrix"]["Unsupportive"]["Unsupportive"] == 1
     assert result.metrics["suicidal_intent"]["accuracy"] == 1.0
+    assert result.metrics["positive_subclassification"]["support"] == 1
+    assert result.metrics["positive_subclassification"]["accuracy"] == 1.0
+    assert result.metrics["positive_subclassification"]["precision"] == 0.25
+    assert result.metrics["positive_subclassification"]["f1_score"] == 0.25
     assert result.metrics["runtime"]["call_count"] == 3
     assert result.metrics["runtime"]["tokens"]["total"] == 15
     assert "agent_metrics" not in result.metrics
@@ -402,6 +406,7 @@ def test_evaluator_writes_complete_artifacts_for_fake_model(tmp_path):
     assert (run_dir / "compiled_results.md").exists()
     assert not (run_dir / "agent_metrics.csv").exists()
     assert (run_dir / "suicidal_intent_metrics.csv").exists()
+    assert (run_dir / "positive_subclassification_metrics.csv").exists()
     assert (run_dir / "results.json").exists()
     assert (run_dir / "misclassified_ids.txt").read_text(encoding="utf-8") == "11\n12\n13\n"
     assert (run_dir / "suicidal_intent_misclassified_ids.txt").read_text(encoding="utf-8") == ""
@@ -422,6 +427,8 @@ def test_evaluator_writes_complete_artifacts_for_fake_model(tmp_path):
     assert all(result.metrics["artifact_status"].values())
     assert result.metrics["suicidal_intent"]["accuracy"] == 1.0
     assert result.metrics["suicidal_intent"]["has_both_ground_truth_classes"] is False
+    assert result.metrics["positive_subclassification"]["support"] == 4
+    assert result.metrics["positive_subclassification"]["accuracy"] == 0.25
     assert "agent_metrics" not in result.metrics
     assert "specialist_metrics" not in result.metrics
     assert set(result.metrics["classification"]) == {

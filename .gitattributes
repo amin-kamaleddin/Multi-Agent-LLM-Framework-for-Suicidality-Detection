@@ -1,2 +1,2 @@
-multi_agent_framework1/dataset/positive-negative-final-datasets/*_100_seed42.csv whitespace=-trailing-space
-multi_agent_framework1/dataset/processed/*.csv whitespace=-trailing-space
+multi_agent_frameworks/dataset/positive-negative-final-datasets/*_100_seed42.csv text eol=lf whitespace=-trailing-space
+multi_agent_frameworks/dataset/processed/*.csv text eol=lf whitespace=-trailing-space

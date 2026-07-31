@@ -1,6 +1,9 @@
+import pytest
+
 from evaluation.metrics import (
     compute_binary_classification_metrics,
     compute_final_label_confusion_matrix,
+    compute_positive_subclassification_metrics,
     compute_suicidal_intent_metrics,
     summarize_runtime,
 )
@@ -166,3 +169,72 @@ def test_negative_only_dataset_cannot_have_suicidal_intent_true_positives():
     assert metrics["positive_class_counts"] == {"tp": 0, "tn": 1, "fp": 1, "fn": 0}
     assert metrics["binary_summary"]["positive_support"] == 0
     assert metrics["binary_summary"]["negative_support"] == 3
+
+
+def test_positive_subclassification_metrics_use_four_positive_labels_only():
+    metrics = compute_positive_subclassification_metrics(
+        ["Indicator", "Ideation", "Behavior", "Attempt", "Attempt", "Unsupportive"],
+        ["Indicator", "Behavior", "Behavior", "Attempt", "Error", "Indicator"],
+    )
+
+    assert metrics["labels"] == ["Indicator", "Ideation", "Behavior", "Attempt"]
+    assert set(metrics) == {
+        "accuracy", "precision", "recall", "f1_score", "support", "correct",
+        "averaging", "summary", "labels", "confusion_matrix", "per_label",
+        "ground_truth_counts", "has_all_ground_truth_labels", "metric_limitation",
+    }
+    assert metrics["support"] == 4
+    assert metrics["correct"] == 3
+    assert metrics["accuracy"] == 0.75
+    assert metrics["precision"] == 0.625
+    assert metrics["recall"] == 0.75
+    assert metrics["f1_score"] == pytest.approx(2 / 3)
+    assert metrics["averaging"] == "macro"
+    assert metrics["confusion_matrix"] == {
+        "Indicator": {"Indicator": 1, "Ideation": 0, "Behavior": 0, "Attempt": 0},
+        "Ideation": {"Indicator": 0, "Ideation": 0, "Behavior": 1, "Attempt": 0},
+        "Behavior": {"Indicator": 0, "Ideation": 0, "Behavior": 1, "Attempt": 0},
+        "Attempt": {"Indicator": 0, "Ideation": 0, "Behavior": 0, "Attempt": 1},
+    }
+    assert metrics["per_label"] == {
+        "Indicator": {
+            "tp": 1, "fp": 0, "fn": 0, "support": 1,
+            "precision": 1.0, "recall": 1.0, "f1_score": 1.0,
+        },
+        "Ideation": {
+            "tp": 0, "fp": 0, "fn": 1, "support": 1,
+            "precision": 0.0, "recall": 0.0, "f1_score": 0.0,
+        },
+        "Behavior": {
+            "tp": 1, "fp": 1, "fn": 0, "support": 1,
+            "precision": 0.5, "recall": 1.0,
+            "f1_score": pytest.approx(2 / 3),
+        },
+        "Attempt": {
+            "tp": 1, "fp": 0, "fn": 0, "support": 1,
+            "precision": 1.0, "recall": 1.0, "f1_score": 1.0,
+        },
+    }
+    assert metrics["ground_truth_counts"] == {
+        "Indicator": 1,
+        "Ideation": 1,
+        "Behavior": 1,
+        "Attempt": 1,
+    }
+    assert metrics["has_all_ground_truth_labels"] is True
+    assert metrics["metric_limitation"] is None
+
+
+def test_positive_subclassification_metrics_report_no_positive_ground_truth():
+    metrics = compute_positive_subclassification_metrics(
+        ["Unsupportive", "Unsupportive"],
+        ["Indicator", "Unsupportive"],
+    )
+
+    assert metrics["support"] == 0
+    assert metrics["accuracy"] == 0.0
+    assert metrics["precision"] == 0.0
+    assert metrics["recall"] == 0.0
+    assert metrics["f1_score"] == 0.0
+    assert metrics["has_all_ground_truth_labels"] is False
+    assert metrics["metric_limitation"]

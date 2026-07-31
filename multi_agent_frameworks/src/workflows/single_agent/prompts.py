@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-SINGLE_CLASS_SYSTEM_PROMPT = """Classify the post into exactly ONE class: Indicator, Ideation, Behavior, or Attempt.
+SINGLE_CLASS_SYSTEM_PROMPT = """Classify the post into exactly ONE class: Unsupportive, Indicator, Ideation, Behavior, or Attempt.
 
 Use these class definitions:
 

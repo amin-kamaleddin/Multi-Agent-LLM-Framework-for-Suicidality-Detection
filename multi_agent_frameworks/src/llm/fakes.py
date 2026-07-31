@@ -47,7 +47,10 @@ class DeterministicFakeModel:
         if "Final Evaluator / Safety Checker" in system:
             return json.dumps({"label_name": "Indicator", "confidence": 0.95, "escalation_flag": False, "reasoning": "Synthetic fake-model evaluator decision."})
         if "Judge Agent in a hierarchical" in system:
-            return json.dumps({"label_name": "Indicator", "confidence": 0.95, "competing_label": "Ideation", "competing_confidence": 0.05, "reasoning": "Synthetic fake-model judge decision."})
+            if '"competing_label"' in system:
+                return json.dumps({"label_name": "Indicator", "confidence": 0.95, "competing_label": "Ideation", "competing_confidence": 0.05, "reasoning": "Synthetic fake-model judge decision."})
+            if '"escalation_flag"' in system:
+                return json.dumps({"label_name": "Indicator", "confidence": 0.95, "escalation_flag": False, "reasoning": "Synthetic fake-model evaluator decision."})
         if "Secondary Review Agent" in system:
             return json.dumps({"label_name": "Indicator", "confidence": 0.95, "escalation_flag": False, "reasoning": "Synthetic fake-model review decision."})
         if "final judge" in system.lower():

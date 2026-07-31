@@ -36,13 +36,13 @@ The frozen 500-row evaluation sample contains only the original four labels. Und
 | Five final labels | Satisfied | `domain/labels.py::FINAL_LABELS`; framework 1 assigns one specialist to each label. |
 | Temperature 0 and per-run configuration | Satisfied | CLI default and `EvaluationConfig.temperature`; persisted in `run_config.json`. |
 | Per-agent model configuration | Satisfied | The shared CLI loads per-workflow JSON; framework_1_parallel_no_evidence builds matching role-keyed model objects from its optional `agents` object. The Python API also accepts arbitrary role-keyed metadata in `EvaluationConfig.agent_configuration`. |
-| Markdown metric summary | Satisfied | Includes grouped `suicidal_intent` metrics plus runtime and guardrail telemetry. |
+| Markdown metric summary | Satisfied | Includes grouped `suicidal_intent`, positive-label subclassification, runtime, and guardrail telemetry. |
 | Text files with wrong-evaluation IDs | Satisfied | `misclassified_ids.txt` and `suicidal_intent_misclassified_ids.txt`. |
 | JSON with complete results and metrics | Satisfied | `results.json`; written by `evaluation/evaluator.py::_complete_results_payload`. |
 | Cost/precision/etc. visualizations | Satisfied | `suicidal_intent_metrics.svg` and `runtime_metrics.svg`; written by `ArtifactWriter.write_visualizations`. |
-| Accuracy, F1, precision/recall | Satisfied | Only positive-oriented `suicidal_intent` metrics are emitted. |
+| Accuracy, F1, precision/recall | Satisfied | Positive-oriented `suicidal_intent` metrics and aggregate four-phase subclassification metrics are emitted. |
 | Final-label aggregate or per-class scores | Not emitted by design | The evaluator retains the five-label confusion matrix without calculating final-label accuracy, precision, recall, or F1. |
-| Confusion matrix | Satisfied | Final-label and binary matrices in `metrics.json` and compiled reports. |
+| Confusion matrix | Satisfied | Final-label, positive-label subclassification, and binary matrices in `metrics.json` and compiled reports. |
 | Failed records/failure rate | Satisfied | `classification.failed_records` and `classification.failure_rate`. |
 | LLM calls and latency | Satisfied | `runtime.call_count`, `llm_request_count`, and `latency_s`. |
 | Token totals | Satisfied | `runtime.tokens.prompt_total`, `completion_total`, and `total`. |
@@ -277,6 +277,28 @@ The calculations are implemented without an external metrics package in `evaluat
 
 There is no final-label accuracy, precision, recall, F1, `model_summary`, `model_metrics.csv`, or `label_metrics.csv`. Exact-label correctness remains available per record in `predictions.csv`, and the five-label matrix remains available for inspection.
 
+### Positive-label subclassification metrics
+
+`metrics.json::positive_subclassification` contains only records whose ground-truth and predicted labels are both `Indicator`, `Ideation`, `Behavior`, or `Attempt`. Its population is exactly the records represented by the 4x4 positive-label matrix.
+
+The payload contains aggregate metrics plus auditable one-vs-rest counts for each positive label:
+
+- `support`: the sum of every cell in the 4x4 matrix;
+- `correct`: included records on the diagonal of the 4x4 matrix;
+- `accuracy = correct / support`;
+- macro precision, macro recall, and macro F1, calculated independently for the four positive labels and then averaged equally;
+- a 4x4 confusion matrix containing positive-phase-to-positive-phase predictions;
+- per-label TP, FP, FN, support, precision, recall, and F1 values;
+- a limitation message when one or more positive phases are absent from the included records.
+
+For a label `L`, the one-vs-rest counts within the included 4x4 population are:
+
+- `TP(L)`: actual `L`, predicted `L`;
+- `FP(L)`: another positive phase predicted as `L`;
+- `FN(L)`: actual `L` predicted as another positive phase;
+
+The formulas are `precision(L) = TP(L) / (TP(L) + FP(L))`, `recall(L) = TP(L) / (TP(L) + FN(L))`, and `F1(L) = 2 * precision(L) * recall(L) / (precision(L) + recall(L))`. Each macro metric is the arithmetic mean of its four per-label values. The 4x4 matrix fully defines this positive-label-only metric population. Per-label TN and accuracy are intentionally omitted because they can be dominated by the other three positive phases; aggregate accuracy remains the exact four-label classification accuracy.
+
 ### `suicidal_intent` metrics
 
 The evaluator keeps two different views of the final judge result:
@@ -370,6 +392,8 @@ The progress table is keyed only by `sample_id`; it intentionally has no
 - the ID column and record count;
 - concurrency and checkpoint settings;
 - pending, running, and completed counts;
+- an append-only `execution_attempts` history with UTC ISO-8601 `start_date`
+  and `end_date` timestamps for every initial or resumed evaluator invocation;
 - final exact-ID coverage and terminal status.
 
 On resume, abandoned `running` rows become `pending`; completed rows remain
@@ -377,6 +401,15 @@ untouched, and only pending IDs are scheduled. The dataset and behavior-affectin
 workflow fingerprints must match. Each case transaction is the crash-safe
 checkpoint; `checkpoint_every` controls only how often the readable manifest
 progress snapshot is refreshed.
+
+An execution attempt is one call to the evaluator, not an individual LLM retry.
+The initial run is attempt 1 and each resume appends the next numbered entry.
+`start_date` is persisted before cases are scheduled; `end_date` is filled when
+that invocation completes, stops early, or exits through a handled interruption.
+For example, one stopped run followed by one resume has two entries and four
+timestamps. If the process is terminated in a way that prevents Python cleanup
+(for example, a forced process kill or power loss), that attempt's `end_date`
+remains `null` because no exact end timestamp is available.
 
 `evaluation/evaluator.py::_stop_reason_from_summary` stops runs when any configured threshold is reached:
 
@@ -400,18 +433,19 @@ Thresholds and the stop reason are persisted in `run_config.json`, `metrics.json
 | Artifact | Created by | Contents |
 |---|---|---|
 | `run_config.json` | `run_evaluation` | Run and arbitrary role-keyed agent configuration; the built-in wrappers record their resolved five- or six-role configuration. |
-| `manifest.json` | `run_evaluation` / `progress.py` | Dataset and workflow fingerprints, execution settings, progress, coverage, resume count, and terminal status. |
+| `manifest.json` | `run_evaluation` / `progress.py` | Dataset and workflow fingerprints, execution settings, per-invocation start/end timestamp history, progress, coverage, resume count, and terminal status. |
 | `progress.sqlite` | `ProgressStore` | Transactional per-ID pending/running/completed state and completed result payloads; no input-position field. |
 | `dataset_audit.json` | `run_evaluation` | Source audit or explicit audit-unavailable marker. |
 | `sampled_dataset.csv` | `run_evaluation` | Exact evaluated inputs and ground truth. |
 | `first_completion_input_prompts.json` | `run_evaluation` | Application-level system and user messages for every agent invoked by the first completed case. Retry-identical inputs are included once, the file is not overwritten on resume, and prompt messages are not duplicated in per-row artifacts. |
 | `predictions.csv` | `_write_evaluation_artifacts` | Source fields, shared outputs, correctness, errors, and optional workflow data. |
 | `results.json` | `_complete_results_payload` | Complete nested per-record results plus all metrics. |
-| `metrics.json` | `_write_evaluation_artifacts` | Five-label confusion audit, grouped-binary metrics, agent execution duration, and runtime metrics. |
+| `metrics.json` | `_write_evaluation_artifacts` | Five-label confusion audit, positive-label subclassification, grouped-binary metrics, agent execution duration, and runtime metrics. |
 | `suicidal_intent_metrics.csv` | `_write_evaluation_artifacts` | One positive-oriented binary summary; negative rows are never reinterpreted as TP/FN. |
-| `metrics.md` | `ArtifactWriter.write_metrics_md` | Grouped-binary metrics plus runtime and guardrail summary. |
-| `compiled_results.csv` | `compile_run_results` | Long-form machine-readable report. |
-| `compiled_results.md` | `compile_run_results` | Review-oriented complete Markdown report. |
+| `positive_subclassification_metrics.csv` | `_write_evaluation_artifacts` | Aggregate accuracy and macro precision, recall, and F1 across the four positive labels. |
+| `metrics.md` | `ArtifactWriter.write_metrics_md` | Positive-label subclassification, grouped-binary metrics, runtime, and guardrail summary. |
+| `compiled_results.csv` | `compile_run_results` | Long-form machine-readable report, including one execution-attempt row per initial or resumed invocation. |
+| `compiled_results.md` | `compile_run_results` | Review-oriented complete Markdown report with an execution-attempt start/end timestamp table. |
 | `misclassified_ids.txt` | `_write_evaluation_artifacts` | IDs whose final label is wrong. |
 | `suicidal_intent_misclassified_ids.txt` | `_write_evaluation_artifacts` | IDs whose boolean output is wrong. |
 | `suicidal_intent_metrics.svg` | `ArtifactWriter.write_visualizations` | Grouped-binary accuracy, precision, recall, and F1 bars. |

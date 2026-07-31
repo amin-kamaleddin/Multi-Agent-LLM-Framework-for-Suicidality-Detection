@@ -1,6 +1,7 @@
 # Local environment and secrets
 .env
 .venv/
+.tmp/
 
 # Python caches
 __pycache__/

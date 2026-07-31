@@ -33,7 +33,7 @@ src/cli.py
   -> run artifacts
 ```
 
-The workflow owns model orchestration, intermediate schemas, prompts, and traces. The shared evaluator owns dataset iteration, the five-label confusion matrix, grouped `suicidal_intent` metrics, runtime telemetry, guardrails, and artifacts.
+The workflow owns model orchestration, intermediate schemas, prompts, and traces. The shared evaluator owns dataset iteration, the five-label confusion matrix, grouped `suicidal_intent` metrics, positive-label subclassification metrics, runtime telemetry, guardrails, and artifacts.
 
 ## Directory structure
 
@@ -90,7 +90,7 @@ Domain modules describe architecture-independent data. They must not import a pa
 |---|---|
 | `evaluator.py` | Architecture-neutral concurrent case scheduler, result aggregation, coverage validation, and reporting handoff. |
 | `progress.py` | SQLite progress store, manifest fingerprints, atomic checkpoints, and exact ID coverage checks. |
-| `metrics.py` | Five-label confusion audit and the only predictive score set: grouped `suicidal_intent` metrics. |
+| `metrics.py` | Five-label confusion audit, grouped `suicidal_intent` metrics, and aggregate subclassification metrics for the four positive labels. |
 | `artifacts.py` | Writes JSON, CSV, Markdown, JSONL, text, and SVG run artifacts. |
 | `reporting.py` | Compiles one run directory into review-oriented CSV and Markdown reports. |
 | `EVALUATION_CONTRACT.md` | Complete input, output, metric, guardrail, and artifact contract. |

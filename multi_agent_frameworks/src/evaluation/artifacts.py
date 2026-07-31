@@ -22,6 +22,7 @@ RUN_ARTIFACTS = (
     "traces.jsonl",
     "predictions.csv",
     "suicidal_intent_metrics.csv",
+    "positive_subclassification_metrics.csv",
     "metrics.json",
     "results.json",
     "metrics.md",
@@ -95,6 +96,7 @@ class ArtifactWriter:
     def write_metrics_md(self, metrics: dict[str, Any]) -> Path:
         path = self.run_dir / "metrics.md"
         suicidal_intent = metrics.get("suicidal_intent")
+        positive_subclassification = metrics.get("positive_subclassification")
         lines = [
             "# Run Metrics",
             "",
@@ -155,6 +157,49 @@ class ArtifactWriter:
             limitation = suicidal_intent.get("metric_limitation")
             if limitation:
                 lines.extend(["", f"> Limitation: {limitation}"])
+        if positive_subclassification:
+            summary = positive_subclassification["summary"]
+            lines.extend(
+                [
+                    "",
+                    "## Positive-Label Subclassification Metrics",
+                    "",
+                    "- Scope: records whose ground-truth and predicted labels are both Indicator, Ideation, Behavior, or Attempt.",
+                    "- Precision, recall, and F1 are macro averages across the four positive labels.",
+                    "- Correct: included records on the diagonal of the 4x4 matrix.",
+                    "- Support: all records represented in the 4x4 matrix.",
+                    "",
+                    "Formulas for each label L:",
+                    "- TP(L) = actual L and predicted L.",
+                    "- FP(L) = actual another positive label and predicted L.",
+                    "- FN(L) = actual L and predicted another positive label.",
+                    "- Precision(L) = TP(L) / (TP(L) + FP(L)).",
+                    "- Recall(L) = TP(L) / (TP(L) + FN(L)).",
+                    "- F1(L) = 2 * Precision(L) * Recall(L) / (Precision(L) + Recall(L)).",
+                    "- Overall accuracy = correct / support.",
+                    "- Macro metric = sum of the four per-label metric values / 4.",
+                    "",
+                    "| Accuracy | F1 Score | Precision | Recall | Support | Correct | Averaging |",
+                    "|---:|---:|---:|---:|---:|---:|---|",
+                    "| {accuracy:.6f} | {f1_score:.6f} | {precision:.6f} | {recall:.6f} | "
+                    "{support} | {correct} | {averaging} |".format(**summary),
+                    "",
+                    "### Positive-Label 4x4 Confusion Matrix",
+                    "",
+                    _confusion_matrix_markdown(
+                        positive_subclassification["confusion_matrix"]
+                    ),
+                    "",
+                    "### Per-Label Calculations",
+                    "",
+                    _positive_per_label_markdown(
+                        positive_subclassification["per_label"]
+                    ),
+                ]
+            )
+            limitation = positive_subclassification.get("metric_limitation")
+            if limitation:
+                lines.extend(["", f"> Limitation: {limitation}"])
         path.write_text("\n".join(lines) + "\n", encoding="utf-8")
         return path
 
@@ -174,6 +219,41 @@ def _runtime_stat(metrics: dict[str, Any], metric_name: str, field: str) -> str:
     if isinstance(value, float):
         return f"{value:.6f}"
     return str(value)
+
+
+def _confusion_matrix_markdown(matrix: dict[str, dict[str, int]]) -> str:
+    predicted_labels = list(next(iter(matrix.values())).keys())
+    lines = [
+        "| Actual \\ Predicted | " + " | ".join(predicted_labels) + " |",
+        "|" + "|".join(["---"] * (len(predicted_labels) + 1)) + "|",
+    ]
+    for actual, counts in matrix.items():
+        lines.append(
+            "| "
+            + actual
+            + " | "
+            + " | ".join(str(counts[label]) for label in predicted_labels)
+            + " |"
+        )
+    return "\n".join(lines)
+
+
+def _positive_per_label_markdown(
+    per_label: dict[str, dict[str, float | int]],
+) -> str:
+    lines = [
+        "| Label | TP | FP | FN | Support | Precision | Recall | F1 Score |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for label, values in per_label.items():
+        lines.append(
+            "| {label} | {tp} | {fp} | {fn} | {support} | "
+            "{precision:.6f} | {recall:.6f} | {f1_score:.6f} |".format(
+                label=label,
+                **values,
+            )
+        )
+    return "\n".join(lines)
 
 
 def _suicidal_intent_metrics_svg(metrics: dict[str, Any]) -> str:

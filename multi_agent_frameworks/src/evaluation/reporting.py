@@ -15,12 +15,15 @@ def compile_run_results(run_dir: str | Path) -> dict[str, str]:
     path = Path(run_dir)
     metrics = _read_json(path / "metrics.json")
     trace_summary = _read_json(path / "trace_summary.json")
+    manifest_path = path / "manifest.json"
+    manifest = _read_json(manifest_path) if manifest_path.is_file() else {}
     predictions = pd.read_csv(path / "predictions.csv", encoding="utf-8-sig")
     llm_calls = _read_jsonl(path / "llm_calls.jsonl")
 
     compiled_rows = _compiled_rows(
         metrics=metrics,
         trace_summary=trace_summary,
+        manifest=manifest,
         predictions=predictions,
         llm_calls=llm_calls,
     )
@@ -33,6 +36,7 @@ def compile_run_results(run_dir: str | Path) -> dict[str, str]:
             run_dir=path,
             metrics=metrics,
             trace_summary=trace_summary,
+            manifest=manifest,
             predictions=predictions,
             llm_calls=llm_calls,
         ),
@@ -62,6 +66,7 @@ def _compiled_rows(
     *,
     metrics: dict[str, Any],
     trace_summary: dict[str, Any],
+    manifest: dict[str, Any],
     predictions: pd.DataFrame,
     llm_calls: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -69,11 +74,48 @@ def _compiled_rows(
     runtime = metrics["runtime"]
     classification = metrics["classification"]
     suicidal_intent = metrics.get("suicidal_intent") or {}
+    positive_subclassification = metrics.get("positive_subclassification") or {}
     provider_timing = runtime.get("provider_timing", {})
+
+    for attempt in manifest.get("execution_attempts") or []:
+        rows.append(
+            {
+                "section": "execution_attempts",
+                "attempt_number": attempt.get("attempt_number"),
+                "start_date": attempt.get("start_date"),
+                "end_date": attempt.get("end_date"),
+            }
+        )
 
     binary_summary = suicidal_intent.get("binary_summary")
     if binary_summary:
         rows.append({"section": "suicidal_intent_metrics", **binary_summary})
+
+    positive_summary = positive_subclassification.get("summary")
+    if positive_summary:
+        rows.append({"section": "positive_subclassification_metrics", **positive_summary})
+
+    for actual, predicted_counts in positive_subclassification.get(
+        "confusion_matrix", {}
+    ).items():
+        for predicted, count in predicted_counts.items():
+            rows.append(
+                {
+                    "section": "positive_subclassification_confusion_matrix",
+                    "actual_label": actual,
+                    "predicted_label": predicted,
+                    "count": count,
+                }
+            )
+
+    for label, values in positive_subclassification.get("per_label", {}).items():
+        rows.append(
+            {
+                "section": "positive_subclassification_per_label",
+                "label": label,
+                **values,
+            }
+        )
 
     for actual, predicted_counts in suicidal_intent.get("confusion_matrix", {}).items():
         for predicted, count in predicted_counts.items():
@@ -186,6 +228,7 @@ def _compiled_markdown(
     run_dir: Path,
     metrics: dict[str, Any],
     trace_summary: dict[str, Any],
+    manifest: dict[str, Any],
     predictions: pd.DataFrame,
     llm_calls: list[dict[str, Any]],
 ) -> str:
@@ -194,6 +237,7 @@ def _compiled_markdown(
     suicidal_intent = metrics.get("suicidal_intent") or {}
     suicidal_intent_mapping = suicidal_intent.get("class_mapping", {})
     suicidal_intent_counts = suicidal_intent.get("positive_class_counts", {})
+    positive_subclassification = metrics.get("positive_subclassification") or {}
     provider_timing = runtime.get("provider_timing", {})
     failed_calls = [call for call in llm_calls if call.get("error")]
     error_summary = Counter(call["error"].get("error_type", "Unknown") for call in failed_calls)
@@ -223,9 +267,59 @@ def _compiled_markdown(
         f"| Failed LLM attempts | {runtime['failed_llm_attempts']} |",
         f"| JSON/schema parsing errors | {runtime.get('json_parsing_errors', 0)} |",
         "",
+        "## Execution Attempts",
+        "",
+        _execution_attempts_table(manifest.get("execution_attempts") or []),
+        "",
         "## Final-Label Confusion Matrix",
         "",
         _confusion_matrix_table(classification["confusion_matrix"]),
+        "",
+        "## Positive-Label Subclassification Metrics",
+        "",
+        "- Scope: records whose ground-truth and predicted labels are both Indicator, Ideation, Behavior, or Attempt.",
+        "- Precision, recall, and F1 are macro averages across the four positive labels.",
+        "- Correct: included records on the diagonal of the 4x4 matrix.",
+        "- Support: all records represented in the 4x4 matrix.",
+        "",
+        "Formulas for each label `L`:",
+        "- `TP(L) = actual L and predicted L`.",
+        "- `FP(L) = actual another positive label and predicted L`.",
+        "- `FN(L) = actual L and predicted another positive label`.",
+        "- `Precision(L) = TP(L) / (TP(L) + FP(L))`.",
+        "- `Recall(L) = TP(L) / (TP(L) + FN(L))`.",
+        "- `F1(L) = 2 * Precision(L) * Recall(L) / (Precision(L) + Recall(L))`.",
+        "- `Overall accuracy = correct / support`.",
+        "- `Macro metric = sum of the four per-label metric values / 4`.",
+        "",
+        _markdown_table(
+            pd.DataFrame([positive_subclassification["summary"]]),
+            [
+                "accuracy", "f1_score", "precision", "recall", "support", "correct", "averaging",
+            ],
+            {"f1_score": "F1 Score"},
+        ) if positive_subclassification.get("summary") else "Not available for this legacy run.",
+        "",
+        "### Positive-Label 4x4 Confusion Matrix",
+        "",
+        _confusion_matrix_table(positive_subclassification["confusion_matrix"])
+        if positive_subclassification.get("confusion_matrix")
+        else "Not available for this legacy run.",
+        "",
+        "### Per-Label Calculations",
+        "",
+        _markdown_table(
+            pd.DataFrame(
+                [
+                    {"label": label, **values}
+                    for label, values in positive_subclassification.get("per_label", {}).items()
+                ]
+            ),
+            ["label", "tp", "fp", "fn", "support", "precision", "recall", "f1_score"],
+            {"f1_score": "F1 Score", "tp": "TP", "fp": "FP", "fn": "FN"},
+        )
+        if positive_subclassification.get("per_label")
+        else "Not available for this legacy run.",
         "",
         "## Suicidal-Intent Positive-Class Grouping Metrics",
         "",
@@ -313,6 +407,17 @@ def _compiled_markdown(
     if limitation:
         lines.extend(["", "## Suicidal-Intent Grouping Metric Limitation", "", f"> {limitation}"])
 
+    positive_limitation = positive_subclassification.get("metric_limitation")
+    if positive_limitation:
+        lines.extend(
+            [
+                "",
+                "## Positive-Label Subclassification Metric Limitation",
+                "",
+                f"> {positive_limitation}",
+            ]
+        )
+
     if failed_calls:
         lines.extend(
             [
@@ -348,6 +453,7 @@ def _compiled_markdown(
             "|---|---|",
             "| `predictions.csv` | Per-record source fields, shared outputs, correctness, errors, and optional workflow-supplied agent outputs. |",
             "| `suicidal_intent_metrics.csv` | One positive-oriented binary summary with TP, FP, TN, and FN. |",
+            "| `positive_subclassification_metrics.csv` | Aggregate accuracy and macro precision, recall, and F1 across the four positive labels. |",
             "| `metrics.json` | Complete metrics payload. |",
             "| `results.json` | Complete per-record outputs and metrics payload. |",
             "| `misclassified_ids.txt` | IDs with an incorrect final-label evaluation. |",
@@ -386,6 +492,21 @@ def _count_table(counts: pd.Series, label_name: str) -> str:
     lines = [f"| {label_name} | Count |", "|---|---:|"]
     for label, count in counts.items():
         lines.append(f"| {label} | {int(count)} |")
+    return "\n".join(lines)
+
+
+def _execution_attempts_table(attempts: list[dict[str, Any]]) -> str:
+    if not attempts:
+        return "Not available for this legacy or snapshot report."
+    lines = [
+        "| Attempt | Start Date (UTC) | End Date (UTC) |",
+        "|---:|---|---|",
+    ]
+    for attempt in attempts:
+        lines.append(
+            f"| {attempt.get('attempt_number')} | "
+            f"{attempt.get('start_date')} | {attempt.get('end_date')} |"
+        )
     return "\n".join(lines)
 
 
