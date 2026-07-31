@@ -1,8 +1,9 @@
 """Prompts for hierarchical suicide-risk classification workflow."""
 
 from __future__ import annotations
-
 from domain.labels import FINAL_LABELS, LABEL_DEFINITIONS, VALID_LABELS
+import json
+from typing import Any
 
 
 def _label_definitions_text() -> str:
@@ -111,26 +112,60 @@ Rules:
 """.strip()
 
 
+# EVALUATOR_SYSTEM_PROMPT = f"""
+# You are the Final Evaluator / Safety Checker.
+
+# Goal:
+# Review the hierarchical path and final proposed label for consistency.
+
+# Valid final labels:
+# {", ".join(FINAL_LABELS)}
+
+# Return only valid JSON:
+# {{
+#   "label_name": "<one valid final label>",
+#   "confidence": 0.0,
+#   "escalation_flag": true | false,
+#   "reasoning": "brief explanation"
+# }}
+
+# Rules:
+# - Preserve the proposed label unless the path is clearly inconsistent.
+# - Set escalation_flag=true if confidence is low, evidence is ambiguous, or the case appears safety-critical.
+# - Do not include markdown.
+# - Do not include extra keys.
+# """.strip()
+
+
 EVALUATOR_SYSTEM_PROMPT = f"""
-You are the Final Evaluator / Safety Checker.
+You are the Judge Agent in a hierarchical suicide-risk classification system.
 
 Goal:
-Review the hierarchical path and final proposed label for consistency.
+Review the original text, the hierarchical decision path, and the proposed
+label. Produce the best final label.
 
 Valid final labels:
 {", ".join(FINAL_LABELS)}
 
 Return only valid JSON:
 {{
-  "label_name": "<one valid final label>",
-  "confidence": 0.0,
-  "escalation_flag": true | false,
-  "reasoning": "brief explanation"
+  "label_name": "...",
+  "confidence": 0.91,
+  "escalation_flag": false,
+  "reasoning": "..."
 }}
 
 Rules:
-- Preserve the proposed label unless the path is clearly inconsistent.
-- Set escalation_flag=true if confidence is low, evidence is ambiguous, or the case appears safety-critical.
+- confidence must be between 0.0 and 1.0.
+- Preserve the proposed label unless the text or path clearly supports
+  another valid label.
+- Distinguish UNSUPPORTIVE from INDICATOR carefully:
+  UNSUPPORTIVE is not meaningfully suicide-related, while INDICATOR remains
+  suicide-related but does not describe the author's own suicide risk.
+- Pay special attention to these clinically adjacent boundaries:
+  Indicator vs Ideation, and Behavior vs Attempt.
+- Confidence values are decision-support signals, not calibrated clinical
+  probabilities.
 - Do not include markdown.
 - Do not include extra keys.
 """.strip()
@@ -140,14 +175,27 @@ def user_prompt(text: str) -> str:
     return f"Text to classify:\n\n{text}"
 
 
+# def evaluator_user_prompt(
+#     *,
+#     text: str,
+#     proposed_label: str,
+#     path: list[dict],
+# ) -> str:
+#     return (
+#         f"Original text:\n{text}\n\n"
+#         f"Proposed final label: {proposed_label}\n\n"
+#         f"Hierarchical path:\n{path}"
+#     )
+
 def evaluator_user_prompt(
     *,
     text: str,
     proposed_label: str,
-    path: list[dict],
+    path: list[dict[str, Any]],
 ) -> str:
     return (
         f"Original text:\n{text}\n\n"
-        f"Proposed final label: {proposed_label}\n\n"
-        f"Hierarchical path:\n{path}"
+        f"Proposed label from the hierarchy: {proposed_label}\n\n"
+        "Hierarchical path:\n"
+        f"{json.dumps(path, ensure_ascii=False, indent=2)}"
     )
