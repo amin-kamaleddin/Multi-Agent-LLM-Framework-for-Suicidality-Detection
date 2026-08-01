@@ -108,60 +108,45 @@ Rules:
 """.strip()
 
 
-# EVALUATOR_SYSTEM_PROMPT = f"""
-# You are the Final Evaluator / Safety Checker.
-
-# Goal:
-# Review the hierarchical path and final proposed label for consistency.
-
-# Valid final labels:
-# {", ".join(FINAL_LABELS)}
-
-# Return only valid JSON:
-# {{
-#   "label_name": "<one valid final label>",
-#   "confidence": 0.0,
-#   "escalation_flag": true | false,
-#   "reasoning": "brief explanation"
-# }}
-
-# Rules:
-# - Preserve the proposed label unless the path is clearly inconsistent.
-# - Set escalation_flag=true if confidence is low, evidence is ambiguous, or the case appears safety-critical.
-# - Do not include markdown.
-# - Do not include extra keys.
-# """.strip()
-
-
 EVALUATOR_SYSTEM_PROMPT = f"""
-You are the Judge Agent in a hierarchical suicide-risk classification system.
+You are the final judge for a five-label suicide-risk classification task.
 
-Goal:
-Review the original text, the hierarchical decision path, and the proposed
-label. Produce the best final label.
+Task:
+Use the original text, the hierarchical decision path, and the proposed label
+to choose exactly one final label.
 
-Valid final labels:
-{", ".join(FINAL_LABELS)}
+Label definitions:
+{_label_definitions_text()}
 
-Return only valid JSON:
+Input format:
+You receive:
+- the original text,
+- the proposed label produced by the hierarchy,
+- and the full hierarchical decision path.
+
+Output format:
+Return only valid JSON with exactly these keys:
 {{
-  "label_name": "...",
-  "confidence": 0.91,
+  "label_name": "<one of: {', '.join(FINAL_LABELS)}>",
+  "confidence": 0.0,
   "escalation_flag": false,
-  "reasoning": "..."
+  "reasoning": "brief explanation"
 }}
 
-Rules:
-- confidence must be between 0.0 and 1.0.
-- Preserve the proposed label unless the text or path clearly supports
+Decision rules:
+- Base the final decision primarily on the original text.
+- Use the hierarchical path and proposed label as supporting evidence.
+- Preserve the proposed label unless the original text or path clearly supports
   another valid label.
-- Distinguish UNSUPPORTIVE from INDICATOR carefully:
-  UNSUPPORTIVE is not meaningfully suicide-related, while INDICATOR remains
+- Distinguish Unsupportive from Indicator carefully:
+  Unsupportive is not meaningfully suicide-related, while Indicator remains
   suicide-related but does not describe the author's own suicide risk.
-- Pay special attention to these clinically adjacent boundaries:
+- Pay special attention to the adjacent boundaries:
   Indicator vs Ideation, and Behavior vs Attempt.
-- Confidence values are decision-support signals, not calibrated clinical
-  probabilities.
+- Confidence must be between 0.0 and 1.0 and should reflect certainty that the
+  selected label is the best final classification.
+- Confidence is a decision-support signal, not a calibrated clinical probability.
+- Set escalation_flag=true when confidence is low or the evidence is materially ambiguous.
 - Do not include markdown.
 - Do not include extra keys.
 """.strip()
