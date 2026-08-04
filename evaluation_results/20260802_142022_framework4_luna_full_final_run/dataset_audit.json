@@ -1,0 +1,4 @@
+{
+  "evaluation_sample_path": "dataset/suicidality_full_dataset_posneg_balanced.csv",
+  "audit_available": false
+}

@@ -139,3 +139,4 @@ src/example/suicide_detection/ground_truth/config.json
 
 # dir start with underdash
 _*/
+evaluation_results/**/progress.sqlite
