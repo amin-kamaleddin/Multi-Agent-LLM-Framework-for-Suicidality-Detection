@@ -1,0 +1,56 @@
+{
+  "model_name": "openai/gpt-5.6-luna",
+  "requested_model_name": "gpt-5.6-luna",
+  "sample_path": "dataset/suicidality_full_dataset_posneg_balanced.csv",
+  "dataset_audit_path": null,
+  "max_retries": 3,
+  "max_completion_tokens": 5000,
+  "temperature": 0.0,
+  "total_records": 28792,
+  "limit": null,
+  "mode": "evidence",
+  "service_tier": "standard",
+  "workflow_name": "framework_2_parallel_with_evidence",
+  "workflow_config": {},
+  "agent_configuration": {
+    "Indicator_collector": {
+      "agent_name": "Indicator Evidence Collector",
+      "model_name": "openai/gpt-5.6-luna",
+      "temperature": 0.0
+    },
+    "Ideation_collector": {
+      "agent_name": "Ideation Evidence Collector",
+      "model_name": "openai/gpt-5.6-luna",
+      "temperature": 0.0
+    },
+    "Behavior_collector": {
+      "agent_name": "Behavior Evidence Collector",
+      "model_name": "openai/gpt-5.6-luna",
+      "temperature": 0.0
+    },
+    "Attempt_collector": {
+      "agent_name": "Attempt Evidence Collector",
+      "model_name": "openai/gpt-5.6-luna",
+      "temperature": 0.0
+    },
+    "Unsupportive_collector": {
+      "agent_name": "Unsupportive Evidence Collector",
+      "model_name": "openai/gpt-5.6-luna",
+      "temperature": 0.0
+    },
+    "judge": {
+      "agent_name": "Final Judge",
+      "model_name": "openai/gpt-5.6-luna",
+      "temperature": 0.0
+    }
+  },
+  "error_stop_failed_llm_attempts": 500,
+  "error_stop_failed_records": 100,
+  "error_stop_rate": 0.2,
+  "error_stop_min_records": 200,
+  "case_workers": 30,
+  "max_in_flight_llm": 100,
+  "checkpoint_every": 250,
+  "stop_after_tokens": null,
+  "command": "evaluate"
+}

@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "workflow_name": "framework_2_parallel_with_evidence",
+  "sample_id": "0",
+  "final_output": {
+    "label_name": "Ideation",
+    "suicidal_intent": true
+  },
+  "agents": [
+    {
+      "role": "Attempt_collector",
+      "model_name": "openai/gpt-5.6-luna",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are the Attempt Evidence Collector for a suicide-risk classification task.\n\nEvidence family: Attempt\n\nRelevant label description:\nThe post mentions a suicide attempt (current or past). A past attempt should still be labeled Attempt, even if the current post does not express ongoing suicidal thoughts.\n\nTask:\nCollect only explicit text evidence that could help a later judge distinguish this evidence family from the other labels. You do not classify the text, vote for a label, or make a final decision.\n\nEvidence types and how to interpret them:\n- attempt_report: An explicit current or historical suicide attempt.\n- suicidal_action: An action carried out with stated suicidal intent.\n- attempt_aftermath: Survival, rescue, hospitalization, or treatment after an attempt.\n\nInput format:\nYou will receive one user message:\n\nText to classify:\n<text>\n\nOutput format:\nReturn only valid JSON with exactly this shape:\n{\"evidence\":[{\"quote\":\"relevant excerpt or concise paraphrase\",\"type\":\"attempt_report | suicidal_action | attempt_aftermath\",\"subject\":\"author | other | general | unclear\",\"time\":\"past | current | future | unclear | na\",\"observation\":\"what the quote factually shows\"}]}\n\nRules:\n- Return zero to three evidence items. If none is supported, return {\"evidence\":[]}.\n- Each quote must be a relevant excerpt or concise paraphrase of at most 100 words; exact substring matching is not required.\n- Use only the three evidence types defined for this collector.\n- subject must be author, other, general, or unclear.\n- time must be past, current, future, unclear, or na.\n- observation must explain how to interpret the quote in at most 100 words.\n- Do not output answer, label_name, prediction, confidence, citations, review status, or extra keys.\n- Do not infer unstated facts or recommend a final label."
+        },
+        {
+          "role": "user",
+          "content": "Text to classify:\n\nNo one understands how much I desperately want a way out I seriously can’t stand this anymore. I can’t do this. I can’t stand living anymore, I truly want to be done with this all. I just want a way out. I want it all to stop. Please, I’m just so tired and want it to all be over"
+        }
+      ]
+    },
+    {
+      "role": "Behavior_collector",
+      "model_name": "openai/gpt-5.6-luna",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are the Behavior Evidence Collector for a suicide-risk classification task.\n\nEvidence family: Behavior\n\nRelevant label description:\nThe author describes preparatory or self-harm behavior beyond verbal thoughts. Includes planning/preparation actions (for example, gathering means, writing notes, preparing for death). Includes non-suicidal self-harm when self-inflicted harm is described, even without explicit intent to die.\n\nTask:\nCollect only explicit text evidence that could help a later judge distinguish this evidence family from the other labels. You do not classify the text, vote for a label, or make a final decision.\n\nEvidence types and how to interpret them:\n- suicide_plan: A concrete method, place, time, or planned suicidal act.\n- preparation: Acquiring means, writing a note, or preparing for death.\n- self_harm: Self-inflicted harm without an established fatal attempt.\n\nInput format:\nYou will receive one user message:\n\nText to classify:\n<text>\n\nOutput format:\nReturn only valid JSON with exactly this shape:\n{\"evidence\":[{\"quote\":\"relevant excerpt or concise paraphrase\",\"type\":\"suicide_plan | preparation | self_harm\",\"subject\":\"author | other | general | unclear\",\"time\":\"past | current | future | unclear | na\",\"observation\":\"what the quote factually shows\"}]}\n\nRules:\n- Return zero to three evidence items. If none is supported, return {\"evidence\":[]}.\n- Each quote must be a relevant excerpt or concise paraphrase of at most 100 words; exact substring matching is not required.\n- Use only the three evidence types defined for this collector.\n- subject must be author, other, general, or unclear.\n- time must be past, current, future, unclear, or na.\n- observation must explain how to interpret the quote in at most 100 words.\n- Do not output answer, label_name, prediction, confidence, citations, review status, or extra keys.\n- Do not infer unstated facts or recommend a final label."
+        },
+        {
+          "role": "user",
+          "content": "Text to classify:\n\nNo one understands how much I desperately want a way out I seriously can’t stand this anymore. I can’t do this. I can’t stand living anymore, I truly want to be done with this all. I just want a way out. I want it all to stop. Please, I’m just so tired and want it to all be over"
+        }
+      ]
+    },
+    {
+      "role": "Ideation_collector",
+      "model_name": "openai/gpt-5.6-luna",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are the Ideation Evidence Collector for a suicide-risk classification task.\n\nEvidence family: Ideation\n\nRelevant label description:\nThe author expresses suicidal thoughts, wishes, or desire to die/end life. Includes passive or active suicidal thinking, including hypothetical or unrealistic methods. No concrete self-harm/suicide action has been taken in the post.\n\nTask:\nCollect only explicit text evidence that could help a later judge distinguish this evidence family from the other labels. You do not classify the text, vote for a label, or make a final decision.\n\nEvidence types and how to interpret them:\n- death_wish: A passive wish to die, disappear, or not wake up.\n- suicidal_thought: Active, self-directed suicidal thinking or desire.\n- hypothetical_method: A suicide method is mentioned without concrete action or preparation.\n\nInput format:\nYou will receive one user message:\n\nText to classify:\n<text>\n\nOutput format:\nReturn only valid JSON with exactly this shape:\n{\"evidence\":[{\"quote\":\"relevant excerpt or concise paraphrase\",\"type\":\"death_wish | suicidal_thought | hypothetical_method\",\"subject\":\"author | other | general | unclear\",\"time\":\"past | current | future | unclear | na\",\"observation\":\"what the quote factually shows\"}]}\n\nRules:\n- Return zero to three evidence items. If none is supported, return {\"evidence\":[]}.\n- Each quote must be a relevant excerpt or concise paraphrase of at most 100 words; exact substring matching is not required.\n- Use only the three evidence types defined for this collector.\n- subject must be author, other, general, or unclear.\n- time must be past, current, future, unclear, or na.\n- observation must explain how to interpret the quote in at most 100 words.\n- Do not output answer, label_name, prediction, confidence, citations, review status, or extra keys.\n- Do not infer unstated facts or recommend a final label."
+        },
+        {
+          "role": "user",
+          "content": "Text to classify:\n\nNo one understands how much I desperately want a way out I seriously can’t stand this anymore. I can’t do this. I can’t stand living anymore, I truly want to be done with this all. I just want a way out. I want it all to stop. Please, I’m just so tired and want it to all be over"
+        }
+      ]
+    },
+    {
+      "role": "Indicator_collector",
+      "model_name": "openai/gpt-5.6-luna",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are the Indicator Evidence Collector for a suicide-risk classification task.\n\nEvidence family: Indicator\n\nRelevant label description:\nThe post does NOT indicate the author's own suicidal risk, but might be a window into their inner thoughts related to suicide. Includes: discussion of another person's suicidality, general discussion/news, or explicit denial of own suicidal intent. Person does not seem at any risk, but suicide was mentioned or discussed, even if in an explicit denial, so it should be flagged accordingly. Also includes concern for someone else at risk.\n\nTask:\nCollect only explicit text evidence that could help a later judge distinguish this evidence family from the other labels. You do not classify the text, vote for a label, or make a final decision.\n\nEvidence types and how to interpret them:\n- third_party: Another person is suicidal, or the author is concerned about another person.\n- self_denial: The author explicitly denies their own suicidality.\n- general_suicide_context: Suicide is meaningfully discussed without personal thoughts or actions.\n\nInput format:\nYou will receive one user message:\n\nText to classify:\n<text>\n\nOutput format:\nReturn only valid JSON with exactly this shape:\n{\"evidence\":[{\"quote\":\"relevant excerpt or concise paraphrase\",\"type\":\"third_party | self_denial | general_suicide_context\",\"subject\":\"author | other | general | unclear\",\"time\":\"past | current | future | unclear | na\",\"observation\":\"what the quote factually shows\"}]}\n\nRules:\n- Return zero to three evidence items. If none is supported, return {\"evidence\":[]}.\n- Each quote must be a relevant excerpt or concise paraphrase of at most 100 words; exact substring matching is not required.\n- Use only the three evidence types defined for this collector.\n- subject must be author, other, general, or unclear.\n- time must be past, current, future, unclear, or na.\n- observation must explain how to interpret the quote in at most 100 words.\n- Do not output answer, label_name, prediction, confidence, citations, review status, or extra keys.\n- Do not infer unstated facts or recommend a final label."
+        },
+        {
+          "role": "user",
+          "content": "Text to classify:\n\nNo one understands how much I desperately want a way out I seriously can’t stand this anymore. I can’t do this. I can’t stand living anymore, I truly want to be done with this all. I just want a way out. I want it all to stop. Please, I’m just so tired and want it to all be over"
+        }
+      ]
+    },
+    {
+      "role": "Unsupportive_collector",
+      "model_name": "openai/gpt-5.6-luna",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are the Unsupportive Evidence Collector for a suicide-risk classification task.\n\nEvidence family: Unsupportive\n\nRelevant label description:\nThe post does NOT indicate the author's own suicidal risk or any connection to suicidal ideation. Includes: discussion of topics unrelated to suicidal ideation or self harm, such as hobbies, nature, and any other topic. However, also includes discussions about different emotions, including negative ones such as anger, sadness and even depression, as long as the author does not indicate at all to be thinking or discussing suicide or self-harm.\n\nTask:\nCollect only explicit text evidence that could help a later judge distinguish this evidence family from the other labels. You do not classify the text, vote for a label, or make a final decision.\n\nEvidence types and how to interpret them:\n- unrelated_topic: An ordinary topic with no suicide or self-harm meaning.\n- benign_language: A figurative or harmless use of words such as die or kill.\n- non_suicidal_distress: Distress is expressed without suicide or self-harm meaning.\n\nInput format:\nYou will receive one user message:\n\nText to classify:\n<text>\n\nOutput format:\nReturn only valid JSON with exactly this shape:\n{\"evidence\":[{\"quote\":\"relevant excerpt or concise paraphrase\",\"type\":\"unrelated_topic | benign_language | non_suicidal_distress\",\"subject\":\"author | other | general | unclear\",\"time\":\"past | current | future | unclear | na\",\"observation\":\"what the quote factually shows\"}]}\n\nRules:\n- Return zero to three evidence items. If none is supported, return {\"evidence\":[]}.\n- Each quote must be a relevant excerpt or concise paraphrase of at most 100 words; exact substring matching is not required.\n- Use only the three evidence types defined for this collector.\n- subject must be author, other, general, or unclear.\n- time must be past, current, future, unclear, or na.\n- observation must explain how to interpret the quote in at most 100 words.\n- Do not output answer, label_name, prediction, confidence, citations, review status, or extra keys.\n- Do not infer unstated facts or recommend a final label."
+        },
+        {
+          "role": "user",
+          "content": "Text to classify:\n\nNo one understands how much I desperately want a way out I seriously can’t stand this anymore. I can’t do this. I can’t stand living anymore, I truly want to be done with this all. I just want a way out. I want it all to stop. Please, I’m just so tired and want it to all be over"
+        }
+      ]
+    },
+    {
+      "role": "judge",
+      "model_name": "openai/gpt-5.6-luna",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are the final judge for a five-label suicide-risk classification task.\nUse the original text and the validated outputs from five parallel evidence collectors to choose exactly one final label.\n\nLabel descriptions:\n- Indicator: The post does NOT indicate the author's own suicidal risk, but might be a window into their inner thoughts related to suicide. Includes: discussion of another person's suicidality, general discussion/news, or explicit denial of own suicidal intent. Person does not seem at any risk, but suicide was mentioned or discussed, even if in an explicit denial, so it should be flagged accordingly. Also includes concern for someone else at risk.\n- Ideation: The author expresses suicidal thoughts, wishes, or desire to die/end life. Includes passive or active suicidal thinking, including hypothetical or unrealistic methods. No concrete self-harm/suicide action has been taken in the post.\n- Behavior: The author describes preparatory or self-harm behavior beyond verbal thoughts. Includes planning/preparation actions (for example, gathering means, writing notes, preparing for death). Includes non-suicidal self-harm when self-inflicted harm is described, even without explicit intent to die.\n- Attempt: The post mentions a suicide attempt (current or past). A past attempt should still be labeled Attempt, even if the current post does not express ongoing suicidal thoughts.\n- Unsupportive: The post does NOT indicate the author's own suicidal risk or any connection to suicidal ideation. Includes: discussion of topics unrelated to suicidal ideation or self harm, such as hobbies, nature, and any other topic. However, also includes discussions about different emotions, including negative ones such as anger, sadness and even depression, as long as the author does not indicate at all to be thinking or discussing suicide or self-harm.\n\nEvidence types and how to interpret them:\nIndicator collector:\n- third_party: Another person is suicidal, or the author is concerned about another person.\n- self_denial: The author explicitly denies their own suicidality.\n- general_suicide_context: Suicide is meaningfully discussed without personal thoughts or actions.\nIdeation collector:\n- death_wish: A passive wish to die, disappear, or not wake up.\n- suicidal_thought: Active, self-directed suicidal thinking or desire.\n- hypothetical_method: A suicide method is mentioned without concrete action or preparation.\nBehavior collector:\n- suicide_plan: A concrete method, place, time, or planned suicidal act.\n- preparation: Acquiring means, writing a note, or preparing for death.\n- self_harm: Self-inflicted harm without an established fatal attempt.\nAttempt collector:\n- attempt_report: An explicit current or historical suicide attempt.\n- suicidal_action: An action carried out with stated suicidal intent.\n- attempt_aftermath: Survival, rescue, hospitalization, or treatment after an attempt.\nUnsupportive collector:\n- unrelated_topic: An ordinary topic with no suicide or self-harm meaning.\n- benign_language: A figurative or harmless use of words such as die or kill.\n- non_suicidal_distress: Distress is expressed without suicide or self-harm meaning.\n\nDecision rules:\n- The original text is authoritative; collector observations are compact aids grounded in it.\n- Collectors do not predict, vote, or assign confidence. A packet is not a vote for its label.\n- Empty evidence means that collector found no supported item; it does not prove a label false.\n- Repeated evidence across packets is still one underlying text fact, not multiple votes.\n- Distinguish the subject, timing, thought, preparation/self-harm, and attempt status.\n- Choose Unsupportive only when the text does not meaningfully concern suicide, self-harm, suicidal thinking, suicidal behavior, or suicide attempts.\n- Suicide-related discussion, another person's suicidality, or an explicit denial of the author's own suicidal intent supports Indicator rather than Unsupportive.\n\nInput format:\nYou receive the original text plus a JSON object keyed by Indicator, Ideation, Behavior, Attempt, and Unsupportive. Each value contains only an evidence array.\n\nOutput format:\nReturn only valid JSON with exactly this shape:\n{\"label_name\": \"<label_name>\"}\n"
+        },
+        {
+          "role": "user",
+          "content": "Original text:\nNo one understands how much I desperately want a way out I seriously can’t stand this anymore. I can’t do this. I can’t stand living anymore, I truly want to be done with this all. I just want a way out. I want it all to stop. Please, I’m just so tired and want it to all be over\n\nValidated evidence packets:\n{\n  \"Indicator\": {\n    \"evidence\": []\n  },\n  \"Ideation\": {\n    \"evidence\": [\n      {\n        \"quote\": \"I can’t stand living anymore, I truly want to be done with this all.\",\n        \"type\": \"suicidal_thought\",\n        \"subject\": \"author\",\n        \"time\": \"current\",\n        \"observation\": \"The author explicitly expresses a current desire to stop living and end their life.\"\n      },\n      {\n        \"quote\": \"I just want a way out. I want it all to stop.\",\n        \"type\": \"death_wish\",\n        \"subject\": \"author\",\n        \"time\": \"current\",\n        \"observation\": \"The author expresses a current passive wish for escape, cessation, and an end to their suffering.\"\n      }\n    ]\n  },\n  \"Behavior\": {\n    \"evidence\": []\n  },\n  \"Attempt\": {\n    \"evidence\": []\n  },\n  \"Unsupportive\": {\n    \"evidence\": []\n  }\n}"
+        }
+      ]
+    }
+  ]
+}
