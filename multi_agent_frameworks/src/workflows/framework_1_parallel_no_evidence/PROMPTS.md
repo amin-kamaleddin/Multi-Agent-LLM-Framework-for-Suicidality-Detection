@@ -220,8 +220,7 @@ You receive the original text plus a JSON object keyed by all five specialist la
 
 Output format:
 Return only valid JSON with exactly this shape:
-{"label_name": "<label_name>", "suicidal_intent": true}
-Set suicidal_intent to true for Indicator, Ideation, Behavior, or Attempt, and false for Unsupportive. Treat this boolean as membership in the dataset's four-label positive class, not as a separate clinical inference about the author's intent.
+{"label_name": "<label_name>"}
 ```
 
 ### User message

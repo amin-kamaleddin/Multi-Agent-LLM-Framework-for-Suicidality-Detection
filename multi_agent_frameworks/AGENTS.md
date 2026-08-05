@@ -7,7 +7,7 @@ This folder contains one single-agent and four standalone multi-agent suicide-ri
 The framework evaluates this v1 workflow:
 
 ```text
-input text -> 5 parallel binary specialist agents -> JSON answers -> final judge -> label + suicidal_intent
+input text -> 5 parallel binary specialist agents -> JSON answers -> final judge -> label -> derived suicidal_intent
 ```
 
 The five specialist labels are:
@@ -23,7 +23,7 @@ The first four specialists represent the positive grouping; the `Unsupportive` s
 The second workflow is evidence-first and has exactly two stages:
 
 ```text
-input text -> 5 parallel evidence collectors -> validate and aggregate -> final judge -> label + suicidal_intent
+input text -> 5 parallel evidence collectors -> validate and aggregate -> final judge -> label -> derived suicidal_intent
 ```
 
 The five collectors cover `Indicator`, `Ideation`, `Behavior`, `Attempt`, and `Unsupportive`. They collect evidence only; they do not return predictions, booleans, scores, confidence, citations, or review status.
@@ -55,8 +55,10 @@ Default specialist output schema (`--mode bool`):
 Judge output schema:
 
 ```json
-{"label_name": "Ideation", "suicidal_intent": true}
+{"label_name": "Ideation"}
 ```
+
+The workflow derives `suicidal_intent` locally: `false` only for `Unsupportive`, and `true` for the other four labels.
 
 ## Folder Index
 

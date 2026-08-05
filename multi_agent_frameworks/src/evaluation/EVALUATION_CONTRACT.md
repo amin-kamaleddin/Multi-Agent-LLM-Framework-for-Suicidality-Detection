@@ -189,8 +189,7 @@ The top-level object has only `evidence`. It contains zero to three items with e
 
 ```json
 {
-  "label_name": "Ideation",
-  "suicidal_intent": true
+  "label_name": "Ideation"
 }
 ```
 
@@ -201,27 +200,16 @@ The strict JSON Schema is:
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": ["label_name", "suicidal_intent"],
+  "required": ["label_name"],
   "properties": {
     "label_name": {
       "enum": ["Indicator", "Ideation", "Behavior", "Attempt", "Unsupportive"]
-    },
-    "suicidal_intent": {
-      "type": "boolean",
-      "description": "Membership in the dataset's four-label positive class; not a separate clinical inference."
     }
-  },
-  "allOf": [
-    {
-      "if": {"properties": {"label_name": {"const": "Unsupportive"}}},
-      "then": {"properties": {"suicidal_intent": {"const": false}}},
-      "else": {"properties": {"suicidal_intent": {"const": true}}}
-    }
-  ]
+  }
 }
 ```
 
-`domain/final_output.py::JudgeAnswer` enforces the conditional mapping. A missing boolean, string boolean, unknown label, extra key, or inconsistent label/boolean pair is a schema-validation failure and is retried according to `max_retries`. Failed cases are represented in artifacts as `prediction = "Error"` and `suicidal_intent = null`; `Error` is not a valid successful judge output.
+`domain/final_output.py::JudgeAnswer` validates and canonicalizes the label. An unknown label or extra key is a schema-validation failure and is retried according to `max_retries`. After validation, the workflow derives `suicidal_intent`: `false` for `Unsupportive` and `true` for `Indicator`, `Ideation`, `Behavior`, or `Attempt`. Failed cases are represented in artifacts as `prediction = "Error"` and `suicidal_intent = null`; `Error` is not a valid successful judge output.
 
 ## Per-record and aggregate output formats
 
@@ -306,7 +294,7 @@ The evaluator keeps two different views of the final judge result:
 1. `metrics.json::classification` is a five-label audit view containing the confusion matrix and failure guardrail counts only.
 2. `metrics.json::suicidal_intent` is one fixed binary task. `Indicator`, `Ideation`, `Behavior`, and `Attempt` are always Positive (`true`); only `Unsupportive` is Negative (`false`).
 
-`compute_suicidal_intent_metrics` derives both actual and predicted binary values from the final labels and then calls `compute_binary_classification_metrics`. The required judge boolean is validated against the same mapping by `domain/final_output.py::JudgeAnswer`; it is not a separate classification decision.
+`compute_suicidal_intent_metrics` derives both actual and predicted binary values from the final labels and then calls `compute_binary_classification_metrics`. The workflow-level `suicidal_intent` value uses the same deterministic mapping; it is not a separate judge decision.
 
 The grouped confusion matrix uses actual values as rows and predicted values as columns:
 

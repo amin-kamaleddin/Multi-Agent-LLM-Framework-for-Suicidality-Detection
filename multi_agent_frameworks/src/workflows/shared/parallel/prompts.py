@@ -226,10 +226,7 @@ def judge_system_prompt() -> str:
         "You receive the original text plus a JSON object keyed by all five specialist labels.\n\n"
         "Output format:\n"
         "Return only valid JSON with exactly this shape:\n"
-        '{"label_name": "<label_name>", "suicidal_intent": true}\n'
-        "Treat this boolean as indicating whether the example belongs to the dataset's positive class that expresses suicide-related content."
-        "Set suicidal_intent to true for Indicator, Ideation, Behavior, or Attempt, that indicates suicide-related content. "
-        "Set false for Unsupportive that expresses no suicide-related content. "
+        '{"label_name": "<label_name>"}\n'
     )
 
 
@@ -279,10 +276,7 @@ def evidence_judge_system_prompt() -> str:
         "Attempt, and Unsupportive. Each value contains only an evidence array.\n\n"
         "Output format:\n"
         "Return only valid JSON with exactly this shape:\n"
-        '{"label_name": "<label_name>", "suicidal_intent": true}\n'
-        "Set suicidal_intent to true for Indicator, Ideation, Behavior, or Attempt, "
-        "and false for Unsupportive. Treat this boolean as membership in the dataset's four-label "
-        "positive class, not as a separate clinical inference about the author's intent."
+        '{"label_name": "<label_name>"}\n'
     )
 
 

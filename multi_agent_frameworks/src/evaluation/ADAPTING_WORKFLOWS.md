@@ -154,7 +154,7 @@ On a failed attempt, preserve any provider usage that is available and set `erro
 {
     "error": {
         "error_type": "ValidationError",
-        "error_message": "suicidal_intent must be true for Ideation"
+        "error_message": "label_name must be one of the five canonical labels"
     }
 }
 ```

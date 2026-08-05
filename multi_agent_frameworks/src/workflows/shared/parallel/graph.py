@@ -10,6 +10,7 @@ from typing import Annotated, Any, Callable, TypedDict
 
 from domain.evidence import validate_evidence_answer
 from domain.final_output import extract_json_object
+from domain.labels import label_to_suicidal_intent
 from llm.protocol import InvokableModel
 from .prompts import (
     EVIDENCE_TYPE_DEFINITIONS,
@@ -785,7 +786,11 @@ class MultiAgentWorkflow:
         )
         node_finished_at_s = time.perf_counter()
         final_label = parsed.label_name if parsed is not None else "Error"
-        suicidal_intent = parsed.suicidal_intent if parsed is not None else None
+        suicidal_intent = (
+            label_to_suicidal_intent(final_label)
+            if parsed is not None
+            else None
+        )
         return {
             "final_label": final_label,
             "suicidal_intent": suicidal_intent,
@@ -795,7 +800,6 @@ class MultiAgentWorkflow:
                     "event": "judge_complete",
                     "ok": parsed is not None,
                     "final_label": final_label,
-                    "suicidal_intent": suicidal_intent,
                     "node_started_at_s": node_started_at_s,
                     "node_finished_at_s": node_finished_at_s,
                     "node_duration_s": node_finished_at_s - node_started_at_s,
@@ -846,7 +850,6 @@ class MultiAgentWorkflow:
         if result.get("final_label"):
             agent_outputs["judge"] = {
                 "label_name": result.get("final_label") or "Error",
-                "suicidal_intent": result.get("suicidal_intent"),
             }
         return CaseResult(
             sample_id=sample_id,
