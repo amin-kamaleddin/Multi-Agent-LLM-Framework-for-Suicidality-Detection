@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "workflow_name": "framework_1_parallel_no_evidence",
+  "sample_id": "0",
+  "final_output": {
+    "label_name": "Ideation",
+    "suicidal_intent": true
+  },
+  "agents": [
+    {
+      "role": "Attempt_specialist",
+      "model_name": "openai/gpt-5.6-luna",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are the Attempt Agent for a suicide-risk classification task.\n\nTarget label: Attempt\n\nLabel definition:\nThe post mentions a suicide attempt (current or past). A past attempt should still be labeled Attempt, even if the current post does not express ongoing suicidal thoughts.\n\nTask:\nDecide only whether the input text matches the Attempt label. Do not choose the final label.\n\nInput format:\nYou will receive one user message:\n\nText to classify:\n<text>\n\nOutput format:\nReturn only valid JSON with exactly these keys:\n{\"answer\": true}\n\nRules:\n- \"answer\" must be true when the text matches Attempt, otherwise false.\n- \"answer\" must be a JSON boolean, not a string.\n- Do not include markdown, commentary, rationale, confidence, or extra keys."
+        },
+        {
+          "role": "user",
+          "content": "Text to classify:\n\nNo one understands how much I desperately want a way out I seriously can’t stand this anymore. I can’t do this. I can’t stand living anymore, I truly want to be done with this all. I just want a way out. I want it all to stop. Please, I’m just so tired and want it to all be over"
+        }
+      ]
+    },
+    {
+      "role": "Behavior_specialist",
+      "model_name": "openai/gpt-5.6-luna",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are the Behavior Agent for a suicide-risk classification task.\n\nTarget label: Behavior\n\nLabel definition:\nThe author describes preparatory or self-harm behavior beyond verbal thoughts. Includes planning/preparation actions (for example, gathering means, writing notes, preparing for death). Includes non-suicidal self-harm when self-inflicted harm is described, even without explicit intent to die.\n\nTask:\nDecide only whether the input text matches the Behavior label. Do not choose the final label.\n\nInput format:\nYou will receive one user message:\n\nText to classify:\n<text>\n\nOutput format:\nReturn only valid JSON with exactly these keys:\n{\"answer\": true}\n\nRules:\n- \"answer\" must be true when the text matches Behavior, otherwise false.\n- \"answer\" must be a JSON boolean, not a string.\n- Do not include markdown, commentary, rationale, confidence, or extra keys."
+        },
+        {
+          "role": "user",
+          "content": "Text to classify:\n\nNo one understands how much I desperately want a way out I seriously can’t stand this anymore. I can’t do this. I can’t stand living anymore, I truly want to be done with this all. I just want a way out. I want it all to stop. Please, I’m just so tired and want it to all be over"
+        }
+      ]
+    },
+    {
+      "role": "Ideation_specialist",
+      "model_name": "openai/gpt-5.6-luna",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are the Ideation Agent for a suicide-risk classification task.\n\nTarget label: Ideation\n\nLabel definition:\nThe author expresses suicidal thoughts, wishes, or desire to die/end life. Includes passive or active suicidal thinking, including hypothetical or unrealistic methods. No concrete self-harm/suicide action has been taken in the post.\n\nTask:\nDecide only whether the input text matches the Ideation label. Do not choose the final label.\n\nInput format:\nYou will receive one user message:\n\nText to classify:\n<text>\n\nOutput format:\nReturn only valid JSON with exactly these keys:\n{\"answer\": true}\n\nRules:\n- \"answer\" must be true when the text matches Ideation, otherwise false.\n- \"answer\" must be a JSON boolean, not a string.\n- Do not include markdown, commentary, rationale, confidence, or extra keys."
+        },
+        {
+          "role": "user",
+          "content": "Text to classify:\n\nNo one understands how much I desperately want a way out I seriously can’t stand this anymore. I can’t do this. I can’t stand living anymore, I truly want to be done with this all. I just want a way out. I want it all to stop. Please, I’m just so tired and want it to all be over"
+        }
+      ]
+    },
+    {
+      "role": "Indicator_specialist",
+      "model_name": "openai/gpt-5.6-luna",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are the Indicator Agent for a suicide-risk classification task.\n\nTarget label: Indicator\n\nLabel definition:\nThe post does NOT indicate the author's own suicidal risk, but might be a window into their inner thoughts related to suicide. Includes: discussion of another person's suicidality, general discussion/news, or explicit denial of own suicidal intent. Person does not seem at any risk, but suicide was mentioned or discussed, even if in an explicit denial, so it should be flagged accordingly. Also includes concern for someone else at risk.\n\nTask:\nDecide only whether the input text matches the Indicator label. Do not choose the final label.\n\nInput format:\nYou will receive one user message:\n\nText to classify:\n<text>\n\nOutput format:\nReturn only valid JSON with exactly these keys:\n{\"answer\": true}\n\nRules:\n- \"answer\" must be true when the text matches Indicator, otherwise false.\n- \"answer\" must be a JSON boolean, not a string.\n- Do not include markdown, commentary, rationale, confidence, or extra keys."
+        },
+        {
+          "role": "user",
+          "content": "Text to classify:\n\nNo one understands how much I desperately want a way out I seriously can’t stand this anymore. I can’t do this. I can’t stand living anymore, I truly want to be done with this all. I just want a way out. I want it all to stop. Please, I’m just so tired and want it to all be over"
+        }
+      ]
+    },
+    {
+      "role": "Unsupportive_specialist",
+      "model_name": "openai/gpt-5.6-luna",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are the Unsupportive Agent for a suicide-risk classification task.\n\nTarget label: Unsupportive\n\nLabel definition:\nThe post does NOT indicate the author's own suicidal risk or any connection to suicidal ideation. Includes: discussion of topics unrelated to suicidal ideation or self harm, such as hobbies, nature, and any other topic. However, also includes discussions about different emotions, including negative ones such as anger, sadness and even depression, as long as the author does not indicate at all to be thinking or discussing suicide or self-harm.\n\nTask:\nDecide only whether the input text matches the Unsupportive label. Do not choose the final label.\n\nInput format:\nYou will receive one user message:\n\nText to classify:\n<text>\n\nOutput format:\nReturn only valid JSON with exactly these keys:\n{\"answer\": true}\n\nRules:\n- \"answer\" must be true when the text matches Unsupportive, otherwise false.\n- \"answer\" must be a JSON boolean, not a string.\n- Do not include markdown, commentary, rationale, confidence, or extra keys."
+        },
+        {
+          "role": "user",
+          "content": "Text to classify:\n\nNo one understands how much I desperately want a way out I seriously can’t stand this anymore. I can’t do this. I can’t stand living anymore, I truly want to be done with this all. I just want a way out. I want it all to stop. Please, I’m just so tired and want it to all be over"
+        }
+      ]
+    },
+    {
+      "role": "judge",
+      "model_name": "openai/gpt-5.6-luna",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are the final judge for a five-label suicide-risk classification task.\nUse the original text and the five specialist answers to choose exactly one final label.\n\nThe five specialist agents run in parallel before you receive their answers:\nLabel definitions:\n- Indicator: The post does NOT indicate the author's own suicidal risk, but might be a window into their inner thoughts related to suicide. Includes: discussion of another person's suicidality, general discussion/news, or explicit denial of own suicidal intent. Person does not seem at any risk, but suicide was mentioned or discussed, even if in an explicit denial, so it should be flagged accordingly. Also includes concern for someone else at risk.\n- Ideation: The author expresses suicidal thoughts, wishes, or desire to die/end life. Includes passive or active suicidal thinking, including hypothetical or unrealistic methods. No concrete self-harm/suicide action has been taken in the post.\n- Behavior: The author describes preparatory or self-harm behavior beyond verbal thoughts. Includes planning/preparation actions (for example, gathering means, writing notes, preparing for death). Includes non-suicidal self-harm when self-inflicted harm is described, even without explicit intent to die.\n- Attempt: The post mentions a suicide attempt (current or past). A past attempt should still be labeled Attempt, even if the current post does not express ongoing suicidal thoughts.\n- Unsupportive: The post does NOT indicate the author's own suicidal risk or any connection to suicidal ideation. Includes: discussion of topics unrelated to suicidal ideation or self harm, such as hobbies, nature, and any other topic. However, also includes discussions about different emotions, including negative ones such as anger, sadness and even depression, as long as the author does not indicate at all to be thinking or discussing suicide or self-harm.\n\nInput format:\nYou receive the original text plus a JSON object keyed by all five specialist labels.\n\nOutput format:\nReturn only valid JSON with exactly this shape:\n{\"label_name\": \"<label_name>\"}\n"
+        },
+        {
+          "role": "user",
+          "content": "Original text:\nNo one understands how much I desperately want a way out I seriously can’t stand this anymore. I can’t do this. I can’t stand living anymore, I truly want to be done with this all. I just want a way out. I want it all to stop. Please, I’m just so tired and want it to all be over\n\nSpecialist answers:\n{\n  \"Indicator\": false,\n  \"Ideation\": true,\n  \"Behavior\": false,\n  \"Attempt\": false,\n  \"Unsupportive\": false\n}"
+        }
+      ]
+    }
+  ]
+}
