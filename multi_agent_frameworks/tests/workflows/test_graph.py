@@ -21,7 +21,7 @@ class FakeGraphModel:
             assert "Specialist answers" in messages[1]["content"]
             for label in FINAL_LABELS:
                 assert label in messages[1]["content"]
-            return json.dumps({"label_name": "Attempt", "suicidal_intent": True})
+            return json.dumps({"label_name": "Attempt"})
 
         for label in FINAL_LABELS:
             if f"Target label: {label}" in system:
@@ -71,7 +71,7 @@ class UnsupportiveSpecialistModel:
         system = messages[0]["content"]
         if "final judge" in system.lower():
             assert '"Unsupportive": true' in messages[1]["content"]
-            return json.dumps({"label_name": "Unsupportive", "suicidal_intent": False})
+            return json.dumps({"label_name": "Unsupportive"})
         for label in FINAL_LABELS:
             if f"Target label: {label}" in system:
                 return json.dumps({"answer": label == "Unsupportive"})
@@ -94,7 +94,7 @@ def test_unsupportive_specialist_runs_in_parallel_and_reaches_judge():
 class UnsupportiveJudgeModel:
     def invoke(self, messages):
         assert "final judge" in messages[0]["content"].lower()
-        return json.dumps({"label_name": "Unsupportive", "suicidal_intent": False})
+        return json.dumps({"label_name": "Unsupportive"})
 
 
 def test_graph_routes_optional_per_agent_models_and_names():
@@ -134,7 +134,7 @@ class EvidenceFakeGraphModel:
                 assert label in messages[1]["content"]
             assert "attempt_report" in system
             assert '"answer"' not in messages[1]["content"]
-            return json.dumps({"label_name": "Attempt", "suicidal_intent": True})
+            return json.dumps({"label_name": "Attempt"})
 
         for label in FINAL_LABELS:
             if f"Evidence family: {label}" in system:
@@ -231,7 +231,7 @@ class SlowSpecialistModel:
     def invoke(self, messages):
         system = messages[0]["content"]
         if "final judge" in system.lower():
-            return json.dumps({"label_name": "Indicator", "suicidal_intent": True})
+            return json.dumps({"label_name": "Indicator"})
         for label in FINAL_LABELS:
             if f"Target label: {label}" in system:
                 time.sleep(0.2)
@@ -274,7 +274,7 @@ class MalformedThenValidModel:
         if role == "Indicator" and self.calls_by_role[role] == 1:
             return "not json"
         if role == "judge":
-            return json.dumps({"label_name": "Indicator", "suicidal_intent": True})
+            return json.dumps({"label_name": "Indicator"})
         return json.dumps({"answer": role == "Indicator"})
 
 
@@ -330,7 +330,7 @@ class UsageModel:
     def invoke(self, messages):
         system = messages[0]["content"]
         if "final judge" in system.lower():
-            return UsageResponse('{"label_name": "Indicator", "suicidal_intent": true}')
+            return UsageResponse('{"label_name": "Indicator"}')
         for label in FINAL_LABELS:
             if f"Target label: {label}" in system:
                 return UsageResponse(json.dumps({"answer": label == "Indicator"}))
@@ -388,7 +388,7 @@ class OpenRouterCostModel:
     def invoke(self, messages):
         system = messages[0]["content"]
         if "final judge" in system.lower():
-            return OpenRouterCostResponse('{"label_name": "Indicator", "suicidal_intent": true}')
+            return OpenRouterCostResponse('{"label_name": "Indicator"}')
         for label in FINAL_LABELS:
             if f"Target label: {label}" in system:
                 return OpenRouterCostResponse(json.dumps({"answer": label == "Indicator"}))
@@ -460,7 +460,7 @@ class FakeStructuredAgent:
         if self.schema is JudgeAnswer:
             return {
                 "messages": [],
-                "structured_response": {"label_name": "Indicator", "suicidal_intent": True},
+                "structured_response": {"label_name": "Indicator"},
             }
         raise AssertionError(f"Unexpected schema {self.schema}")
 

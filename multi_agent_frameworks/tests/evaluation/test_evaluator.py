@@ -12,13 +12,14 @@ from evaluation.evaluator import (
     run_evaluation,
 )
 from workflows.framework_1_parallel_no_evidence.evaluation import run_evaluation as run_framework_1_evaluation
+from workflows.framework_2_parallel_with_evidence.evaluation import run_evaluation as run_framework_2_evaluation
 
 
 class EvaluatorFakeModel:
     def invoke(self, messages):
         system = messages[0]["content"]
         if "final judge" in system.lower():
-            return json.dumps({"label_name": "Indicator", "suicidal_intent": True})
+            return json.dumps({"label_name": "Indicator"})
         for label in FINAL_LABELS:
             if f"Target label: {label}" in system:
                 return json.dumps({"answer": label == "Indicator"})
@@ -34,10 +35,29 @@ class EvaluatorUnsupportiveFakeModel:
     def invoke(self, messages):
         system = messages[0]["content"]
         if "final judge" in system.lower():
-            return json.dumps({"label_name": "Unsupportive", "suicidal_intent": False})
+            return json.dumps({"label_name": "Unsupportive"})
         for label in FINAL_LABELS:
             if f"Target label: {label}" in system:
                 return json.dumps({"answer": label == "Unsupportive"})
+        raise AssertionError("Unexpected evaluator prompt")
+
+
+class LabelOnlyJudgeFakeModel:
+    """Return only a label from the judge while supporting both parallel workflows."""
+
+    def invoke(self, messages):
+        system = messages[0]["content"]
+        user = messages[1]["content"]
+        expected = next(
+            label for label in FINAL_LABELS if f"EXPECTED={label}" in user
+        )
+        if "final judge" in system.lower():
+            return json.dumps({"label_name": expected})
+        for label in FINAL_LABELS:
+            if f"Evidence family: {label}" in system:
+                return json.dumps({"evidence": []})
+            if f"Target label: {label}" in system:
+                return json.dumps({"answer": label == expected})
         raise AssertionError("Unexpected evaluator prompt")
 
 
@@ -594,3 +614,67 @@ def test_evaluator_accepts_unsupportive_and_computes_negative_intent_metrics(tmp
     assert len(binary_metrics) == 1
     assert binary_metrics.loc[0, ["positive_support", "tp", "fn"]].tolist() == [0, 0, 0]
     assert binary_metrics.loc[0, ["negative_support", "tn", "fp"]].tolist() == [1, 1, 0]
+
+
+@pytest.mark.parametrize(
+    ("runner", "mode", "workflow_name"),
+    [
+        (run_framework_1_evaluation, "bool", "framework_1_parallel_no_evidence"),
+        (run_framework_2_evaluation, "evidence", "framework_2_parallel_with_evidence"),
+    ],
+)
+def test_parallel_reports_derive_suicidal_intent_from_label_only_judge(
+    tmp_path,
+    runner,
+    mode,
+    workflow_name,
+):
+    sample_df = pd.DataFrame(
+        [
+            {
+                "source_row": index,
+                "text": f"EXPECTED={label}",
+                "sentiment": label,
+            }
+            for index, label in enumerate(FINAL_LABELS, start=1)
+        ]
+    )
+    result = runner(
+        sample_df=sample_df,
+        model=LabelOnlyJudgeFakeModel(),
+        config=_config(tmp_path, total_records=5, mode=mode),
+        run_id=f"test-{workflow_name}-derived-intent",
+        artifact_base_dir=tmp_path / "runs",
+    )
+    run_dir = Path(result.run_dir)
+
+    judge_calls = [
+        json.loads(line)
+        for line in (run_dir / "llm_calls.jsonl").read_text(encoding="utf-8").splitlines()
+        if json.loads(line)["role"] == "judge"
+    ]
+    assert len(judge_calls) == 5
+    assert all(set(call["parsed"]) == {"label_name"} for call in judge_calls)
+
+    predictions = pd.read_csv(run_dir / "predictions.csv", encoding="utf-8-sig")
+    assert predictions["prediction"].tolist() == list(FINAL_LABELS)
+    assert predictions["suicidal_intent"].tolist() == [True, True, True, True, False]
+    assert all(
+        json.loads(value)["judge"] == {"label_name": label}
+        for value, label in zip(predictions["agent_outputs"], FINAL_LABELS)
+    )
+
+    results = json.loads((run_dir / "results.json").read_text(encoding="utf-8"))
+    assert [item["final_output"]["suicidal_intent"] for item in results["results"]] == [
+        True,
+        True,
+        True,
+        True,
+        False,
+    ]
+    assert result.metrics["suicidal_intent"]["positive_class_counts"] == {
+        "tp": 4,
+        "tn": 1,
+        "fp": 0,
+        "fn": 0,
+    }

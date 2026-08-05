@@ -90,18 +90,13 @@ def test_evidence_quote_and_observation_allow_100_words_but_reject_101():
 
 
 def test_judge_answer_requires_known_label_only():
-    parsed = JudgeAnswer.model_validate({"label_name": "attempt", "suicidal_intent": True})
+    parsed = JudgeAnswer.model_validate({"label_name": "attempt"})
     assert parsed.label_name == "Attempt"
-    assert parsed.suicidal_intent is True
-    assert JudgeAnswer.model_validate(
-        {"label_name": "unsupportive", "suicidal_intent": False}
-    ).label_name == "Unsupportive"
+    assert JudgeAnswer.model_validate({"label_name": "unsupportive"}).label_name == "Unsupportive"
     with pytest.raises(ValidationError):
-        JudgeAnswer.model_validate({"label_name": "No-Risk", "suicidal_intent": False})
+        JudgeAnswer.model_validate({"label_name": "No-Risk"})
     with pytest.raises(ValidationError):
-        JudgeAnswer.model_validate({"label_name": "Indicator", "suicidal_intent": False})
-    with pytest.raises(ValidationError):
-        JudgeAnswer.model_validate({"label_name": "Unsupportive", "suicidal_intent": True})
+        JudgeAnswer.model_validate({"label_name": "Indicator", "suicidal_intent": True})
 
 
 def test_extract_json_object_accepts_wrapped_json():

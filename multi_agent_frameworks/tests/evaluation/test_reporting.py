@@ -13,7 +13,7 @@ class ReportingFakeModel:
     def invoke(self, messages):
         system = messages[0]["content"]
         if "final judge" in system.lower():
-            return json.dumps({"label_name": "Indicator", "suicidal_intent": True})
+            return json.dumps({"label_name": "Indicator"})
         for label in FINAL_LABELS:
             if f"Target label: {label}" in system:
                 return json.dumps({"answer": label == "Indicator"})

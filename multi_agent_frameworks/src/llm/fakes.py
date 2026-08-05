@@ -53,8 +53,14 @@ class DeterministicFakeModel:
                 return json.dumps({"label_name": "Indicator", "confidence": 0.95, "escalation_flag": False, "reasoning": "Synthetic fake-model evaluator decision."})
         if "Secondary Review Agent" in system:
             return json.dumps({"label_name": "Indicator", "confidence": 0.95, "escalation_flag": False, "reasoning": "Synthetic fake-model review decision."})
+        if (
+            "final judge" in system.lower()
+            and '"escalation_flag"' in system
+            and '"confidence"' in system
+        ):
+            return json.dumps({"label_name": "Indicator", "confidence": 0.95, "escalation_flag": False, "reasoning": "Synthetic fake-model evaluator decision."})
         if "final judge" in system.lower():
-            return json.dumps({"label_name": "Indicator", "suicidal_intent": True})
+            return json.dumps({"label_name": "Indicator"})
         for label in FINAL_LABELS:
             if f"Evidence family: {label}" in system:
                 return json.dumps({"evidence": []})
@@ -64,4 +70,4 @@ class DeterministicFakeModel:
                 if '"reasoning"' in system:
                     return json.dumps({"answer": answer, "reasoning": f"Synthetic fake-model rationale for {label}; answer is {str(answer).lower()}."})
                 return json.dumps({"answer": answer})
-        return json.dumps({"label_name": "Indicator", "suicidal_intent": True})
+        return json.dumps({"label_name": "Indicator"})

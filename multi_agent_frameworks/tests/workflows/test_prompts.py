@@ -109,7 +109,8 @@ def test_workflow_modes_keep_bool_specialists_separate_from_evidence_collectors(
     for mode in WORKFLOW_MODES.values():
         judge_prompt = mode.judge_system_prompt()
         assert "Unsupportive" in judge_prompt
-        assert '"suicidal_intent": true' in judge_prompt
+        assert '"label_name": "<label_name>"' in judge_prompt
+        assert "suicidal_intent" not in judge_prompt
     assert "five specialist answers" in WORKFLOW_MODES["bool"].judge_system_prompt()
 
 
