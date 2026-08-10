@@ -1,0 +1,126 @@
+# Evaluation Report — Suicide Risk Detection
+
+**Timestamp:** 2026-08-02T20:02:43.450580
+**Agent:** gpt-4o-mini-suicide-detector
+**Model:** openai/gpt-4o-mini
+**Task:** suicide_risk_classification
+**Dataset:** suicidality_full_dataset_posneg.csv (n=28792)
+**Duration:** 2302.2451 s
+**Agent Mode:** per-class-score
+**Base Class:** Unsupportive
+**Max Host Iterations:** 10
+**Workers:** 50 | **Retries:** 3 | **Seed:** 42
+**Cache Hit Rate:** 0.7% (191/28792)
+
+## Label Distribution (ground truth)
+
+| Label | Count | % |
+|---|---|---|
+| Unsupportive | 14396 | 50.0% |
+| Ideation | 7022 | 24.4% |
+| Behavior | 2039 | 7.1% |
+| Indicator | 4550 | 15.8% |
+| Attempt | 785 | 2.7% |
+
+## Aggregate Metrics
+
+- **accuracy**: 0.619304
+- **precision**: 0.430540
+- **recall**: 0.505186
+- **f1_score**: 0.419570
+- **avg_ttft**: 0.000000
+- **avg_tps**: 9.042359
+- **avg_generation_time**: 4.020455
+- **avg_total_time**: 4.020455
+- **total_prompt_tokens**: 43300382
+- **total_completion_tokens**: 998063
+- **total_tokens**: 44298445
+- **avg_prompt_tokens**: 1513.946435
+- **avg_completion_tokens**: 34.896088
+- **total_cost_usd**: 7.093895
+
+## Error Report
+
+- **error_cases**: 0
+- **unique_error_keys**: 0
+
+```json
+{}
+```
+
+## Per-Class Metrics
+
+*Accuracy is one-vs-rest: (TP + TN) / N for each class treated as C-vs-not-C.*
+
+| Class | Precision | Recall | F1 | Accuracy | Support |
+|---|---|---|---|---|---|
+| Unsupportive | 0.9112 | 0.8295 | 0.8684 | 0.8743 | 14396 |
+| Ideation | 0.5459 | 0.5897 | 0.5669 | 0.7803 | 7022 |
+| Behavior | 0.1924 | 0.1648 | 0.1775 | 0.8919 | 2039 |
+| Indicator | 0.3559 | 0.1789 | 0.2381 | 0.8191 | 4550 |
+| Attempt | 0.1472 | 0.7631 | 0.2468 | 0.8730 | 785 |
+
+## Confusion Matrix
+
+*Rows = Actual, Columns = Predicted*
+
+| Actual \ Predicted | Unsupportive | Ideation | Behavior | Indicator | Attempt |
+|---|---|---|---|---|---|
+| **Unsupportive** | 11941 | 1133 | 83 | 1219 | 20 |
+| **Ideation** | 41 | 4141 | 851 | 224 | 1765 |
+| **Behavior** | 16 | 320 | 336 | 26 | 1341 |
+| **Indicator** | 1106 | 1929 | 357 | 814 | 344 |
+| **Attempt** | 0 | 63 | 119 | 4 | 599 |
+
+## Positive-Class Differentiation Metrics
+
+*Computed only over cases where BOTH the true label and the predicted label are one of the 4 positive classes (`Ideation`, `Behavior`, `Indicator`, `Attempt`). Cases where either side is `Unsupportive` (or an unrecognized prediction) are excluded from this subset entirely — this isolates how well the agent tells the risk levels apart from each other, independent of the Unsupportive-vs-rest screening decision covered in the Binary Metrics section below.*
+
+- **cases considered**: 13233 of 28792 total (15559 excluded because the true or predicted label was `Unsupportive` or unrecognized)
+
+| Class | Precision | Recall | F1 | Support (within this subset) |
+|---|---|---|---|---|
+| Ideation | 0.6417 | 0.5932 | 0.6165 | 6981 |
+| Behavior | 0.2020 | 0.1661 | 0.1823 | 2023 |
+| Indicator | 0.7622 | 0.2364 | 0.3608 | 3444 |
+| Attempt | 0.1479 | 0.7631 | 0.2478 | 785 |
+
+- **accuracy_4class**: 0.445099
+- **precision_4class_macro**: 0.438468
+- **recall_4class_macro**: 0.439670
+- **f1_4class_macro**: 0.351863
+
+*precision/recall/f1 macros above are the unweighted mean across the 4 positive classes. accuracy_4class is the plain 4-label classification accuracy over the included cases only.*
+
+### Positive-Class Confusion Matrix (4x4 subset)
+
+*Rows = Actual, Columns = Predicted — restricted to the 4 positive classes*
+
+| Actual \ Predicted | Ideation | Behavior | Indicator | Attempt |
+|---|---|---|---|---|
+| **Ideation** | 4141 | 851 | 224 | 1765 |
+| **Behavior** | 320 | 336 | 26 | 1341 |
+| **Indicator** | 1929 | 357 | 814 | 344 |
+| **Attempt** | 63 | 119 | 4 | 599 |
+
+## Binary Metrics (Positive vs Negative)
+
+*Negative = `Unsupportive`; Positive = any of `Ideation`, `Behavior`, `Indicator`, `Attempt`.*
+
+- **accuracy_positive**: 0.874340
+- **precision_positive**: 0.877380
+- **recall_positive**: 0.874340
+- **f1_positive**: 0.874087
+- **counts**: TP=13233 | TN=11941 | FP=2455 | FN=1163
+
+*precision/recall/f1 above are macro-averaged over the Positive and Negative classes.*
+
+## Binary Confusion Matrix
+
+*Rows = Actual, Columns = Predicted*
+
+| Actual \ Predicted | Positive | Negative |
+|---|---|---|
+| **Positive** | 13233 | 1163 |
+| **Negative** | 2455 | 11941 |
+

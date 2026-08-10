@@ -1,0 +1,37 @@
+================================================================================
+Running RSD_15K evaluation — sample limit: 28792
+OPEN_ROUTER_KEY found. Using OpenAISuicideDetectionAgent (openai/gpt-4o-mini, mode=single-class, base=Unsupportive).
+Loading dataset from: C:\Users\Owner\Documents\UofT\LMP2392\old_repo\Suicide-Detection-Agent\src\example\suicide_detection\data\suicidality_full_dataset_posneg_balanced.csv
+Total samples loaded: 28792
+Samples limited to: 28792
+
+Starting evaluation — workers=50, retries=3, seed=42 ...
+Scanning for cache candidates in C:\Users\Owner\Documents\UofT\LMP2392\old_repo\Suicide-Detection-Agent\src\example\suicide_detection\_EvalRing...
+Found 17 candidate cache directories.
+Loading cache for gpt-4o-mini:   0%|          | 0/17 [00:00<?, ?it/s]Loading cache for gpt-4o-mini:  41%|████      | 7/17 [00:00<00:00, 33.19it/s]Loading cache for gpt-4o-mini: 100%|██████████| 17/17 [00:00<00:00, 79.34it/s]
+[Concurrency Plan] tasks=538, requested_max_workers=50, planned_parallelism=50, local_cpu_count=20
+[Concurrency Executor] executor_max_workers=50, submitted_tasks=538
+Evaluating:   0%|          | 0/538 [00:00<?, ?it/s]Evaluating:   0%|          | 1/538 [00:01<15:09,  1.69s/it]Evaluating:   5%|▌         | 27/538 [00:01<00:24, 20.62it/s]Evaluating:   8%|▊         | 41/538 [00:02<00:20, 24.72it/s]Evaluating:   9%|▉         | 51/538 [00:02<00:15, 31.81it/s]Evaluating:  11%|█▏        | 61/538 [00:02<00:12, 38.39it/s]Evaluating:  14%|█▎        | 73/538 [00:02<00:09, 49.36it/s]Evaluating:  15%|█▌        | 83/538 [00:02<00:08, 51.21it/s]Evaluating:  17%|█▋        | 92/538 [00:02<00:09, 47.07it/s]Evaluating:  19%|█▉        | 102/538 [00:03<00:08, 53.02it/s]Evaluating:  20%|██        | 110/538 [00:03<00:07, 54.48it/s]Evaluating:  22%|██▏       | 117/538 [00:03<00:08, 49.44it/s]Evaluating:  23%|██▎       | 123/538 [00:03<00:08, 51.41it/s]Evaluating:  24%|██▍       | 131/538 [00:03<00:07, 56.47it/s]Evaluating:  26%|██▌       | 138/538 [00:03<00:07, 55.24it/s]Evaluating:  28%|██▊       | 148/538 [00:03<00:05, 65.47it/s]Evaluating:  30%|██▉       | 160/538 [00:03<00:04, 76.64it/s]Evaluating:  31%|███▏      | 169/538 [00:04<00:05, 69.83it/s]Evaluating:  34%|███▍      | 183/538 [00:04<00:05, 69.25it/s]Evaluating:  36%|███▌      | 192/538 [00:04<00:04, 73.64it/s]Evaluating:  37%|███▋      | 200/538 [00:04<00:05, 65.28it/s]Evaluating:  38%|███▊      | 207/538 [00:04<00:06, 54.07it/s]Evaluating:  41%|████      | 218/538 [00:04<00:04, 65.54it/s]Evaluating:  42%|████▏     | 226/538 [00:05<00:04, 62.78it/s]Evaluating:  44%|████▎     | 235/538 [00:05<00:04, 68.45it/s]Evaluating:  45%|████▌     | 243/538 [00:05<00:04, 68.09it/s]Evaluating:  47%|████▋     | 252/538 [00:05<00:03, 73.06it/s]Evaluating:  49%|████▊     | 261/538 [00:05<00:03, 70.39it/s]Evaluating:  50%|█████     | 269/538 [00:05<00:03, 68.95it/s]Evaluating:  51%|█████▏    | 277/538 [00:05<00:04, 63.69it/s]Evaluating:  54%|█████▎    | 289/538 [00:05<00:03, 71.65it/s]Evaluating:  55%|█████▌    | 297/538 [00:06<00:03, 62.79it/s]Evaluating:  57%|█████▋    | 306/538 [00:06<00:03, 64.53it/s]Evaluating:  59%|█████▊    | 315/538 [00:06<00:03, 70.38it/s]Evaluating:  60%|██████    | 323/538 [00:06<00:03, 69.11it/s]Evaluating:  62%|██████▏   | 332/538 [00:06<00:02, 73.05it/s]Evaluating:  63%|██████▎   | 340/538 [00:06<00:03, 62.29it/s]Evaluating:  65%|██████▌   | 350/538 [00:06<00:02, 62.72it/s]Evaluating:  66%|██████▋   | 357/538 [00:07<00:03, 56.67it/s]Evaluating:  67%|██████▋   | 363/538 [00:07<00:03, 53.92it/s]Evaluating:  69%|██████▉   | 371/538 [00:07<00:02, 55.85it/s]Evaluating:  71%|███████   | 380/538 [00:07<00:02, 63.09it/s]Evaluating:  72%|███████▏  | 390/538 [00:07<00:02, 66.37it/s]Evaluating:  74%|███████▍  | 399/538 [00:07<00:01, 72.10it/s]Evaluating:  76%|███████▌  | 407/538 [00:07<00:01, 66.69it/s]Evaluating:  77%|███████▋  | 416/538 [00:07<00:01, 72.36it/s]Evaluating:  79%|███████▉  | 424/538 [00:08<00:01, 63.86it/s]Evaluating:  80%|████████  | 432/538 [00:08<00:01, 67.72it/s]Evaluating:  82%|████████▏ | 442/538 [00:08<00:01, 72.69it/s]Evaluating:  84%|████████▎ | 450/538 [00:08<00:01, 68.88it/s]Evaluating:  85%|████████▌ | 458/538 [00:08<00:01, 58.14it/s]Evaluating:  86%|████████▋ | 465/538 [00:08<00:01, 57.20it/s]Evaluating:  88%|████████▊ | 471/538 [00:08<00:01, 55.36it/s]Evaluating:  89%|████████▉ | 478/538 [00:08<00:01, 54.07it/s]Evaluating:  90%|████████▉ | 484/538 [00:09<00:01, 51.24it/s]Evaluating:  93%|█████████▎| 498/538 [00:09<00:00, 59.41it/s]Evaluating:  94%|█████████▍| 506/538 [00:09<00:00, 62.62it/s]Evaluating:  95%|█████████▌| 513/538 [00:09<00:00, 56.96it/s]Evaluating:  97%|█████████▋| 520/538 [00:09<00:00, 46.92it/s]Evaluating:  98%|█████████▊| 528/538 [00:10<00:00, 44.28it/s]Evaluating:  99%|█████████▉| 533/538 [00:10<00:00, 40.11it/s]Evaluating: 100%|██████████| 538/538 [00:10<00:00, 32.21it/s]Evaluating: 100%|██████████| 538/538 [00:10<00:00, 51.57it/s]
+
+Evaluation complete. Collecting results...
+
+Saving reports to: C:\Users\Owner\Documents\UofT\LMP2392\old_repo\Suicide-Detection-Agent\src\example\suicide_detection\_EvalRing\run_suite_20260802_183218_single-class\run_20260802_183232_gpt-4o-mini_single-class
+  ✓ result.md
+  ✓ all_cases.txt
+  ✓ all_cases.csv
+  ✓ error.csv
+  ✓ incorrect_cases.txt (7891 cases)
+  ✓ Meta.json
+
+============================================================
+SUMMARY
+============================================================
+Agent:    gpt-4o-mini-suicide-detector  (model: openai/gpt-4o-mini)
+Mode:     single-class
+Base:     Unsupportive
+HostMax:  10
+Samples:  28792  |  Incorrect: 7891
+Accuracy: 0.7259  |  F1 (macro): 0.4656
+Duration: 11.68s  |  Est. Cost: $0.037104
+Output:   C:\Users\Owner\Documents\UofT\LMP2392\old_repo\Suicide-Detection-Agent\src\example\suicide_detection\_EvalRing\run_suite_20260802_183218_single-class\run_20260802_183232_gpt-4o-mini_single-class
+============================================================

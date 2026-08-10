@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-08-02T18:32:47.121006",
+  "n_samples": 28792,
+  "max_workers": 50,
+  "agent_mode": "multi-class-chance",
+  "base_class": "Unsupportive",
+  "host_model": null,
+  "role_models_json": null,
+  "max_host_iterations": 10,
+  "models": [
+    {
+      "model": "openai/gpt-4o-mini",
+      "run_dir": "C:\\Users\\Owner\\Documents\\UofT\\LMP2392\\old_repo\\Suicide-Detection-Agent\\src\\example\\suicide_detection\\_EvalRing\\run_suite_20260802_183247_multi-class-chance\\run_20260802_183256_gpt-4o-mini_multi-class-chance",
+      "accuracy": 0.6483745484856904,
+      "f1_score": 0.4326776738755023,
+      "execution_failures": 0,
+      "incorrect": 10124,
+      "execution_errors": 0,
+      "error_total": 0,
+      "agent_mode": "multi-class-chance",
+      "base_class": "Unsupportive",
+      "host_model": null,
+      "role_models_json": null,
+      "max_host_iterations": 10
+    }
+  ]
+}

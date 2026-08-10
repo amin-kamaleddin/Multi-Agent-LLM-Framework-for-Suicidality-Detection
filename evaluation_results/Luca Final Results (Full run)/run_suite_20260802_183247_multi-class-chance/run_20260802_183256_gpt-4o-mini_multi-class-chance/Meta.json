@@ -1,0 +1,241 @@
+{
+    "cache_mode": "both",
+    "task_name": "suicide_risk_classification",
+    "version": "v1.0",
+    "max_workers": 50,
+    "max_retries": 3,
+    "agent_info": {
+        "name": "gpt-4o-mini-suicide-detector",
+        "version": "1.0",
+        "description": "Agent: gpt-4o-mini-suicide-detector",
+        "type": "OpenAISuicideDetectionAgent",
+        "metadata": {},
+        "is_initialized": true
+    },
+    "dataset_info": {
+        "total_samples": 28792,
+        "name": "rsd_15k_sample",
+        "version": "1.0",
+        "description": "Dataset: rsd_15k_sample",
+        "avg_input_length": 346.7979994442901,
+        "min_input_length": 1,
+        "max_input_length": 14982
+    },
+    "execution_failures": [],
+    "kwargs": {
+        "n_samples": 28792,
+        "agent_mode": "multi-class-chance",
+        "base_class": "Unsupportive"
+    },
+    "run_config": {
+        "n_samples": 28792,
+        "max_workers": 50,
+        "max_retries": 3,
+        "seed": 42,
+        "timestamp": "2026-08-02T18:45:14.311202",
+        "python_version": "3.13.14",
+        "platform": "Windows-10-10.0.19045-SP0"
+    },
+    "model_config": {
+        "model_name": "openai/gpt-4o-mini",
+        "agent_mode": "multi-class-chance",
+        "base_class": "Unsupportive",
+        "host_model": null,
+        "role_models_json": null,
+        "max_host_iterations": 10,
+        "temperature": 0.0,
+        "max_completion_tokens": 500,
+        "system_prompt": "You are a suicide-risk classification assistant.\n\nClassify the post using these 5 classes:\n- Unsupportive\n- Indicator\n- Ideation\n- Behavior\n- Attempt\n\nUse the same definitions and decision rules as the single-label setting:\n- Unsupportive: no self-risk signal from the author and the topic of suicide is NOT explicitly or implicitly discussed.\n- Indicator: no self-risk signal from the author, but the topic of suicide is explicitly or implicitly discussed.\n- Ideation: suicidal thoughts/wishes without concrete self-harm action.\n- Behavior: preparatory/self-harm behavior beyond verbal thoughts.\n- Attempt: explicit mention of suicide attempt (current or past).\n\nOutput format requirements:\n1) Return ONLY a JSON object.\n2) Include ALL 5 keys: \"unsupportive\", \"ideation\", \"behavior\", \"indicator\", \"attempt\".\n3) Values must be numbers in [0, 1].\n4) The values should sum to 1.0 (or very close).\n5) No extra text, no markdown, no explanation.\n\nExample:\n{\"unsupportive\": 0.10, \"ideation\": 0.70, \"behavior\": 0.10, \"indicator\": 0.05, \"attempt\": 0.05}"
+    },
+    "dataset_config": {
+        "source": "C:\\Users\\Owner\\Documents\\UofT\\LMP2392\\old_repo\\Suicide-Detection-Agent\\src\\example\\suicide_detection\\data\\suicidality_full_dataset_posneg_balanced.csv",
+        "text_field": "text",
+        "label_field": "sentiment",
+        "id_field": "ID",
+        "label_distribution": {
+            "Ideation": 7022,
+            "Behavior": 2039,
+            "Indicator": 4550,
+            "Attempt": 785,
+            "Unsupportive": 14396
+        }
+    },
+    "aggregate_metrics": {
+        "accuracy": 0.6483745484856904,
+        "precision": 0.4722861770923415,
+        "recall": 0.44113588350295413,
+        "f1_score": 0.4326776738755023,
+        "avg_ttft": 0.9786944313160609,
+        "avg_tps": 290.5545182001329,
+        "avg_generation_time": 0.3088070953279841,
+        "avg_total_time": 1.287501526644045,
+        "total_prompt_tokens": 10078686,
+        "total_completion_tokens": 1240666,
+        "total_tokens": 11319352,
+        "avg_prompt_tokens": 352.38928708786403,
+        "avg_completion_tokens": 43.37841334219083,
+        "accuracy_positive": 0.8450958599611003,
+        "precision_positive": 0.858543424107435,
+        "recall_positive": 0.8450958599611003,
+        "f1_positive": 0.8436296496110746,
+        "accuracy_4class": 0.5823008849557522,
+        "precision_4class_macro": 0.4953394097223209,
+        "recall_4class_macro": 0.37645938701679377,
+        "f1_4class_macro": 0.3840332665838142,
+        "total_cost_usd": 2.2562024999999997
+    },
+    "error": {},
+    "per_class_metrics": [
+        {
+            "class": "Unsupportive",
+            "precision": 0.9279807029634735,
+            "recall": 0.748263406501806,
+            "f1": 0.8284879249346253,
+            "support": 14396,
+            "accuracy": 0.8450958599611003
+        },
+        {
+            "class": "Ideation",
+            "precision": 0.5122726189530542,
+            "recall": 0.9183993164340644,
+            "f1": 0.657692111570037,
+            "support": 7022,
+            "accuracy": 0.7668449569324812
+        },
+        {
+            "class": "Behavior",
+            "precision": 0.38469087340529934,
+            "recall": 0.19225110348209906,
+            "f1": 0.2563767168083715,
+            "support": 2039,
+            "accuracy": 0.9210197277021395
+        },
+        {
+            "class": "Indicator",
+            "precision": 0.304571796522859,
+            "recall": 0.2079120879120879,
+            "f1": 0.24712643678160923,
+            "support": 4550,
+            "accuracy": 0.7998055015282023
+        },
+        {
+            "class": "Attempt",
+            "precision": 0.23191489361702128,
+            "recall": 0.13885350318471337,
+            "f1": 0.1737051792828685,
+            "support": 785,
+            "accuracy": 0.9639830508474576
+        }
+    ],
+    "confusion_matrix": {
+        "Unsupportive": {
+            "Unsupportive": 10772,
+            "Ideation": 1730,
+            "Behavior": 35,
+            "Indicator": 1843,
+            "Attempt": 16
+        },
+        "Ideation": {
+            "Unsupportive": 21,
+            "Ideation": 6449,
+            "Behavior": 182,
+            "Indicator": 269,
+            "Attempt": 101
+        },
+        "Behavior": {
+            "Unsupportive": 11,
+            "Ideation": 1427,
+            "Behavior": 392,
+            "Indicator": 31,
+            "Attempt": 178
+        },
+        "Indicator": {
+            "Unsupportive": 804,
+            "Ideation": 2616,
+            "Behavior": 118,
+            "Indicator": 946,
+            "Attempt": 66
+        },
+        "Attempt": {
+            "Unsupportive": 0,
+            "Ideation": 367,
+            "Behavior": 292,
+            "Indicator": 17,
+            "Attempt": 109
+        }
+    },
+    "per_class_metrics_4class_only": [
+        {
+            "class": "Ideation",
+            "precision": 0.5938852564692881,
+            "recall": 0.92115412083988,
+            "f1": 0.7221724524076149,
+            "support": 7001
+        },
+        {
+            "class": "Behavior",
+            "precision": 0.3983739837398374,
+            "recall": 0.1932938856015779,
+            "f1": 0.2602921646746348,
+            "support": 2028
+        },
+        {
+            "class": "Indicator",
+            "precision": 0.7490102929532858,
+            "recall": 0.25253603844100375,
+            "f1": 0.37772010381313637,
+            "support": 3746
+        },
+        {
+            "class": "Attempt",
+            "precision": 0.24008810572687225,
+            "recall": 0.13885350318471337,
+            "f1": 0.17594834543987084,
+            "support": 785
+        }
+    ],
+    "positive_class_confusion_matrix": {
+        "Ideation": {
+            "Ideation": 6449,
+            "Behavior": 182,
+            "Indicator": 269,
+            "Attempt": 101
+        },
+        "Behavior": {
+            "Ideation": 1427,
+            "Behavior": 392,
+            "Indicator": 31,
+            "Attempt": 178
+        },
+        "Indicator": {
+            "Ideation": 2616,
+            "Behavior": 118,
+            "Indicator": 946,
+            "Attempt": 66
+        },
+        "Attempt": {
+            "Ideation": 367,
+            "Behavior": 292,
+            "Indicator": 17,
+            "Attempt": 109
+        }
+    },
+    "binary_confusion_matrix": {
+        "Positive": {
+            "Positive": 13560,
+            "Negative": 836
+        },
+        "Negative": {
+            "Positive": 3624,
+            "Negative": 10772
+        }
+    },
+    "binary_counts": {
+        "TP": 13560,
+        "TN": 10772,
+        "FP": 3624,
+        "FN": 836
+    },
+    "total_cost_usd_estimate": 2.2562024999999997,
+    "retry_history": []
+}

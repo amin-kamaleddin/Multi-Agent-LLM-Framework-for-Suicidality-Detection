@@ -1,0 +1,241 @@
+{
+    "cache_mode": "both",
+    "task_name": "suicide_risk_classification",
+    "version": "v1.0",
+    "max_workers": 50,
+    "max_retries": 3,
+    "agent_info": {
+        "name": "gpt-4o-mini-suicide-detector",
+        "version": "1.0",
+        "description": "Agent: gpt-4o-mini-suicide-detector",
+        "type": "OpenAISuicideDetectionAgent",
+        "metadata": {},
+        "is_initialized": true
+    },
+    "dataset_info": {
+        "total_samples": 28792,
+        "name": "rsd_15k_sample",
+        "version": "1.0",
+        "description": "Dataset: rsd_15k_sample",
+        "avg_input_length": 346.7979994442901,
+        "min_input_length": 1,
+        "max_input_length": 14982
+    },
+    "execution_failures": [],
+    "kwargs": {
+        "n_samples": 28792,
+        "agent_mode": "single-class",
+        "base_class": "Unsupportive"
+    },
+    "run_config": {
+        "n_samples": 28792,
+        "max_workers": 50,
+        "max_retries": 3,
+        "seed": 42,
+        "timestamp": "2026-08-02T18:32:45.110503",
+        "python_version": "3.13.14",
+        "platform": "Windows-10-10.0.19045-SP0"
+    },
+    "model_config": {
+        "model_name": "openai/gpt-4o-mini",
+        "agent_mode": "single-class",
+        "base_class": "Unsupportive",
+        "host_model": null,
+        "role_models_json": null,
+        "max_host_iterations": 10,
+        "temperature": 0.0,
+        "max_completion_tokens": 500,
+        "system_prompt": "Classify the post into exactly ONE class: Unsupportive, Indicator, Ideation, Behavior, or Attempt.\n\nUse these class definitions:\n\n**Unsupportive**\n- The post does NOT indicate the author's own suicidal risk or any connection to suicidal ideation.\n- Includes: discussion of topics unrelated to suicidal ideation or self harm, such as hobbies, nature, and any other topic.\n- However, also includes discussions about different emotions, including negative ones such as anger, sadness and even depression, \n- as long as the author does not indicate at all to be thinking or discussing suicide or self-harm.\n\n**Indicator**\n- The post does NOT indicate the author's own suicidal risk, but might be a window into their inner thoughts related to suicide.\n- Includes: discussion of another person's suicidality, general discussion/news, or explicit denial of own suicidal intent.\n- Person does not seem at any risk, but suicide was mentioned or discussed, even if in an explicit denial, so it should be \n- flagged accordingly.\n- Also includes concern for someone else at risk.\n\n**Ideation**\n- The author expresses suicidal thoughts, wishes, or desire to die/end life.\n- Includes passive or active suicidal thinking, including hypothetical or unrealistic methods.\n- No concrete self-harm/suicide action has been taken in the post.\n\n**Behavior**\n- The author describes preparatory or self-harm behavior beyond verbal thoughts.\n- Includes planning/preparation actions (for example, gathering means, writing notes, preparing for death).\n- Includes non-suicidal self-harm when self-inflicted harm is described, even without explicit intent to die.\n\n**Attempt**\n- The post mentions a suicide attempt (current or past).\n- A past attempt should still be labeled Attempt, even if the current post does not express ongoing suicidal thoughts.\n\nDecision rules:\n- If the post contains mixed signals, choose the class supported by the clearest explicit evidence.\n\nOutput format:\n- Return ONLY one word: Unsupportive, Indicator, Ideation, Behavior, or Attempt."
+    },
+    "dataset_config": {
+        "source": "C:\\Users\\Owner\\Documents\\UofT\\LMP2392\\old_repo\\Suicide-Detection-Agent\\src\\example\\suicide_detection\\data\\suicidality_full_dataset_posneg_balanced.csv",
+        "text_field": "text",
+        "label_field": "sentiment",
+        "id_field": "ID",
+        "label_distribution": {
+            "Ideation": 7022,
+            "Behavior": 2039,
+            "Indicator": 4550,
+            "Attempt": 785,
+            "Unsupportive": 14396
+        }
+    },
+    "aggregate_metrics": {
+        "accuracy": 0.7259308141150319,
+        "precision": 0.5089218986460378,
+        "recall": 0.529739578542664,
+        "f1_score": 0.46562714804970484,
+        "avg_ttft": 0.8623719021127303,
+        "avg_tps": 102.10886749732622,
+        "avg_generation_time": 0.05042358259089492,
+        "avg_total_time": 0.9127954847036251,
+        "total_prompt_tokens": 239873,
+        "total_completion_tokens": 1872,
+        "total_tokens": 241745,
+        "avg_prompt_tokens": 445.86059479553904,
+        "avg_completion_tokens": 3.479553903345725,
+        "accuracy_positive": 0.9045915532092248,
+        "precision_positive": 0.907670057462858,
+        "recall_positive": 0.9045915532092248,
+        "f1_positive": 0.9044110942525534,
+        "accuracy_4class": 0.5850609018310882,
+        "precision_4class_macro": 0.47390736944048784,
+        "recall_4class_macro": 0.45042701381763633,
+        "f1_4class_macro": 0.39113888641961,
+        "total_cost_usd": 0.037104149999999995
+    },
+    "error": {},
+    "per_class_metrics": [
+        {
+            "class": "Unsupportive",
+            "precision": 0.8722438806160926,
+            "recall": 0.9480411225340373,
+            "f1": 0.90856439103951,
+            "support": 14396,
+            "accuracy": 0.9045915532092248
+        },
+        {
+            "class": "Ideation",
+            "precision": 0.6220488606035721,
+            "recall": 0.8630019937339789,
+            "f1": 0.7229778095919828,
+            "support": 7022,
+            "accuracy": 0.8387051958877466
+        },
+        {
+            "class": "Behavior",
+            "precision": 0.2786885245901639,
+            "recall": 0.06669936243256498,
+            "f1": 0.10763751483973091,
+            "support": 2039,
+            "accuracy": 0.9216796332314532
+        },
+        {
+            "class": "Indicator",
+            "precision": 0.48663101604278075,
+            "recall": 0.12,
+            "f1": 0.19252468265162198,
+            "support": 4550,
+            "accuracy": 0.8409280355654348
+        },
+        {
+            "class": "Attempt",
+            "precision": 0.2849972113775795,
+            "recall": 0.6509554140127388,
+            "f1": 0.3964313421256788,
+            "support": 785,
+            "accuracy": 0.9459572103362045
+        }
+    ],
+    "confusion_matrix": {
+        "Unsupportive": {
+            "Unsupportive": 13648,
+            "Ideation": 416,
+            "Behavior": 13,
+            "Indicator": 311,
+            "Attempt": 8
+        },
+        "Ideation": {
+            "Unsupportive": 148,
+            "Ideation": 6060,
+            "Behavior": 130,
+            "Indicator": 235,
+            "Attempt": 449
+        },
+        "Behavior": {
+            "Unsupportive": 14,
+            "Ideation": 1160,
+            "Behavior": 136,
+            "Indicator": 23,
+            "Attempt": 706
+        },
+        "Indicator": {
+            "Unsupportive": 1836,
+            "Ideation": 1921,
+            "Behavior": 128,
+            "Indicator": 546,
+            "Attempt": 119
+        },
+        "Attempt": {
+            "Unsupportive": 1,
+            "Ideation": 185,
+            "Behavior": 81,
+            "Indicator": 7,
+            "Attempt": 511
+        }
+    },
+    "per_class_metrics_4class_only": [
+        {
+            "class": "Ideation",
+            "precision": 0.6497962684966759,
+            "recall": 0.881582775676462,
+            "f1": 0.7481481481481482,
+            "support": 6874
+        },
+        {
+            "class": "Behavior",
+            "precision": 0.2863157894736842,
+            "recall": 0.0671604938271605,
+            "f1": 0.10880000000000001,
+            "support": 2025
+        },
+        {
+            "class": "Indicator",
+            "precision": 0.6732429099876696,
+            "recall": 0.20117907148120856,
+            "f1": 0.30978723404255326,
+            "support": 2714
+        },
+        {
+            "class": "Attempt",
+            "precision": 0.28627450980392155,
+            "recall": 0.6517857142857143,
+            "f1": 0.3978201634877384,
+            "support": 784
+        }
+    ],
+    "positive_class_confusion_matrix": {
+        "Ideation": {
+            "Ideation": 6060,
+            "Behavior": 130,
+            "Indicator": 235,
+            "Attempt": 449
+        },
+        "Behavior": {
+            "Ideation": 1160,
+            "Behavior": 136,
+            "Indicator": 23,
+            "Attempt": 706
+        },
+        "Indicator": {
+            "Ideation": 1921,
+            "Behavior": 128,
+            "Indicator": 546,
+            "Attempt": 119
+        },
+        "Attempt": {
+            "Ideation": 185,
+            "Behavior": 81,
+            "Indicator": 7,
+            "Attempt": 511
+        }
+    },
+    "binary_confusion_matrix": {
+        "Positive": {
+            "Positive": 12397,
+            "Negative": 1999
+        },
+        "Negative": {
+            "Positive": 748,
+            "Negative": 13648
+        }
+    },
+    "binary_counts": {
+        "TP": 12397,
+        "TN": 13648,
+        "FP": 748,
+        "FN": 1999
+    },
+    "total_cost_usd_estimate": 0.037104149999999995,
+    "retry_history": []
+}

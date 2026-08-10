@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-08-03T20:55:27.316587",
+  "n_samples": 28792,
+  "max_workers": 50,
+  "agent_mode": "per-class-score",
+  "base_class": "Unsupportive",
+  "host_model": null,
+  "role_models_json": null,
+  "max_host_iterations": 10,
+  "models": [
+    {
+      "model": "openai/gpt-5.6-luna",
+      "run_dir": "C:\\Users\\Owner\\Documents\\UofT\\LMP2392\\old_repo\\Suicide-Detection-Agent\\src\\example\\suicide_detection\\_EvalRing\\run_suite_20260803_205527_per-class-score\\run_20260803_205533_gpt-5.6-luna_per-class-score",
+      "accuracy": 0.7486454570714087,
+      "f1_score": 0.5511793835622977,
+      "execution_failures": 0,
+      "incorrect": 7237,
+      "execution_errors": 0,
+      "error_total": 0,
+      "agent_mode": "per-class-score",
+      "base_class": "Unsupportive",
+      "host_model": null,
+      "role_models_json": null,
+      "max_host_iterations": 10
+    }
+  ]
+}
