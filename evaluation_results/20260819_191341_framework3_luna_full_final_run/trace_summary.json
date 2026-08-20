@@ -1,0 +1,102 @@
+{
+  "workflow_name": "framework_3_hierarchical_no_reviewer",
+  "model_name": "openai/gpt-5.6-luna",
+  "requested_model_name": "gpt-5.6-luna",
+  "mode": "bool",
+  "service_tier": "standard",
+  "evaluation_status": "completed",
+  "processed_records": 28792,
+  "total_records": 28792,
+  "stop_reason": null,
+  "coverage": {
+    "expected_records": 28792,
+    "output_records": 28792,
+    "unique_output_ids": 28792,
+    "missing_ids": [],
+    "unexpected_ids": [],
+    "duplicate_ids": [],
+    "complete": true
+  },
+  "token_stop": {
+    "threshold": null,
+    "current_session_total_tokens": 58660647,
+    "reached": false
+  },
+  "runtime": {
+    "agent_execution_duration_s": 118177.94203934353,
+    "real_execution_duration_s": 14909.00294495793,
+    "call_count": 71800,
+    "llm_request_count": 71800,
+    "failed_llm_attempts": 14,
+    "json_parsing_errors": 14,
+    "errors_by_type": {
+      "JSONDecodeError": 12,
+      "ValidationError": 2
+    },
+    "latency_s": {
+      "min": 0.7518992498517036,
+      "max": 54.977276916848496,
+      "avg": 1.6450221566996417,
+      "total": 118112.59085103427
+    },
+    "tokens": {
+      "prompt_total": 52932374,
+      "completion_total": 5728273,
+      "total": 58660647,
+      "cached_total": 0,
+      "cache_write_total": 0,
+      "avg_prompt_per_request": 737.2196935933148,
+      "avg_completion_per_request": 79.78096100278552,
+      "avg_total_per_request": 817.0006545961003,
+      "avg_cached_per_request": 0.0,
+      "avg_cache_write_per_request": 0.0
+    },
+    "cost_usd": {
+      "total": 17.66305909,
+      "avg_per_call": 0.0002460036084958217
+    },
+    "provider_timing": {
+      "ttft_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "generation_time_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "provider_latency_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "moderation_latency_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "completion_tps": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "e2e_completion_tps": {
+        "count": 71800,
+        "min": 1.3096319795703573,
+        "max": 120.07171040419531,
+        "avg": 49.88344316919436
+      }
+    }
+  },
+  "json_parsing_errors": 14,
+  "failed_records": 0,
+  "failure_rate": 0.0,
+  "llm_trace_file": "llm_calls.jsonl",
+  "node_trace_file": "traces.jsonl"
+}
