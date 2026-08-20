@@ -94,8 +94,48 @@ def test_list_workflows_reports_valid_cli_names(capsys):
         "framework_2_parallel_with_evidence",
         "framework_3_hierarchical_no_reviewer",
         "framework_4_hierarchical_with_reviewer",
+        "rule_based",
         "single_agent",
     ]
+
+
+def test_rule_based_cli_uses_shared_evaluator_without_llm_calls(tmp_path):
+    sample_path = tmp_path / "sample.csv"
+    pd.DataFrame(
+        [
+            {"ID": 1, "users": 1, "text": "I wish I would not wake up.", "sentiment": "Ideation", "time": 1},
+            {"ID": 2, "users": 1, "text": "I watched Suicide Squad.", "sentiment": "Unsupportive", "time": 2},
+        ]
+    ).to_csv(sample_path, index=False, encoding="utf-8-sig")
+    artifact_base_dir = tmp_path / "rule-based-runs"
+
+    assert cli.main(
+        [
+            "evaluate",
+            "--workflow",
+            "rule_based",
+            "--mode",
+            "rules",
+            "--sample-path",
+            str(sample_path),
+            "--artifact-base-dir",
+            str(artifact_base_dir),
+            "--run-id",
+            "smoke",
+        ]
+    ) == 0
+
+    run_dir = next(artifact_base_dir.glob("*_smoke"))
+    metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
+    predictions = pd.read_csv(run_dir / "predictions.csv", encoding="utf-8-sig")
+    prompt_snapshot = json.loads(
+        (run_dir / "first_completion_input_prompts.json").read_text(encoding="utf-8")
+    )
+    assert metrics["workflow_name"] == "rule_based"
+    assert metrics["runtime"]["call_count"] == 0
+    assert metrics["classification"]["failed_records"] == 0
+    assert set(predictions["prediction"]) == {"Ideation", "Unsupportive"}
+    assert prompt_snapshot["agents"] == []
 
 
 @pytest.mark.parametrize(

@@ -1,14 +1,15 @@
 # Suicide-Risk Agent Workflow Evaluator
 
-This package contains one single-agent workflow, four LangGraph multi-agent workflows, and an architecture-neutral evaluator:
+This package contains one deterministic rule-based baseline, one single-agent workflow, four LangGraph multi-agent workflows, and an architecture-neutral evaluator:
 
 - `single_agent`: one model using single-label, probability, per-class-score, or binary-tournament classification
+- `rule_based`: context-aware deterministic regex baseline with no model calls
 - `framework_1_parallel_no_evidence`: five parallel boolean specialists, then a final judge
 - `framework_2_parallel_with_evidence`: five parallel non-decision-making evidence collectors, then a final judge
 - `framework_3_hierarchical_no_reviewer`: hierarchical routing followed by a final evaluator
 - `framework_4_hierarchical_with_reviewer`: hierarchical routing, an uncertainty gate, and an optional secondary reviewer
 
-All five workflows accept the same input and return the same strict final JSON contract. The evaluator can also run any workflow that accepts one `sample_id` and text at a time and returns the shared final-result and telemetry fields.
+All six workflows accept the same input and return the same strict final JSON contract. The evaluator can also run any workflow that accepts one `sample_id` and text at a time and returns the shared final-result and telemetry fields.
 
 Start here:
 
@@ -16,6 +17,7 @@ Start here:
 - [Evaluation contract](src/evaluation/EVALUATION_CONTRACT.md) defines all input/output schemas, metrics, guardrails, and artifacts.
 - [Shared CLI usage](../docs/USAGE.md#shared-agent-workflow-evaluator-cli) explains workflow selection, JSON configuration, datasets, log directories, and registry extension.
 - [Single-agent example configuration](configs/single_agent.example.json) runs the one-request `single-class` mode by default.
+- [Rule-based classifier research and implementation note](docs/rule_based_classifier.md) documents the deterministic baseline, its sources, and limitations.
 - [Framework 1 example configuration](configs/framework_1_parallel_no_evidence.example.json) can be copied and adjusted per run.
 - [Framework 2 example configuration](configs/framework_2_parallel_with_evidence.example.json) selects the evidence workflow.
 - [Framework guide](AGENTS.md) documents the built-in workflows and commands.
@@ -109,6 +111,7 @@ workflows/
 │   └── hierarchical/
 │       └── schemas.py
 ├── single_agent/
+├── rule_based/
 ├── framework_1_parallel_no_evidence/
 ├── framework_2_parallel_with_evidence/
 ├── framework_3_hierarchical_no_reviewer/
@@ -123,7 +126,7 @@ workflows/
 
 `registry.py` maps stable lowercase names such as `framework_2_parallel_with_evidence` to runner functions. `uv run python -m cli evaluate --workflow ...` can select only workflows registered there.
 
-Each `framework_*` directory is a runnable architecture and uses the same module roles:
+Each runnable workflow directory uses the same small public boundary. Agentic frameworks use the modules below; `rule_based/` instead owns `workflow.py`, a deterministic classifier that does not need prompts, schemas, or a graph.
 
 | Module | Framework-owned responsibility |
 |---|---|

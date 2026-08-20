@@ -13,6 +13,7 @@ def test_builtin_registry_exposes_workflow_metadata():
         "framework_2_parallel_with_evidence",
         "framework_3_hierarchical_no_reviewer",
         "framework_4_hierarchical_with_reviewer",
+        "rule_based",
         "single_agent",
     )
     assert WORKFLOW_REGISTRY.get("framework_1_parallel_no_evidence").name == "framework_1_parallel_no_evidence"
@@ -30,6 +31,7 @@ def test_builtin_registry_exposes_workflow_metadata():
     assert WORKFLOW_REGISTRY.get("framework_3_hierarchical_no_reviewer").default_mode == "bool"
     assert WORKFLOW_REGISTRY.get("framework_4_hierarchical_with_reviewer").default_mode == "bool"
     assert WORKFLOW_REGISTRY.get("single_agent").default_mode == "single-class"
+    assert WORKFLOW_REGISTRY.get("rule_based").default_mode == "rules"
 
 
 def test_registry_accepts_new_named_runner_and_rejects_invalid_names():

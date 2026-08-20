@@ -37,6 +37,11 @@ from workflows.single_agent.config import (
     MODE_NAMES as SINGLE_AGENT_MODE_NAMES,
 )
 from workflows.single_agent.evaluation import run_evaluation as run_single_agent_evaluation
+from workflows.rule_based.config import (
+    CONFIG_KEYS as RULE_BASED_CONFIG_KEYS,
+    MODE_NAMES as RULE_BASED_MODE_NAMES,
+)
+from workflows.rule_based.evaluation import run_evaluation as run_rule_based_evaluation
 
 
 class WorkflowRegistry:
@@ -99,6 +104,24 @@ def _run_single_agent(request: WorkflowRunRequest) -> EvaluationResult:
         model=model,
         config=request.config,
         base_class=str(request.workflow_config.get("base_class", "Unsupportive")),
+        run_id=request.run_id,
+        artifact_base_dir=request.artifact_base_dir,
+        resume_run_dir=request.resume_run_dir,
+    )
+
+
+def _run_rule_based(request: WorkflowRunRequest) -> EvaluationResult:
+    unknown_keys = sorted(set(request.workflow_config) - set(RULE_BASED_CONFIG_KEYS))
+    if unknown_keys:
+        raise ValueError(f"Unknown rule_based workflow-config keys: {unknown_keys}")
+    if request.config.mode not in RULE_BASED_MODE_NAMES:
+        raise ValueError(
+            f"rule_based mode must be one of {list(RULE_BASED_MODE_NAMES)}; "
+            f"got {request.config.mode!r}"
+        )
+    return run_rule_based_evaluation(
+        sample_df=request.sample_df,
+        config=request.config,
         run_id=request.run_id,
         artifact_base_dir=request.artifact_base_dir,
         resume_run_dir=request.resume_run_dir,
@@ -325,6 +348,15 @@ def _agent_overrides(
 
 
 WORKFLOW_REGISTRY = WorkflowRegistry()
+WORKFLOW_REGISTRY.register(
+    WorkflowRegistration(
+        name="rule_based",
+        description="Deterministic context-aware regex baseline with no LLM calls.",
+        runner=_run_rule_based,
+        config_keys=RULE_BASED_CONFIG_KEYS,
+        default_mode="rules",
+    )
+)
 WORKFLOW_REGISTRY.register(
     WorkflowRegistration(
         name="single_agent",
