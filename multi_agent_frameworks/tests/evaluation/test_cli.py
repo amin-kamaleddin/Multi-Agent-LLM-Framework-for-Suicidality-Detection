@@ -264,6 +264,63 @@ def test_hierarchical_workflow_fake_llm_smoke(tmp_path, workflow_name):
         else "judge_agent"
     )
     assert terminal_role in {agent["role"] for agent in prompt_snapshot["agents"]}
+    if workflow_name == "framework_4_hierarchical_with_reviewer":
+        run_config = json.loads((run_dirs[0] / "run_config.json").read_text(encoding="utf-8"))
+        manifest = json.loads((run_dirs[0] / "manifest.json").read_text(encoding="utf-8"))
+        expected_reviewer_settings = {
+            "confidence_threshold": 0.85,
+            "margin_threshold": 0.25,
+            "review_known_boundaries_only": False,
+        }
+        for key, value in expected_reviewer_settings.items():
+            assert run_config["workflow_config"][key] == value
+            assert manifest["workflow"]["identity"]["workflow_config"][key] == value
+
+
+def test_framework_4_reviewer_settings_are_persisted_in_run_config_and_manifest(tmp_path):
+    sample_path = tmp_path / "sample.csv"
+    pd.DataFrame(
+        [
+            {
+                "ID": 21,
+                "users": 8,
+                "text": "A suicide-related discussion about another person.",
+                "sentiment": "Indicator",
+                "time": 126,
+            }
+        ]
+    ).to_csv(sample_path, index=False, encoding="utf-8-sig")
+    workflow_config_path = tmp_path / "framework_4.json"
+    reviewer_settings = {
+        "confidence_threshold": 0.9,
+        "margin_threshold": 0.1,
+        "review_known_boundaries_only": True,
+    }
+    workflow_config_path.write_text(json.dumps(reviewer_settings), encoding="utf-8")
+    artifact_base_dir = tmp_path / "framework-4-runs"
+
+    assert cli.main(
+        [
+            "evaluate",
+            "--workflow",
+            "framework_4_hierarchical_with_reviewer",
+            "--fake-llm",
+            "--workflow-config",
+            str(workflow_config_path),
+            "--sample-path",
+            str(sample_path),
+            "--artifact-base-dir",
+            str(artifact_base_dir),
+            "--run-id",
+            "reviewer-settings",
+        ]
+    ) == 0
+
+    run_dir = next(artifact_base_dir.glob("*_reviewer-settings"))
+    run_config = json.loads((run_dir / "run_config.json").read_text(encoding="utf-8"))
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert run_config["workflow_config"] == reviewer_settings
+    assert manifest["workflow"]["identity"]["workflow_config"] == reviewer_settings
 
 
 def test_shared_cli_uses_registered_workflow_config_dataset_and_output_dir(tmp_path):

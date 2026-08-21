@@ -252,6 +252,10 @@ The framework 1 wrapper additionally preserves `specialist_answers`, `specialist
 
 The calculations are implemented without an external metrics package in `evaluation/metrics.py`.
 
+### Prespecified statistical analysis
+
+Completed canonical runs can be recompiled with a user-cluster bootstrap analysis. The prespecified primary endpoint is suicidal-intent sensitivity; PPV/NPV and positive-phase macro F1 are secondary. The report provides observed-sample PPV/NPV plus target-prevalence transport estimates, and can compare matching workflow runs with paired user-bootstrap confidence intervals. See [STATISTICAL_ANALYSIS.md](STATISTICAL_ANALYSIS.md) for the complete endpoint, formula, and command contract.
+
 ### Final-label confusion matrix
 
 `compute_final_label_confusion_matrix` records the five final labels without calculating aggregate or per-label model scores. Invalid or failed predictions go into an `Error` prediction column. The persisted matrix has actual labels as rows and predicted labels plus `Error` as columns.

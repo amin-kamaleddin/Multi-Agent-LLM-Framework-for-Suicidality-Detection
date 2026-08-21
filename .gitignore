@@ -119,6 +119,24 @@ _EvalRing/
 !multi_agent_frameworks/test-results/
 !multi_agent_frameworks/test-results/**
 
+# Curated completed-run archives under evaluation_results must retain the inputs,
+# per-record outputs, and audit trails required to reproduce reported metrics.
+# These narrow exceptions override the global *.csv and *.jsonl exclusions above.
+!evaluation_results/**/sampled_dataset.csv
+!evaluation_results/**/predictions.csv
+!evaluation_results/**/suicidal_intent_metrics.csv
+!evaluation_results/**/positive_subclassification_metrics.csv
+!evaluation_results/**/compiled_results.csv
+!evaluation_results/**/llm_calls.jsonl
+!evaluation_results/**/traces.jsonl
+!evaluation_results/**/errors.jsonl
+
+# Do not archive resumable SQLite state or the duplicate, potentially large
+# results payload. The retained predictions, metrics, manifests, and audit
+# trails are the canonical reproducibility bundle.
+evaluation_results/**/progress.sqlite
+evaluation_results/**/results.json
+
 # CounselBench is its own separate repo
 CounselBench/
 
@@ -139,5 +157,3 @@ src/example/suicide_detection/ground_truth/config.json
 
 # dir start with underdash
 _*/
-evaluation_results/**/progress.sqlite
-evaluation_results/**/results.json

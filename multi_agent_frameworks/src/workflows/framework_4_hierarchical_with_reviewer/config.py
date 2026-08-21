@@ -3,6 +3,9 @@
 WORKFLOW_NAME = "framework_4_hierarchical_with_reviewer"
 DEFAULT_MODE = "bool"
 MODE_NAMES = ("bool", "reasoned")
+DEFAULT_CONFIDENCE_THRESHOLD = 0.85
+DEFAULT_MARGIN_THRESHOLD = 0.25
+DEFAULT_REVIEW_KNOWN_BOUNDARIES_ONLY = False
 CONFIG_KEYS = (
     "model",
     "temperature",
@@ -11,4 +14,7 @@ CONFIG_KEYS = (
     "mode",
     "service_tier",
     "fake_llm",
+    "confidence_threshold",
+    "margin_threshold",
+    "review_known_boundaries_only",
 )

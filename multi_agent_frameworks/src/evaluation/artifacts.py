@@ -23,6 +23,7 @@ RUN_ARTIFACTS = (
     "predictions.csv",
     "suicidal_intent_metrics.csv",
     "positive_subclassification_metrics.csv",
+    "statistical_analysis.json",
     "metrics.json",
     "results.json",
     "metrics.md",

@@ -9,8 +9,23 @@ from typing import Any
 
 import pandas as pd
 
+from .statistics import (
+    DEFAULT_BOOTSTRAP_REPLICATES,
+    DEFAULT_BOOTSTRAP_SEED,
+    DEFAULT_TARGET_PREVALENCES,
+    analyze_predictions,
+    paired_primary_endpoint_comparison,
+)
 
-def compile_run_results(run_dir: str | Path) -> dict[str, str]:
+
+def compile_run_results(
+    run_dir: str | Path,
+    *,
+    compare_run_dirs: list[str | Path] | None = None,
+    bootstrap_replicates: int = DEFAULT_BOOTSTRAP_REPLICATES,
+    bootstrap_seed: int = DEFAULT_BOOTSTRAP_SEED,
+    target_prevalences: tuple[float, ...] = DEFAULT_TARGET_PREVALENCES,
+) -> dict[str, str]:
     """Write a long-form CSV and Markdown tables for one completed run."""
     path = Path(run_dir)
     metrics = _read_json(path / "metrics.json")
@@ -19,6 +34,26 @@ def compile_run_results(run_dir: str | Path) -> dict[str, str]:
     manifest = _read_json(manifest_path) if manifest_path.is_file() else {}
     predictions = pd.read_csv(path / "predictions.csv", encoding="utf-8-sig")
     llm_calls = _read_jsonl(path / "llm_calls.jsonl")
+    statistics = _statistics_or_unavailable(
+        predictions,
+        bootstrap_replicates=bootstrap_replicates,
+        bootstrap_seed=bootstrap_seed,
+        target_prevalences=target_prevalences,
+    )
+    (path / "statistical_analysis.json").write_text(
+        json.dumps(statistics, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    comparisons = _paired_comparisons(
+        reference_run_dir=path,
+        reference_predictions=predictions,
+        compare_run_dirs=compare_run_dirs or [],
+        bootstrap_replicates=bootstrap_replicates,
+        bootstrap_seed=bootstrap_seed,
+    )
+    if comparisons:
+        (path / "paired_comparisons.json").write_text(
+            json.dumps(comparisons, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
     compiled_rows = _compiled_rows(
         metrics=metrics,
@@ -26,6 +61,8 @@ def compile_run_results(run_dir: str | Path) -> dict[str, str]:
         manifest=manifest,
         predictions=predictions,
         llm_calls=llm_calls,
+        statistics=statistics,
+        comparisons=comparisons,
     )
     compiled_csv = path / "compiled_results.csv"
     pd.DataFrame(compiled_rows).to_csv(compiled_csv, index=False, encoding="utf-8-sig")
@@ -39,10 +76,51 @@ def compile_run_results(run_dir: str | Path) -> dict[str, str]:
             manifest=manifest,
             predictions=predictions,
             llm_calls=llm_calls,
+            statistics=statistics,
+            comparisons=comparisons,
         ),
         encoding="utf-8",
     )
-    return {"compiled_csv": str(compiled_csv), "compiled_markdown": str(compiled_md)}
+    return {
+        "compiled_csv": str(compiled_csv),
+        "compiled_markdown": str(compiled_md),
+        "statistical_analysis": str(path / "statistical_analysis.json"),
+        **({"paired_comparisons": str(path / "paired_comparisons.json")} if comparisons else {}),
+    }
+
+
+def _statistics_or_unavailable(
+    predictions: pd.DataFrame,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    try:
+        return analyze_predictions(predictions, **kwargs)
+    except ValueError as exc:
+        return {"available": False, "reason": str(exc)}
+
+
+def _paired_comparisons(
+    *,
+    reference_run_dir: Path,
+    reference_predictions: pd.DataFrame,
+    compare_run_dirs: list[str | Path],
+    bootstrap_replicates: int,
+    bootstrap_seed: int,
+) -> list[dict[str, Any]]:
+    comparisons = []
+    for compare_run_dir in compare_run_dirs:
+        candidate_path = Path(compare_run_dir)
+        candidate_predictions = pd.read_csv(candidate_path / "predictions.csv", encoding="utf-8-sig")
+        comparison = paired_primary_endpoint_comparison(
+            reference_predictions,
+            candidate_predictions,
+            bootstrap_replicates=bootstrap_replicates,
+            bootstrap_seed=bootstrap_seed,
+        )
+        comparison["reference_run_dir"] = str(reference_run_dir)
+        comparison["candidate_run_dir"] = str(candidate_path)
+        comparisons.append(comparison)
+    return comparisons
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -69,6 +147,8 @@ def _compiled_rows(
     manifest: dict[str, Any],
     predictions: pd.DataFrame,
     llm_calls: list[dict[str, Any]],
+    statistics: dict[str, Any],
+    comparisons: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     runtime = metrics["runtime"]
@@ -76,6 +156,34 @@ def _compiled_rows(
     suicidal_intent = metrics.get("suicidal_intent") or {}
     positive_subclassification = metrics.get("positive_subclassification") or {}
     provider_timing = runtime.get("provider_timing", {})
+
+    if statistics.get("available", True):
+        for metric, point_value in statistics.get("point_estimates", {}).items():
+            ci = (statistics.get("confidence_intervals_95") or {}).get(metric, {})
+            rows.append(
+                {
+                    "section": "statistical_analysis",
+                    "metric_name": metric,
+                    "point_estimate": point_value,
+                    "ci_95_lower": ci.get("lower"),
+                    "ci_95_upper": ci.get("upper"),
+                    "valid_replicates": ci.get("valid_replicates"),
+                }
+            )
+    else:
+        rows.append({"section": "statistical_analysis", "available": False, "reason": statistics.get("reason")})
+    for comparison in comparisons:
+        ci = comparison["difference_ci_95"]
+        rows.append(
+            {
+                "section": "paired_primary_endpoint_comparison",
+                "candidate_run_dir": comparison["candidate_run_dir"],
+                "difference": comparison["difference"],
+                "ci_95_lower": ci["lower"],
+                "ci_95_upper": ci["upper"],
+                "interpretation": comparison["interpretation"],
+            }
+        )
 
     for attempt in manifest.get("execution_attempts") or []:
         rows.append(
@@ -231,6 +339,8 @@ def _compiled_markdown(
     manifest: dict[str, Any],
     predictions: pd.DataFrame,
     llm_calls: list[dict[str, Any]],
+    statistics: dict[str, Any],
+    comparisons: list[dict[str, Any]],
 ) -> str:
     runtime = metrics["runtime"]
     classification = metrics["classification"]
@@ -353,6 +463,8 @@ def _compiled_markdown(
         _confusion_matrix_table(suicidal_intent["confusion_matrix"])
         if suicidal_intent.get("confusion_matrix")
         else "Not available for this legacy run.",
+        "",
+        _statistical_analysis_markdown(statistics, comparisons),
         "",
         "## Label Distributions",
         "",
@@ -507,6 +619,86 @@ def _execution_attempts_table(attempts: list[dict[str, Any]]) -> str:
             f"| {attempt.get('attempt_number')} | "
             f"{attempt.get('start_date')} | {attempt.get('end_date')} |"
         )
+    return "\n".join(lines)
+
+
+def _statistical_analysis_markdown(
+    statistics: dict[str, Any],
+    comparisons: list[dict[str, Any]],
+) -> str:
+    lines = ["## Prespecified Statistical Analysis", ""]
+    if not statistics.get("available", True):
+        lines.extend([f"> Unavailable: {statistics.get('reason')}"])
+        return "\n".join(lines)
+
+    primary = statistics["prespecification"]["primary_endpoint"]
+    bootstrap = statistics["bootstrap"]
+    point_estimates = statistics["point_estimates"]
+    confidence_intervals = statistics["confidence_intervals_95"]
+    lines.extend(
+        [
+            f"- Primary endpoint (prespecified): **{primary['display_name']}** — `{primary['definition']}`",
+            f"- Rationale: {primary['rationale']}",
+            f"- CI method: two-sided 95% percentile user-cluster bootstrap ({bootstrap['replicates_requested']} resamples; {bootstrap['cluster_count']} users; seed {bootstrap['seed']}).",
+            "- The primary endpoint is prevalence-invariant. PPV and NPV are secondary and depend on prevalence.",
+            "",
+            "### Observed-Sample Estimates And 95% CIs",
+            "",
+            "| Metric | Estimate | 95% CI |",
+            "|---|---:|---|",
+        ]
+    )
+    display_names = {
+        "sensitivity": "Sensitivity (primary)",
+        "specificity": "Specificity",
+        "ppv": "PPV at observed sample prevalence",
+        "npv": "NPV at observed sample prevalence",
+        "phase_macro_f1": "Positive-phase macro F1",
+    }
+    for metric in ("sensitivity", "specificity", "ppv", "npv", "phase_macro_f1"):
+        ci = confidence_intervals[metric]
+        lines.append(
+            f"| {display_names[metric]} | {_format_optional(point_estimates[metric])} | "
+            f"{_format_optional(ci['lower'])} to {_format_optional(ci['upper'])} |"
+        )
+    lines.extend(
+        [
+            "",
+            "### Prevalence-Adjusted Predictive Values",
+            "",
+            "These are transport estimates assuming sensitivity and specificity transfer to a target population. "
+            "They are not estimates of the balanced evaluation sample's prevalence.",
+            "",
+            "| Target Positive Prevalence | PPV (95% CI) | NPV (95% CI) |",
+            "|---:|---|---|",
+        ]
+    )
+    for row in statistics["prevalence_adjusted_predictive_values"]:
+        ppv_ci = row["ppv_ci_95"]
+        npv_ci = row["npv_ci_95"]
+        lines.append(
+            f"| {row['target_prevalence']:.2%} | {_format_optional(row['ppv'])} "
+            f"({_format_optional(ppv_ci['lower'])} to {_format_optional(ppv_ci['upper'])}) | "
+            f"{_format_optional(row['npv'])} ({_format_optional(npv_ci['lower'])} to {_format_optional(npv_ci['upper'])}) |"
+        )
+    if comparisons:
+        lines.extend(
+            [
+                "",
+                "### Paired Primary-Endpoint Comparisons",
+                "",
+                "Differences are candidate minus this report's run. Each bootstrap resample uses the same selected users for both workflows.",
+                "",
+                "| Candidate Run | Difference In Sensitivity | 95% CI | Interpretation |",
+                "|---|---:|---|---|",
+            ]
+        )
+        for comparison in comparisons:
+            ci = comparison["difference_ci_95"]
+            lines.append(
+                f"| `{comparison['candidate_run_dir']}` | {_format_optional(comparison['difference'])} | "
+                f"{_format_optional(ci['lower'])} to {_format_optional(ci['upper'])} | {comparison['interpretation']} |"
+            )
     return "\n".join(lines)
 
 

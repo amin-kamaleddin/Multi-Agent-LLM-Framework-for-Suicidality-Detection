@@ -9,6 +9,11 @@ import pandas as pd
 from evaluation.evaluator import EvaluationConfig, EvaluationResult, run_evaluation as run_shared_evaluation
 from llm.protocol import InvokableModel
 from llm.limiter import LlmConcurrencyLimiter
+from .config import (
+    DEFAULT_CONFIDENCE_THRESHOLD,
+    DEFAULT_MARGIN_THRESHOLD,
+    DEFAULT_REVIEW_KNOWN_BOUNDARIES_ONLY,
+)
 from .graph import MultiAgentWorkflow
 
 
@@ -21,6 +26,9 @@ def run_evaluation(
     artifact_base_dir: str | Path = "logs/runs",
     dataset_audit: dict[str, Any] | None = None,
     resume_run_dir: str | Path | None = None,
+    confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD,
+    margin_threshold: float = DEFAULT_MARGIN_THRESHOLD,
+    review_known_boundaries_only: bool = DEFAULT_REVIEW_KNOWN_BOUNDARIES_ONLY,
 ) -> EvaluationResult:
     limiter = LlmConcurrencyLimiter(config.max_in_flight_llm)
     workflow = MultiAgentWorkflow(
@@ -28,12 +36,21 @@ def run_evaluation(
         model_name=config.model_name,
         max_retries=config.max_retries,
         mode=config.mode,
+        confidence_threshold=confidence_threshold,
+        margin_threshold=margin_threshold,
+        review_known_boundaries_only=review_known_boundaries_only,
     )
     resolved_config = EvaluationConfig(
         **{
             **asdict(config),
             "workflow_name": "framework_4_hierarchical_with_reviewer",
             "agent_configuration": config.agent_configuration or {},
+            "workflow_config": {
+                **(config.workflow_config or {}),
+                "confidence_threshold": confidence_threshold,
+                "margin_threshold": margin_threshold,
+                "review_known_boundaries_only": review_known_boundaries_only,
+            },
         }
     )
     return run_shared_evaluation(

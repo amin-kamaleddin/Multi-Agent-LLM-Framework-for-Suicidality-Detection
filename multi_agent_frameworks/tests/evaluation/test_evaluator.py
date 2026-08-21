@@ -441,9 +441,11 @@ def test_evaluator_writes_complete_artifacts_for_fake_model(tmp_path):
     assert result.metrics["compiled_reports"] == {
         "compiled_csv": str(run_dir / "compiled_results.csv"),
         "compiled_markdown": str(run_dir / "compiled_results.md"),
+        "statistical_analysis": str(run_dir / "statistical_analysis.json"),
     }
     assert result.metrics["artifact_status"]["compiled_results.csv"] is True
     assert result.metrics["artifact_status"]["compiled_results.md"] is True
+    assert result.metrics["artifact_status"]["statistical_analysis.json"] is True
     assert all(result.metrics["artifact_status"].values())
     assert result.metrics["suicidal_intent"]["accuracy"] == 1.0
     assert result.metrics["suicidal_intent"]["has_both_ground_truth_classes"] is False

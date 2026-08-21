@@ -73,7 +73,7 @@ The workflow derives `suicidal_intent` locally: `false` only for `Unsupportive`,
 - `src/workflows/framework_1_parallel_no_evidence/`: parallel decision-making specialists.
 - `src/workflows/framework_2_parallel_with_evidence/`: parallel evidence collectors.
 - `src/workflows/framework_3_hierarchical_no_reviewer/`: hierarchy without a secondary reviewer.
-- `src/workflows/framework_4_hierarchical_with_reviewer/`: hierarchy with uncertainty review.
+- `src/workflows/framework_4_hierarchical_with_reviewer/`: hierarchy with uncertainty review. Its workflow JSON may set `confidence_threshold` (default `0.85`), `margin_threshold` (default `0.25`), and `review_known_boundaries_only` (default `false`); all effective values are persisted in the run config and manifest identity.
 - `src/evaluation/ADAPTING_WORKFLOWS.md`: copyable guide for connecting another agentic workflow to the shared evaluator.
 - `src/evaluation/EVALUATION_CONTRACT.md`: exhaustive input, output, metric, guardrail, and artifact reference.
 - `tests/`: pytest suite for data rules, schemas, prompts, graph behavior, metrics, evaluator, and reporting.

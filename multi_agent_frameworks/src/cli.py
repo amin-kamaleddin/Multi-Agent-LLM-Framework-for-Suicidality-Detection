@@ -294,9 +294,25 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
 
 
 def cmd_compile_results(args: argparse.Namespace) -> int:
-    outputs = compile_run_results(args.run_dir)
+    outputs = compile_run_results(
+        args.run_dir,
+        compare_run_dirs=args.compare_run_dir,
+        bootstrap_replicates=args.bootstrap_replicates,
+        bootstrap_seed=args.bootstrap_seed,
+        target_prevalences=_parse_target_prevalences(args.target_prevalences),
+    )
     print(json.dumps(outputs, indent=2))
     return 0
+
+
+def _parse_target_prevalences(value: str) -> tuple[float, ...]:
+    try:
+        prevalences = tuple(float(item.strip()) for item in value.split(","))
+    except ValueError as exc:
+        raise ValueError("--target-prevalences must be comma-separated decimals, for example 0.01,0.05,0.10") from exc
+    if not prevalences or any(prevalence <= 0 or prevalence >= 1 for prevalence in prevalences):
+        raise ValueError("--target-prevalences values must be strictly between 0 and 1")
+    return prevalences
 
 
 def cmd_snapshot_results(args: argparse.Namespace) -> int:
@@ -508,8 +524,31 @@ def build_parser() -> argparse.ArgumentParser:
     )
     list_workflows.set_defaults(func=cmd_list_workflows)
 
-    compile_results = subparsers.add_parser("compile-results", help="Compile a run directory into CSV and Markdown summary tables.")
+    compile_results = subparsers.add_parser("compile-results", help="Compile a run directory into reports with clustered CIs and optional paired comparisons.")
     compile_results.add_argument("--run-dir", required=True, help="Run directory containing evaluator artifacts.")
+    compile_results.add_argument(
+        "--compare-run-dir",
+        action="append",
+        default=[],
+        help="Optional candidate run directory. Repeat to add paired primary-endpoint comparisons against --run-dir.",
+    )
+    compile_results.add_argument(
+        "--bootstrap-replicates",
+        type=int,
+        default=2000,
+        help="User-cluster bootstrap resamples for 95%% CIs (minimum: 100; default: 2000).",
+    )
+    compile_results.add_argument(
+        "--bootstrap-seed",
+        type=int,
+        default=20260820,
+        help="Deterministic seed for user-cluster bootstrap resampling (default: 20260820).",
+    )
+    compile_results.add_argument(
+        "--target-prevalences",
+        default="0.01,0.05,0.10,0.20,0.50",
+        help="Comma-separated target positive prevalences for transport PPV/NPV, each strictly between 0 and 1.",
+    )
     compile_results.set_defaults(func=cmd_compile_results)
 
     snapshot_results = subparsers.add_parser(

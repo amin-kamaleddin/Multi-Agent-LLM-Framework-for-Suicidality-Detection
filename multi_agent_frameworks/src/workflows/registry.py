@@ -29,7 +29,12 @@ from workflows.framework_2_parallel_with_evidence.evaluation import run_evaluati
 from workflows.framework_3_hierarchical_no_reviewer.config import CONFIG_KEYS as FRAMEWORK_3_HIERARCHICAL_NO_REVIEWER_CONFIG_KEYS
 from workflows.framework_3_hierarchical_no_reviewer.config import MODE_NAMES as FRAMEWORK_3_HIERARCHICAL_NO_REVIEWER_MODE_NAMES
 from workflows.framework_3_hierarchical_no_reviewer.evaluation import run_evaluation as run_framework_3_evaluation
-from workflows.framework_4_hierarchical_with_reviewer.config import CONFIG_KEYS as FRAMEWORK_4_HIERARCHICAL_WITH_REVIEWER_CONFIG_KEYS
+from workflows.framework_4_hierarchical_with_reviewer.config import (
+    CONFIG_KEYS as FRAMEWORK_4_HIERARCHICAL_WITH_REVIEWER_CONFIG_KEYS,
+    DEFAULT_CONFIDENCE_THRESHOLD as FRAMEWORK_4_DEFAULT_CONFIDENCE_THRESHOLD,
+    DEFAULT_MARGIN_THRESHOLD as FRAMEWORK_4_DEFAULT_MARGIN_THRESHOLD,
+    DEFAULT_REVIEW_KNOWN_BOUNDARIES_ONLY as FRAMEWORK_4_DEFAULT_REVIEW_KNOWN_BOUNDARIES_ONLY,
+)
 from workflows.framework_4_hierarchical_with_reviewer.config import MODE_NAMES as FRAMEWORK_4_HIERARCHICAL_WITH_REVIEWER_MODE_NAMES
 from workflows.framework_4_hierarchical_with_reviewer.evaluation import run_evaluation as run_framework_4_evaluation
 from workflows.single_agent.config import (
@@ -237,6 +242,25 @@ def _run_framework_4_hierarchical_with_reviewer(
             service_tier=request.config.service_tier,
         )
     )
+    confidence_threshold = _unit_interval_workflow_value(
+        request.workflow_config,
+        "confidence_threshold",
+        FRAMEWORK_4_DEFAULT_CONFIDENCE_THRESHOLD,
+    )
+    margin_threshold = _unit_interval_workflow_value(
+        request.workflow_config,
+        "margin_threshold",
+        FRAMEWORK_4_DEFAULT_MARGIN_THRESHOLD,
+    )
+    review_known_boundaries_only = request.workflow_config.get(
+        "review_known_boundaries_only",
+        FRAMEWORK_4_DEFAULT_REVIEW_KNOWN_BOUNDARIES_ONLY,
+    )
+    if not isinstance(review_known_boundaries_only, bool):
+        raise ValueError(
+            "framework_4_hierarchical_with_reviewer workflow-config "
+            "'review_known_boundaries_only' must be a JSON boolean"
+        )
     return run_framework_4_evaluation(
         sample_df=request.sample_df,
         model=model,
@@ -244,7 +268,31 @@ def _run_framework_4_hierarchical_with_reviewer(
         run_id=request.run_id,
         artifact_base_dir=request.artifact_base_dir,
         resume_run_dir=request.resume_run_dir,
+        confidence_threshold=confidence_threshold,
+        margin_threshold=margin_threshold,
+        review_known_boundaries_only=review_known_boundaries_only,
     )
+
+
+def _unit_interval_workflow_value(
+    workflow_config: dict[str, Any],
+    name: str,
+    default: float,
+) -> float:
+    value = workflow_config.get(name, default)
+    if isinstance(value, bool):
+        raise ValueError(f"framework_4_hierarchical_with_reviewer workflow-config {name!r} must be a number")
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"framework_4_hierarchical_with_reviewer workflow-config {name!r} must be a number"
+        ) from exc
+    if not 0 <= parsed <= 1:
+        raise ValueError(
+            f"framework_4_hierarchical_with_reviewer workflow-config {name!r} must be between 0 and 1"
+        )
+    return parsed
 def _run_framework_2_parallel_with_evidence(request: WorkflowRunRequest) -> EvaluationResult:
     unknown_keys = sorted(set(request.workflow_config) - set(FRAMEWORK_2_PARALLEL_WITH_EVIDENCE_CONFIG_KEYS))
     if unknown_keys:

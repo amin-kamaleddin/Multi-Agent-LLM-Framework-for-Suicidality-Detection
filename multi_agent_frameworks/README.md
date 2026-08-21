@@ -15,6 +15,7 @@ Start here:
 
 - [Adapting another workflow](src/evaluation/ADAPTING_WORKFLOWS.md) provides a copyable adapter and runner.
 - [Evaluation contract](src/evaluation/EVALUATION_CONTRACT.md) defines all input/output schemas, metrics, guardrails, and artifacts.
+- [Prespecified statistical analysis](src/evaluation/STATISTICAL_ANALYSIS.md) defines clustered confidence intervals, prevalence-adjusted PPV/NPV, and paired workflow comparisons.
 - [Shared CLI usage](../docs/USAGE.md#shared-agent-workflow-evaluator-cli) explains workflow selection, JSON configuration, datasets, log directories, and registry extension.
 - [Single-agent example configuration](configs/single_agent.example.json) runs the one-request `single-class` mode by default.
 - [Rule-based classifier research and implementation note](docs/rule_based_classifier.md) documents the deterministic baseline, its sources, and limitations.
