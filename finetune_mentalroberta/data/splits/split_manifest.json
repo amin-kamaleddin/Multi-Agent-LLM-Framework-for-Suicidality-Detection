@@ -1,0 +1,74 @@
+{
+    "experiment": "MentalRoBERTa five-class fine-tuning dataset split",
+    "input_file": "data/raw/suicidality_full_dataset_posneg_balanced.csv",
+    "input_file_sha256": "caccbbefab9739016059b57d803d911aa787450684e40f5f8f6a507e5b468d95",
+    "random_seed": 42,
+    "sorting_column": "ID",
+    "split_unit": "individual post",
+    "stratification_column": "sentiment",
+    "split_strategy": "Stratified post-level train/validation/test split",
+    "train_fraction": 0.7,
+    "validation_fraction": 0.15,
+    "test_fraction": 0.15,
+    "labels": [
+        "Unsupportive",
+        "Indicator",
+        "Ideation",
+        "Behavior",
+        "Attempt"
+    ],
+    "positive_labels": [
+        "Indicator",
+        "Ideation",
+        "Behavior",
+        "Attempt"
+    ],
+    "total_rows": 28792,
+    "full_dataset_label_counts": {
+        "Unsupportive": 14396,
+        "Indicator": 4550,
+        "Ideation": 7022,
+        "Behavior": 2039,
+        "Attempt": 785
+    },
+    "train_rows": 20154,
+    "validation_rows": 4319,
+    "test_rows": 4319,
+    "train_label_counts": {
+        "Unsupportive": 10077,
+        "Indicator": 3185,
+        "Ideation": 4915,
+        "Behavior": 1427,
+        "Attempt": 550
+    },
+    "validation_label_counts": {
+        "Unsupportive": 2160,
+        "Indicator": 682,
+        "Ideation": 1054,
+        "Behavior": 306,
+        "Attempt": 117
+    },
+    "test_label_counts": {
+        "Unsupportive": 2159,
+        "Indicator": 683,
+        "Ideation": 1053,
+        "Behavior": 306,
+        "Attempt": 118
+    },
+    "train_positive_rows": 10077,
+    "validation_positive_rows": 2159,
+    "test_positive_rows": 2160,
+    "software_versions": {
+        "python": "3.12.13",
+        "pandas": "3.0.3",
+        "scikit_learn": "1.9.0"
+    },
+    "output_file_sha256": {
+        "train.csv": "a6d11c56fd8335e8db87fa8639750596921bd82c507f8df198daf6c5b68d5fe3",
+        "validation.csv": "ddf637a89ef021e5ae4689edb9a65d603c9c0e193e0c3033d1ea29dd6993ed14",
+        "test.csv": "cc48cd9110cce90bacbe87e5136499e9cae44f926c70316d81386724ea01ee69",
+        "train_positive.csv": "a55239ff2f33c707a57184d2a2e039dfe95b708c50553a3eea49128b81bb98a5",
+        "validation_positive.csv": "3417e731f80d211dddc35d0c7a465bdc6ae42eaff273586f0a9fd51772f63b46",
+        "test_positive.csv": "f84087867f510eb3f3a5dc6c7223145b1ddc0326a2a7ceb47f2a13b9d8aebe88"
+    }
+}

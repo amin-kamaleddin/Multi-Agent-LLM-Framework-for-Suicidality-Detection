@@ -1,0 +1,1 @@
+{"sample_id": "12714", "role": "perspective_agent", "attempt": 4, "latency_s": 1.7417566670046654, "error_type": "JSONDecodeError", "error_message": "Expecting value: line 1 column 1 (char 0)"}
