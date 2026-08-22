@@ -740,7 +740,7 @@ training_args = TrainingArguments(
     bf16=False,
 
     # Save model using safetensors.
-    save_safetensors=True,
+    #save_safetensors=True,
 )
 
 
