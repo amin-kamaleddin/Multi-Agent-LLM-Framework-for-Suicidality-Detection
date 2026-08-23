@@ -1,4 +1,4 @@
-# EvalRing
+# EvalRing (Legacy Name)
 
 EvalRing is a unified evaluation framework for agents across LLMs and agent versions. Its goal is to provide a standardized interface for evaluating AI agents with comprehensive metrics and reproducible results.
 
@@ -151,7 +151,7 @@ print(f"Recall: {result.metrics['recall']:.4f}")
 print(f"F1 Score: {result.metrics['f1_score']:.4f}")
 ```
 
-## Project Structure
+## Project Structure (Legacy for EvalRing; new project structure for suicidality study might differ)
 
 ```
 EvalRing/

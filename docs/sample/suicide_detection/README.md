@@ -16,12 +16,12 @@ It covers:
 
 Core package and sample files:
 
-- [src/EvalRing](../../../src/EvalRing)
-- [src/example/suicide_detection/llm_agent.py](../../../src/example/suicide_detection/llm_agent.py)
-- [src/example/suicide_detection/evaluate_rsd15k_main.py](../../../src/example/suicide_detection/evaluate_rsd15k_main.py)
-- [src/example/suicide_detection/run_model_suite.py](../../../src/example/suicide_detection/run_model_suite.py)
-- [src/example/suicide_detection/data_translator.py](../../../src/example/suicide_detection/data_translator.py)
-- [src/example/suicide_detection/data/rsd_15k.csv](../../../src/example/suicide_detection/data/rsd_15k.csv)
+- [single_agent_frameworks/single_agent_frameworks](../../../single_agent_frameworks/single_agent_frameworks)
+- [single_agent_frameworks/example/suicide_detection/llm_agent.py](../../../single_agent_frameworks/example/suicide_detection/llm_agent.py)
+- [single_agent_frameworks/example/suicide_detection/evaluate_rsd15k_main.py](../../../single_agent_frameworks/example/suicide_detection/evaluate_rsd15k_main.py)
+- [single_agent_frameworks/example/suicide_detection/run_model_suite.py](../../../single_agent_frameworks/example/suicide_detection/run_model_suite.py)
+- [single_agent_frameworks/example/suicide_detection/data_translator.py](../../../single_agent_frameworks/example/suicide_detection/data_translator.py)
+- [single_agent_frameworks/example/suicide_detection/data/rsd_15k.csv](../../../single_agent_frameworks/example/suicide_detection/data/rsd_15k.csv)
 
 One can access original dataset from: https://drive.google.com/file/d/1DrWVF28hEj70x3Yxtfonk3pzS0hPOQBT/view?usp=sharing
 
@@ -29,13 +29,13 @@ Alternative datasets: https://drive.google.com/drive/folders/1c8wL7woT-td9SFVr78
 
 Reusable classification helpers used by this sample:
 
-- [src/EvalRing/agent/classification.py](../../../src/EvalRing/agent/classification.py)
+- [single_agent_frameworks/single_agent_frameworks/agent/classification.py](../../../single_agent_frameworks/single_agent_frameworks/agent/classification.py)
 
 ## 2. Dataset Translator
 
 Translator file:
 
-- [src/example/suicide_detection/data_translator.py](../../../src/example/suicide_detection/data_translator.py)
+- [single_agent_frameworks/example/suicide_detection/data_translator.py](../../../single_agent_frameworks/example/suicide_detection/data_translator.py)
 
 Purpose:
 
@@ -281,7 +281,7 @@ The evaluator accepts either:
 - plain string labels
 - mapping outputs (class to score)
 
-Core resolver in [src/EvalRing/agent/classification.py](../../../src/EvalRing/agent/classification.py) selects the top class for accuracy/precision/recall/F1 while preserving confidence and class scores in per-sample metadata.
+Core resolver in [single_agent_frameworks/single_agent_frameworks/agent/classification.py](../../../single_agent_frameworks/single_agent_frameworks/agent/classification.py) selects the top class for accuracy/precision/recall/F1 while preserving confidence and class scores in per-sample metadata.
 
 ## 10. Practical Experiment Recipes
 

@@ -22,7 +22,7 @@ The codebase has two main layers.
 
 ### Core Evaluation Framework
 
-Location: `src/EvalRing`
+Location: `single_agent_frameworks/single_agent_frameworks`
 
 Responsibilities:
 
@@ -34,14 +34,14 @@ Responsibilities:
 
 Important modules:
 
-- `src/EvalRing/dataset`: dataset loaders such as `CSVDataset` and `DataFrameDataset`
-- `src/EvalRing/agent`: `MockAgent`, `RuleBasedAgent`, `OpenAIAgent`, classification utilities, and multi-role orchestration
-- `src/EvalRing/evaluator`: classification evaluation, metrics, and result objects
-- `src/EvalRing/evaluator/llm_judge`: rubric and LLM-as-judge evaluation utilities
+- `single_agent_frameworks/single_agent_frameworks/dataset`: dataset loaders such as `CSVDataset` and `DataFrameDataset`
+- `single_agent_frameworks/single_agent_frameworks/agent`: `MockAgent`, `RuleBasedAgent`, `OpenAIAgent`, classification utilities, and multi-role orchestration
+- `single_agent_frameworks/single_agent_frameworks/evaluator`: classification evaluation, metrics, and result objects
+- `single_agent_frameworks/single_agent_frameworks/evaluator/llm_judge`: rubric and LLM-as-judge evaluation utilities
 
 ### Suicide Detection Application
 
-Location: `src/example/suicide_detection`
+Location: `single_agent_frameworks/example/suicide_detection`
 
 Responsibilities:
 

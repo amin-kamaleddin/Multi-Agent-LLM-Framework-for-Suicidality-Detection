@@ -1,4 +1,4 @@
-# EvalRing specific gitignore
+# Legacy specific gitignore
 
 # Allow requirements files
 !requirements.txt
@@ -101,7 +101,7 @@ models/
 *.pkl
 *.joblib
 
-# EvalRing run outputs (auto-generated, may contain results/keys)
+# EvalRing (Legacy Name) run outputs (auto-generated, may contain results/keys)
 _EvalRing/
 .deepeval/
 

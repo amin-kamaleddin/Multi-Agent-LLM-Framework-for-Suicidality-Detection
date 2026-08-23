@@ -419,8 +419,8 @@ Purpose:
 
 The current code already has partial support for this direction:
 
-- `multi-agent-host` mode in `src/example/suicide_detection/llm_agent.py`
-- reusable orchestration in `src/EvalRing/agent/multi_role.py`
+- `multi-agent-host` mode in `single_agent_frameworks/example/suicide_detection/llm_agent.py`
+- reusable orchestration in `single_agent_frameworks/single_agent_frameworks/agent/multi_role.py`
 - `per-class-score` mode, which already asks one class-specific question per label
 
 Recommended implementation path:

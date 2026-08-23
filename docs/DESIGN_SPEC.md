@@ -2,12 +2,12 @@
 
 ## 1. Purpose
 
-EvalRing is a lightweight evaluation framework for model and agent benchmarking.
+EvalRing (Legacy) is a lightweight evaluation framework for model and agent benchmarking.
 
 In the current repository state, the system has two layers:
 
-1. **Core framework layer** in [src/EvalRing](../src/EvalRing)
-2. **Task-specific evaluation applications** in [src/example](../src/example), especially [src/example/suicide_detection](../src/example/suicide_detection)
+1. **Core framework layer** in [single_agent_frameworks/single_agent_frameworks](../single_agent_frameworks/single_agent_frameworks)
+2. **Task-specific evaluation applications** in [single_agent_frameworks/example](../single_agent_frameworks/example), especially [single_agent_frameworks/example/suicide_detection](../single_agent_frameworks/example/suicide_detection)
 
 The framework standardizes:
 
@@ -43,7 +43,7 @@ The framework standardizes:
 
 ### Agent layer
 
-Location: [src/EvalRing/agent](../src/EvalRing/agent)
+Location: [single_agent_frameworks/single_agent_frameworks/agent](../single_agent_frameworks/single_agent_frameworks/agent)
 
 Responsibilities:
 
@@ -62,7 +62,7 @@ Key public types:
 
 ### Dataset layer
 
-Location: [src/EvalRing/dataset](../src/EvalRing/dataset)
+Location: [single_agent_frameworks/single_agent_frameworks/dataset](../single_agent_frameworks/single_agent_frameworks/dataset)
 
 Responsibilities:
 
@@ -80,7 +80,7 @@ Key public types:
 
 ### Evaluator layer
 
-Location: [src/EvalRing/evaluator](../src/EvalRing/evaluator)
+Location: [single_agent_frameworks/single_agent_frameworks/evaluator](../single_agent_frameworks/single_agent_frameworks/evaluator)
 
 Responsibilities:
 
@@ -99,7 +99,7 @@ Key public types:
 
 ### LLM-as-a-Judge layer
 
-Location: [src/EvalRing/evaluator/llm_judge](../src/EvalRing/evaluator/llm_judge)
+Location: [single_agent_frameworks/single_agent_frameworks/evaluator/llm_judge](../single_agent_frameworks/single_agent_frameworks/evaluator/llm_judge)
 
 Responsibilities:
 
@@ -107,7 +107,7 @@ Responsibilities:
 - templated judgment prompts
 - evaluation pipelines where an LLM judges another output
 
-Key public types exported through [src/EvalRing/evaluator/__init__.py](../src/EvalRing/evaluator/__init__.py):
+Key public types exported through [single_agent_frameworks/single_agent_frameworks/evaluator/__init__.py](../single_agent_frameworks/single_agent_frameworks/evaluator/__init__.py):
 
 - `Rubric`
 - `RubricLevel`
@@ -238,7 +238,7 @@ This prevents rerunning the entire experiment for one or two transient API failu
 
 ## 7.1 Generic model client
 
-`OpenAIAgent` in [src/EvalRing/agent/implementations.py](../src/EvalRing/agent/implementations.py) is the common model-backed client.
+`OpenAIAgent` in [single_agent_frameworks/single_agent_frameworks/agent/implementations.py](../single_agent_frameworks/single_agent_frameworks/agent/implementations.py) is the common model-backed client.
 
 Current behavior:
 
@@ -275,7 +275,7 @@ Current `OpenAISuicideDetectionAgent` modes:
 
 ### 7.2.2 Reusable classification output utilities
 
-Location: [src/EvalRing/agent/classification.py](../src/EvalRing/agent/classification.py)
+Location: [single_agent_frameworks/single_agent_frameworks/agent/classification.py](../single_agent_frameworks/single_agent_frameworks/agent/classification.py)
 
 Core reusable functions:
 
@@ -313,7 +313,7 @@ This application provides a concrete research workflow around the RSD_15K datase
 
 Created under:
 
-- [src/example/suicide_detection/_EvalRing](../src/example/suicide_detection/_EvalRing)
+- [single_agent_frameworks/example/suicide_detection/_EvalRing](../single_agent_frameworks/example/suicide_detection/_EvalRing)
 
 Each run produces a timestamped folder containing:
 
