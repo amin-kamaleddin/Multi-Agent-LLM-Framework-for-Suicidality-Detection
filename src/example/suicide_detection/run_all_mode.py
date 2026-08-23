@@ -9,16 +9,16 @@ script_dir = Path(__file__).resolve().parent
 from run_model_suite import run_local_suite
 
 MODES = [
-    "single-class",
+    #"single-class",
     #"multi-class-chance",
     #"base-vs-rest-binary",
-    #"per-class-score",
+    "per-class-score",
     # "multi-agent-host"
 ]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run all evaluation modes sequentially via python invocation.")
-    parser.add_argument("--n-samples", type=int, default=29727)
+    parser.add_argument("--n-samples", type=int, default=28792)
     parser.add_argument("--max-workers", type=int, default=50)
     parser.add_argument("--models-file", type=str, default="model_list.json")
     parser.add_argument("--cache-mode", type=str, default="both", choices=["runs_only", "cache_file", "both"], help="Global cache operation mode")
