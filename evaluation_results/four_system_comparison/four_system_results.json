@@ -1,0 +1,293 @@
+{
+    "experiment": "Four-system paired comparison on canonical held-out test set",
+    "test_rows": 4319,
+    "positive_test_rows": 2160,
+    "test_file_sha256": "cc48cd9110cce90bacbe87e5136499e9cae44f926c70316d81386724ea01ee69",
+    "random_seed": 42,
+    "bootstrap_iterations": 5000,
+    "systems": {
+        "single_agent_luna": {
+            "display_name": "Single-Agent Luna",
+            "prediction_file": "../multi_agent_frameworks/logs/runs/20260822_144023_single_agent_luna_frozen_test/predictions.csv",
+            "five_class_metrics": {
+                "accuracy": 0.7457744848344524,
+                "macro_precision": 0.5770330498064453,
+                "macro_recall": 0.5717278522809379,
+                "macro_f1": 0.5317848399328005,
+                "weighted_precision": 0.7041273834729969,
+                "weighted_recall": 0.7457744848344524,
+                "weighted_f1": 0.6908601534062258
+            },
+            "positive_only_metrics": {
+                "accuracy": 0.5037037037037037,
+                "macro_precision": 0.5388780795656977,
+                "macro_recall": 0.4676704684313021,
+                "macro_f1": 0.4406265906468114,
+                "weighted_precision": 0.6082304852540678,
+                "weighted_recall": 0.5037037037037037,
+                "weighted_f1": 0.4803717311562447
+            },
+            "binary_metrics": {
+                "accuracy": 0.8953461449409585,
+                "precision": 0.9852272727272727,
+                "recall": 0.8027777777777778,
+                "f1": 0.8846938775510204,
+                "tn": 2133,
+                "fp": 26,
+                "fn": 426,
+                "tp": 1734
+            }
+        },
+        "framework3": {
+            "display_name": "Framework 3 (Hierarchical, No Reviewer)",
+            "prediction_file": "../multi_agent_frameworks/logs/runs/20260822_233218_framework3_luna_frozen_test/predictions.csv",
+            "five_class_metrics": {
+                "accuracy": 0.7520259319286872,
+                "macro_precision": 0.610753421560843,
+                "macro_recall": 0.5885289695201559,
+                "macro_f1": 0.5575012486908142,
+                "weighted_precision": 0.7212814981021777,
+                "weighted_recall": 0.7520259319286872,
+                "weighted_f1": 0.7012485162071856
+            },
+            "positive_only_metrics": {
+                "accuracy": 0.5175925925925926,
+                "macro_precision": 0.5788195161389492,
+                "macro_recall": 0.4890192480280318,
+                "macro_f1": 0.472934864689631,
+                "weighted_precision": 0.6361950947550263,
+                "weighted_recall": 0.5175925925925926,
+                "weighted_f1": 0.4997662698359714
+            },
+            "binary_metrics": {
+                "accuracy": 0.8978930307941653,
+                "precision": 0.983680360157569,
+                "recall": 0.8092592592592592,
+                "f1": 0.8879857759715519,
+                "tn": 2130,
+                "fp": 29,
+                "fn": 412,
+                "tp": 1748
+            }
+        },
+        "framework4": {
+            "display_name": "Framework 4 (Hierarchical + Reviewer)",
+            "prediction_file": "../multi_agent_frameworks/logs/runs/20260823_002216_framework4_luna_frozen_test/predictions.csv",
+            "five_class_metrics": {
+                "accuracy": 0.755498958092151,
+                "macro_precision": 0.616658877998165,
+                "macro_recall": 0.5878148959831077,
+                "macro_f1": 0.5651550995393764,
+                "weighted_precision": 0.7312234750088915,
+                "weighted_recall": 0.755498958092151,
+                "weighted_f1": 0.7121298852142595
+            },
+            "positive_only_metrics": {
+                "accuracy": 0.5263888888888889,
+                "macro_precision": 0.5898379591736749,
+                "macro_recall": 0.4885898335036645,
+                "macro_f1": 0.48205750991467067,
+                "weighted_precision": 0.6551345100021145,
+                "weighted_recall": 0.5263888888888889,
+                "weighted_f1": 0.5183002148358957
+            },
+            "binary_metrics": {
+                "accuracy": 0.9020606621903219,
+                "precision": 0.9816971713810316,
+                "recall": 0.8194444444444444,
+                "f1": 0.8932626797880394,
+                "tn": 2126,
+                "fp": 33,
+                "fn": 390,
+                "tp": 1770
+            }
+        },
+        "mentalroberta_ft": {
+            "display_name": "Fine-Tuned MentalRoBERTa",
+            "prediction_file": "results/test/test_predictions.csv",
+            "five_class_metrics": {
+                "accuracy": 0.8437138226441306,
+                "macro_precision": 0.7105180696673644,
+                "macro_recall": 0.769570881625534,
+                "macro_f1": 0.7292765569118629,
+                "weighted_precision": 0.8603851124026621,
+                "weighted_recall": 0.8437138226441306,
+                "weighted_f1": 0.8479386312344108
+            },
+            "positive_only_metrics": {
+                "accuracy": 0.7097222222222223,
+                "macro_precision": 0.6585067719605675,
+                "macro_recall": 0.7175217307952338,
+                "macro_f1": 0.6741206481111939,
+                "weighted_precision": 0.7583616625418934,
+                "weighted_recall": 0.7097222222222223,
+                "weighted_f1": 0.7249326479296533
+            },
+            "binary_metrics": {
+                "accuracy": 0.979624913174346,
+                "precision": 0.977859778597786,
+                "recall": 0.9814814814814815,
+                "f1": 0.9796672828096118,
+                "tn": 2111,
+                "fp": 48,
+                "fn": 40,
+                "tp": 2120
+            }
+        }
+    },
+    "mcnemar_pairwise": [
+        {
+            "system_a": "single_agent_luna",
+            "system_b": "framework3",
+            "comparison": "framework3_minus_single_agent_luna",
+            "system_a_only_correct": 53,
+            "system_b_only_correct": 80,
+            "both_correct": 3168,
+            "both_wrong": 1018,
+            "discordant_pairs": 133,
+            "raw_p_value": 0.023801099334890975,
+            "accuracy_difference_b_minus_a": 0.006251447094234752,
+            "holm_adjusted_p_value": 0.04760219866978195,
+            "significant_after_holm_0_05": true
+        },
+        {
+            "system_a": "framework3",
+            "system_b": "framework4",
+            "comparison": "framework4_minus_framework3",
+            "system_a_only_correct": 38,
+            "system_b_only_correct": 53,
+            "both_correct": 3210,
+            "both_wrong": 1018,
+            "discordant_pairs": 91,
+            "raw_p_value": 0.14179337454474714,
+            "accuracy_difference_b_minus_a": 0.0034730261634637882,
+            "holm_adjusted_p_value": 0.14179337454474714,
+            "significant_after_holm_0_05": false
+        },
+        {
+            "system_a": "single_agent_luna",
+            "system_b": "framework4",
+            "comparison": "framework4_minus_single_agent_luna",
+            "system_a_only_correct": 60,
+            "system_b_only_correct": 102,
+            "both_correct": 3161,
+            "both_wrong": 996,
+            "discordant_pairs": 162,
+            "raw_p_value": 0.0012072213753207735,
+            "accuracy_difference_b_minus_a": 0.00972447325769854,
+            "holm_adjusted_p_value": 0.0036216641259623206,
+            "significant_after_holm_0_05": true
+        },
+        {
+            "system_a": "single_agent_luna",
+            "system_b": "mentalroberta_ft",
+            "comparison": "mentalroberta_ft_minus_single_agent_luna",
+            "system_a_only_correct": 304,
+            "system_b_only_correct": 727,
+            "both_correct": 2917,
+            "both_wrong": 371,
+            "discordant_pairs": 1031,
+            "raw_p_value": 1.4081361121871501e-40,
+            "accuracy_difference_b_minus_a": 0.09793933780967823,
+            "holm_adjusted_p_value": 8.448816673122901e-40,
+            "significant_after_holm_0_05": true
+        },
+        {
+            "system_a": "framework3",
+            "system_b": "mentalroberta_ft",
+            "comparison": "mentalroberta_ft_minus_framework3",
+            "system_a_only_correct": 307,
+            "system_b_only_correct": 703,
+            "both_correct": 2941,
+            "both_wrong": 368,
+            "discordant_pairs": 1010,
+            "raw_p_value": 2.227028870225008e-36,
+            "accuracy_difference_b_minus_a": 0.09168789071544348,
+            "holm_adjusted_p_value": 1.1135144351125039e-35,
+            "significant_after_holm_0_05": true
+        },
+        {
+            "system_a": "framework4",
+            "system_b": "mentalroberta_ft",
+            "comparison": "mentalroberta_ft_minus_framework4",
+            "system_a_only_correct": 305,
+            "system_b_only_correct": 686,
+            "both_correct": 2958,
+            "both_wrong": 370,
+            "discordant_pairs": 991,
+            "raw_p_value": 2.2470262866127433e-34,
+            "accuracy_difference_b_minus_a": 0.08821486455197969,
+            "holm_adjusted_p_value": 8.988105146450973e-34,
+            "significant_after_holm_0_05": true
+        }
+    ],
+    "bootstrap_pairwise": [
+        {
+            "comparison": "framework3_minus_single_agent_luna",
+            "system_a": "single_agent_luna",
+            "system_b": "framework3",
+            "five_class_observed_difference": 0.02571640875801373,
+            "five_class_ci_95_lower": 0.012021259087369616,
+            "five_class_ci_95_upper": 0.03909727227759895,
+            "positive_only_observed_difference": 0.03230827404281955,
+            "positive_only_ci_95_lower": 0.015667154621840144,
+            "positive_only_ci_95_upper": 0.04912151004023749
+        },
+        {
+            "comparison": "framework4_minus_framework3",
+            "system_a": "framework3",
+            "system_b": "framework4",
+            "five_class_observed_difference": 0.0076538508485621826,
+            "five_class_ci_95_lower": -0.002439437457908944,
+            "five_class_ci_95_upper": 0.01792168328847009,
+            "positive_only_observed_difference": 0.009122645225039694,
+            "positive_only_ci_95_lower": -0.003207281402993134,
+            "positive_only_ci_95_upper": 0.021884519474544617
+        },
+        {
+            "comparison": "framework4_minus_single_agent_luna",
+            "system_a": "single_agent_luna",
+            "system_b": "framework4",
+            "five_class_observed_difference": 0.033370259606575914,
+            "five_class_ci_95_lower": 0.0190066926962933,
+            "five_class_ci_95_upper": 0.047815874888057004,
+            "positive_only_observed_difference": 0.041430919267859245,
+            "positive_only_ci_95_lower": 0.023855157490677438,
+            "positive_only_ci_95_upper": 0.059474999278162806
+        },
+        {
+            "comparison": "mentalroberta_ft_minus_single_agent_luna",
+            "system_a": "single_agent_luna",
+            "system_b": "mentalroberta_ft",
+            "five_class_observed_difference": 0.19749171697906243,
+            "five_class_ci_95_lower": 0.1744024773520685,
+            "five_class_ci_95_upper": 0.22136883026166185,
+            "positive_only_observed_difference": 0.23349405746438245,
+            "positive_only_ci_95_lower": 0.2040429430831055,
+            "positive_only_ci_95_upper": 0.26204437639814127
+        },
+        {
+            "comparison": "mentalroberta_ft_minus_framework3",
+            "system_a": "framework3",
+            "system_b": "mentalroberta_ft",
+            "five_class_observed_difference": 0.1717753082210487,
+            "five_class_ci_95_lower": 0.14885819180859422,
+            "five_class_ci_95_upper": 0.19507564570412014,
+            "positive_only_observed_difference": 0.2011857834215629,
+            "positive_only_ci_95_lower": 0.17146310800067108,
+            "positive_only_ci_95_upper": 0.22948042014613457
+        },
+        {
+            "comparison": "mentalroberta_ft_minus_framework4",
+            "system_a": "framework4",
+            "system_b": "mentalroberta_ft",
+            "five_class_observed_difference": 0.1641214573724865,
+            "five_class_ci_95_lower": 0.14097885506521216,
+            "five_class_ci_95_upper": 0.1870191862220669,
+            "positive_only_observed_difference": 0.1920631381965232,
+            "positive_only_ci_95_lower": 0.1623981442869388,
+            "positive_only_ci_95_upper": 0.22011639385493123
+        }
+    ],
+    "positive_only_definition": "All records whose ground-truth label is Indicator, Ideation, Behavior, or Attempt. Predictions of Unsupportive remain errors and are not excluded."
+}

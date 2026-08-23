@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "workflow_name": "single_agent",
+  "sample_id": "49",
+  "final_output": {
+    "label_name": "Behavior",
+    "suicidal_intent": true
+  },
+  "agents": [
+    {
+      "role": "single_agent",
+      "model_name": "openai/gpt-5.6-luna",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Classify the post into exactly ONE class: Unsupportive, Indicator, Ideation, Behavior, or Attempt.\n\nUse these class definitions:\n\n**Unsupportive**\n- The post does NOT indicate the author's own suicidal risk or any connection to suicidal ideation.\n- Includes: discussion of topics unrelated to suicidal ideation or self harm, such as hobbies, nature, and any other topic.\n- However, also includes discussions about different emotions, including negative ones such as anger, sadness and even depression,\n- as long as the author does not indicate at all to be thinking or discussing suicide or self-harm.\n\n**Indicator**\n- The post does NOT indicate the author's own suicidal risk, but might be a window into their inner thoughts related to suicide.\n- Includes: discussion of another person's suicidality, general discussion/news, or explicit denial of own suicidal intent.\n- Person does not seem at any risk, but suicide was mentioned or discussed, even if in an explicit denial, so it should be\n- flagged accordingly.\n- Also includes concern for someone else at risk.\n\n**Ideation**\n- The author expresses suicidal thoughts, wishes, or desire to die/end life.\n- Includes passive or active suicidal thinking, including hypothetical or unrealistic methods.\n- No concrete self-harm/suicide action has been taken in the post.\n\n**Behavior**\n- The author describes preparatory or self-harm behavior beyond verbal thoughts.\n- Includes planning/preparation actions (for example, gathering means, writing notes, preparing for death).\n- Includes non-suicidal self-harm when self-inflicted harm is described, even without explicit intent to die.\n\n**Attempt**\n- The post mentions a suicide attempt (current or past).\n- A past attempt should still be labeled Attempt, even if the current post does not express ongoing suicidal thoughts.\n\nDecision rules:\n- If the post contains mixed signals, choose the class supported by the clearest explicit evidence.\n\nOutput format:\n- Return ONLY one word: Unsupportive, Indicator, Ideation, Behavior, or Attempt."
+        },
+        {
+          "role": "user",
+          "content": "Text to classify:\n\nI’m just getting ready for it now. I’m just about ready to go. I’m alone, I have a lot of time, and access to a couple ways I could end it. I’m just slowly letting go. I can’t take the pain anymore."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "evaluation_sample_path": "../finetune_mentalroberta/data/splits/test.csv",
+  "audit_available": false
+}
