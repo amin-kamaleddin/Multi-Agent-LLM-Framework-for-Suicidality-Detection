@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 try:
-    from EvalRing.utils.visualizations import generate_suite_visuals
+    from single_agent_frameworks.utils.visualizations import generate_suite_visuals
 except ImportError:
     generate_suite_visuals = None
 

@@ -27,10 +27,10 @@ sys.path.append(str(src_path))
 try:
     import json
     import csv
-    from EvalRing.dataset import CSVDataset, DataFrameDataset
-    from EvalRing.agent import MockAgent
-    from EvalRing.evaluator import ClassificationEvaluator
-    from EvalRing.utils.global_cache import _load_cached_cases as _load_cached_cases
+    from single_agent_frameworks.dataset import CSVDataset, DataFrameDataset
+    from single_agent_frameworks.agent import MockAgent
+    from single_agent_frameworks.evaluator import ClassificationEvaluator
+    from single_agent_frameworks.utils.global_cache import _load_cached_cases as _load_cached_cases
     from llm_agent import OpenAISuicideDetectionAgent
 except ImportError as e:
     print(f"Error importing EvalRing: {e}")
@@ -986,7 +986,7 @@ def run_main_eval(
         )
     else:
         print("\nAll samples cached. Evaluation completely bypassed.")
-        from EvalRing.evaluator.base import EvaluationResult, EvaluationMetrics
+        from single_agent_frameworks.evaluator.base import EvaluationResult, EvaluationMetrics
         result = EvaluationResult(
             agent_name=getattr(agent, "name", "unknown"),
             dataset_name=dataset.name,

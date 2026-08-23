@@ -11,7 +11,7 @@ project_root = script_dir.parent.parent.parent
 
 sys.path.insert(0, str(project_root))
 
-from src.EvalRing.utils.suite_runner import run_suite
+from single_agent_frameworks.single_agent_frameworks.utils.suite_runner import run_suite
 
 def run_local_suite(
     n_samples: int = 10,

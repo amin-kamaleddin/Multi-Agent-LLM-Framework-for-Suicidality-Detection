@@ -9,7 +9,7 @@ script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.EvalRing.utils.generate_model_list import generate_model_list
+from single_agent_frameworks.single_agent_frameworks.utils.generate_model_list import generate_model_list
 
 if __name__ == "__main__":
     out_path = script_dir / "model_list.json"

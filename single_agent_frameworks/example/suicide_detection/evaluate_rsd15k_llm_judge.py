@@ -20,8 +20,8 @@ project_root = current_file.parent.parent.parent.parent
 src_path = project_root / "src"
 sys.path.append(str(src_path))
 
-from EvalRing.dataset import CSVDataset
-from EvalRing.evaluator.llm_judge import LLMJudgeEvaluator, Rubric, RubricLevel
+from single_agent_frameworks.dataset import CSVDataset
+from single_agent_frameworks.evaluator.llm_judge import LLMJudgeEvaluator, Rubric, RubricLevel
 
 try:
     from llm_agent import OpenAISuicideDetectionAgent

@@ -2,13 +2,13 @@ from typing import Any, Dict, Optional
 import os
 import json
 import time
-from EvalRing.agent import OpenAIAgent
-from EvalRing.agent.classification import (
+from single_agent_frameworks.agent import OpenAIAgent
+from single_agent_frameworks.agent.classification import (
     aggregate_base_vs_rest_probabilities,
     parse_json_object,
 )
-from EvalRing.agent.multi_role import MultiRoleHostOrchestrator, RoleConfig
-from EvalRing.agent.base import AgentResponse
+from single_agent_frameworks.agent.multi_role import MultiRoleHostOrchestrator, RoleConfig
+from single_agent_frameworks.agent.base import AgentResponse
 
 
 class OpenAISuicideDetectionAgent(OpenAIAgent):
