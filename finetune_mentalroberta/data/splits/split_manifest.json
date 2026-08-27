@@ -1,15 +1,46 @@
 {
-    "experiment": "MentalRoBERTa five-class fine-tuning dataset split",
+    "experiment": "MentalRoBERTa five-class fine-tuning user-disjoint dataset split",
     "input_file": "data/raw/suicidality_full_dataset_posneg_balanced.csv",
     "input_file_sha256": "caccbbefab9739016059b57d803d911aa787450684e40f5f8f6a507e5b468d95",
     "random_seed": 42,
     "sorting_column": "ID",
-    "split_unit": "individual post",
+    "split_unit": "user",
+    "group_column": "users",
     "stratification_column": "sentiment",
-    "split_strategy": "Stratified post-level train/validation/test split",
-    "train_fraction": 0.7,
-    "validation_fraction": 0.15,
-    "test_fraction": 0.15,
+    "split_strategy": "User-disjoint approximately stratified train/validation/test split using StratifiedGroupKFold with 20 folds; 14 folds assigned to train, 3 to validation, and 3 to test.",
+    "n_stratified_group_folds": 20,
+    "train_fold_numbers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+    ],
+    "validation_fold_numbers": [
+        14,
+        15,
+        16
+    ],
+    "test_fold_numbers": [
+        17,
+        18,
+        19
+    ],
+    "target_train_fraction": 0.7,
+    "target_validation_fraction": 0.15,
+    "target_test_fraction": 0.15,
+    "actual_train_fraction": 0.7001250347318699,
+    "actual_validation_fraction": 0.149937482634065,
+    "actual_test_fraction": 0.149937482634065,
     "labels": [
         "Unsupportive",
         "Indicator",
@@ -24,6 +55,7 @@
         "Attempt"
     ],
     "total_rows": 28792,
+    "total_unique_users": 13575,
     "full_dataset_label_counts": {
         "Unsupportive": 14396,
         "Indicator": 4550,
@@ -31,44 +63,80 @@
         "Behavior": 2039,
         "Attempt": 785
     },
-    "train_rows": 20154,
-    "validation_rows": 4319,
-    "test_rows": 4319,
+    "full_dataset_label_proportions": {
+        "Unsupportive": 0.5,
+        "Indicator": 0.1580300083356488,
+        "Ideation": 0.24388719088635732,
+        "Behavior": 0.07081828285634899,
+        "Attempt": 0.0272645179216449
+    },
+    "train_rows": 20158,
+    "validation_rows": 4317,
+    "test_rows": 4317,
+    "train_unique_users": 9503,
+    "validation_unique_users": 2036,
+    "test_unique_users": 2036,
     "train_label_counts": {
-        "Unsupportive": 10077,
-        "Indicator": 3185,
-        "Ideation": 4915,
+        "Unsupportive": 10078,
+        "Indicator": 3187,
+        "Ideation": 4916,
         "Behavior": 1427,
         "Attempt": 550
     },
     "validation_label_counts": {
-        "Unsupportive": 2160,
+        "Unsupportive": 2158,
         "Indicator": 682,
-        "Ideation": 1054,
-        "Behavior": 306,
-        "Attempt": 117
-    },
-    "test_label_counts": {
-        "Unsupportive": 2159,
-        "Indicator": 683,
         "Ideation": 1053,
         "Behavior": 306,
         "Attempt": 118
     },
-    "train_positive_rows": 10077,
+    "test_label_counts": {
+        "Unsupportive": 2160,
+        "Indicator": 681,
+        "Ideation": 1053,
+        "Behavior": 306,
+        "Attempt": 117
+    },
+    "train_label_proportions": {
+        "Unsupportive": 0.49995039190395874,
+        "Indicator": 0.15810100208354003,
+        "Ideation": 0.24387340013890266,
+        "Behavior": 0.07079075305089791,
+        "Attempt": 0.027284452822700665
+    },
+    "validation_label_proportions": {
+        "Unsupportive": 0.4998841788278897,
+        "Indicator": 0.15798007875839704,
+        "Ideation": 0.24391938846421127,
+        "Behavior": 0.07088255733148019,
+        "Attempt": 0.027333796618021773
+    },
+    "test_label_proportions": {
+        "Unsupportive": 0.5003474635163307,
+        "Indicator": 0.15774843641417652,
+        "Ideation": 0.24391938846421127,
+        "Behavior": 0.07088255733148019,
+        "Attempt": 0.027102154273801252
+    },
+    "train_positive_rows": 10080,
     "validation_positive_rows": 2159,
-    "test_positive_rows": 2160,
+    "test_positive_rows": 2157,
+    "user_overlap_counts": {
+        "train_validation": 0,
+        "train_test": 0,
+        "validation_test": 0
+    },
     "software_versions": {
         "python": "3.12.13",
         "pandas": "3.0.3",
         "scikit_learn": "1.9.0"
     },
     "output_file_sha256": {
-        "train.csv": "a6d11c56fd8335e8db87fa8639750596921bd82c507f8df198daf6c5b68d5fe3",
-        "validation.csv": "ddf637a89ef021e5ae4689edb9a65d603c9c0e193e0c3033d1ea29dd6993ed14",
-        "test.csv": "cc48cd9110cce90bacbe87e5136499e9cae44f926c70316d81386724ea01ee69",
-        "train_positive.csv": "a55239ff2f33c707a57184d2a2e039dfe95b708c50553a3eea49128b81bb98a5",
-        "validation_positive.csv": "3417e731f80d211dddc35d0c7a465bdc6ae42eaff273586f0a9fd51772f63b46",
-        "test_positive.csv": "f84087867f510eb3f3a5dc6c7223145b1ddc0326a2a7ceb47f2a13b9d8aebe88"
+        "train.csv": "223a801c86a89bfa95d1c11606681f4a0829e93022af5233fabbfaf48d719c63",
+        "validation.csv": "05ead175b6c3d0eb664cedcc3eb596e5d915ae1abadca47dfa2bbb475cd43813",
+        "test.csv": "1786dbe96e3898bc3ef336d0d021253ed0604ee8d73c1ef2dea409ce2dfe3f64",
+        "train_positive.csv": "dd496af9b7c01aed03b9fb44c7220c77f6deabdf44c5a335a07586b39120b268",
+        "validation_positive.csv": "60239de70d889428a5e6ad0480a2c5b51c5d7cf71739d1bf52a197ed5ed55540",
+        "test_positive.csv": "c8c6fbae35c13ad978290eb51e66b7f8ae194a69846c82b58bedd42cc2fd112b"
     }
 }

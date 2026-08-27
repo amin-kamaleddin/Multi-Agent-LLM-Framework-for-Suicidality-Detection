@@ -12,7 +12,6 @@ import sklearn
 import torch
 import torch.nn.functional as F
 
-from huggingface_hub import HfApi
 from sklearn.metrics import (
     accuracy_score,
     precision_recall_fscore_support,
@@ -39,16 +38,17 @@ from transformers import (
 SEED = 42
 
 MODEL_NAME = "mental/mental-roberta-base"
+MODEL_REVISION = "610e9d35d8f2550d713579077242d5e523209cea"
 
 TRAIN_FILE = Path("data/splits/train.csv")
 VALIDATION_FILE = Path("data/splits/validation.csv")
 SPLIT_MANIFEST_FILE = Path("data/splits/split_manifest.json")
 
-MODEL_ROOT = Path("models/mentalroberta_5class")
+MODEL_ROOT = Path("models/mentalroberta_5class_user_disjoint")
 CHECKPOINT_DIR = MODEL_ROOT / "checkpoints"
 FINAL_MODEL_DIR = MODEL_ROOT / "best_model"
 
-RESULTS_DIR = Path("results/training")
+RESULTS_DIR = Path("results/training_user_disjoint")
 
 CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -301,6 +301,7 @@ print(
 
 required_columns = {
     "ID",
+    "users",
     "text",
     "sentiment",
 }
@@ -340,13 +341,53 @@ for name, dataframe in [
         f"{unknown_labels}"
     )
 
-# Ensure train and validation remain disjoint.
+# Ensure train and validation remain disjoint at both the post and user levels.
 
 assert set(train_df["ID"]).isdisjoint(
     set(validation_df["ID"])
-), "Train and validation IDs overlap."
+), "Train and validation post IDs overlap."
+
+assert train_df["users"].notna().all(), (
+    "Missing user IDs found in train."
+)
+
+assert validation_df["users"].notna().all(), (
+    "Missing user IDs found in validation."
+)
+
+train_users = set(train_df["users"])
+validation_users = set(validation_df["users"])
+
+assert train_users.isdisjoint(validation_users), (
+    "CRITICAL: Train and validation USERS overlap."
+)
+
+assert split_manifest.get("split_unit") == "user", (
+    "split_manifest.json does not describe a user-level split."
+)
+
+assert split_manifest.get("group_column") == "users", (
+    "split_manifest.json does not identify 'users' as the grouping column."
+)
+
+manifest_overlap = split_manifest.get("user_overlap_counts", {})
+
+assert manifest_overlap.get("train_validation") == 0, (
+    "Manifest reports train/validation user overlap."
+)
+
+assert manifest_overlap.get("train_test") == 0, (
+    "Manifest reports train/test user overlap."
+)
+
+assert manifest_overlap.get("validation_test") == 0, (
+    "Manifest reports validation/test user overlap."
+)
 
 print("Data integrity checks passed.")
+print(f"Unique train users:      {train_df['users'].nunique():,}")
+print(f"Unique validation users: {validation_df['users'].nunique():,}")
+print("Train/validation user overlap: 0")
 
 
 # ============================================================
@@ -418,28 +459,14 @@ for label, label_id in LABEL2ID.items():
 
 
 # ============================================================
-# 7. PIN CURRENT HUGGING FACE MODEL REVISION
+# 7. USE THE SAME PINNED HUGGING FACE MODEL REVISION
 # ============================================================
 
-# Instead of silently relying on whatever model files
-# happen to be current in the future, record the exact
-# Hugging Face repository revision used for this run.
+# Keep the exact same base-model revision as the original experiment.
+# This makes the user-disjoint split the substantive experimental change.
 
-print(
-    "\nResolving exact Hugging Face model revision..."
-)
-
-api = HfApi()
-
-model_info = api.model_info(
-    MODEL_NAME
-)
-
-MODEL_REVISION = model_info.sha
-
-print(
-    f"Model revision: {MODEL_REVISION}"
-)
+print("\nUsing pinned Hugging Face model revision...")
+print(f"Model revision: {MODEL_REVISION}")
 
 
 # ============================================================
@@ -801,6 +828,16 @@ training_manifest = {
 
     "task": "five-class sequence classification",
 
+    "split_method": "user-disjoint",
+
+    "group_column": "users",
+
+    "train_unique_users": int(train_df["users"].nunique()),
+
+    "validation_unique_users": int(validation_df["users"].nunique()),
+
+    "train_validation_user_overlap": 0,
+
     "labels": LABEL2ID,
 
     "primary_validation_metric": "macro_f1",
@@ -1132,5 +1169,5 @@ print(
 
 print(
     "The model is now frozen and ready "
-    "for the final held-out test."
+    "for the final test-partition evaluation."
 )
