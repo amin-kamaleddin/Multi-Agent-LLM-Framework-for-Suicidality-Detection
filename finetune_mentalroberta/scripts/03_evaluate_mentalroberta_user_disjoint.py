@@ -30,7 +30,7 @@ import transformers
 SEED = 42
 
 MODEL_DIR = Path(
-    "models/mentalroberta_5class/best_model"
+    "models/mentalroberta_5class_user_disjoint/best_model"
 )
 
 TEST_FILE = Path(
@@ -42,11 +42,11 @@ SPLIT_MANIFEST_FILE = Path(
 )
 
 TRAINING_SUMMARY_FILE = Path(
-    "results/training/training_summary.json"
+    "results/training_user_disjoint/training_summary.json"
 )
 
 OUTPUT_DIR = Path(
-    "results/test"
+    "results/test_user_disjoint"
 )
 
 OUTPUT_DIR.mkdir(
@@ -351,7 +351,7 @@ class TestDataset(Dataset):
 # ============================================================
 
 print("\n" + "=" * 70)
-print("MENTALROBERTA — FINAL HELD-OUT TEST")
+print("MENTALROBERTA — FINAL TEST-PARTITION EVALUATION")
 print("=" * 70)
 
 print(
@@ -421,7 +421,7 @@ assert (
     actual_test_hash == expected_test_hash
 ), (
     "ERROR: test.csv does not match the "
-    "canonical held-out test split."
+    "canonical test split."
 )
 
 print(
@@ -442,8 +442,21 @@ print(
     f"{len(test_df):,}"
 )
 
-assert len(test_df) == 4319, (
-    f"Expected 4,319 test rows, "
+print(
+    f"Unique test users: "
+    f"{test_df['users'].nunique():,}"
+)
+
+expected_test_rows = split_manifest.get("test_rows")
+
+if expected_test_rows is None:
+    raise ValueError(
+        "split_manifest.json does not record test_rows."
+    )
+
+assert len(test_df) == int(expected_test_rows), (
+    f"Expected {int(expected_test_rows):,} test rows "
+    f"from split_manifest.json, "
     f"found {len(test_df):,}."
 )
 
@@ -454,6 +467,7 @@ assert len(test_df) == 4319, (
 
 required_columns = {
     "ID",
+    "users",
     "text",
     "sentiment",
 }
@@ -487,6 +501,56 @@ unexpected_labels = (
 assert not unexpected_labels, (
     f"Unexpected labels found: "
     f"{unexpected_labels}"
+)
+
+# Verify that this evaluation is using the canonical
+# user-disjoint split recorded by the split manifest.
+
+assert split_manifest.get("split_unit") == "user", (
+    "split_manifest.json does not describe a user-level split."
+)
+
+assert split_manifest.get("group_column") == "users", (
+    "split_manifest.json does not identify 'users' as the grouping column."
+)
+
+manifest_overlap = split_manifest.get(
+    "user_overlap_counts",
+    {},
+)
+
+assert manifest_overlap.get("train_validation") == 0, (
+    "Manifest reports train/validation user overlap."
+)
+
+assert manifest_overlap.get("train_test") == 0, (
+    "Manifest reports train/test user overlap."
+)
+
+assert manifest_overlap.get("validation_test") == 0, (
+    "Manifest reports validation/test user overlap."
+)
+
+assert test_df["users"].notna().all(), (
+    "Missing user identifiers found in test.csv."
+)
+
+expected_test_users = split_manifest.get(
+    "test_unique_users"
+)
+
+if expected_test_users is None:
+    raise ValueError(
+        "split_manifest.json does not record test_unique_users."
+    )
+
+assert (
+    test_df["users"].nunique()
+    == int(expected_test_users)
+), (
+    f"Expected {int(expected_test_users):,} unique test users "
+    f"from split_manifest.json, "
+    f"found {test_df['users'].nunique():,}."
 )
 
 print(
@@ -545,8 +609,21 @@ assert model.config.num_labels == 5, (
     f"found {model.config.num_labels} labels."
 )
 
+config_label2id = {
+    str(label): int(label_id)
+    for label, label_id
+    in model.config.label2id.items()
+}
+
+assert config_label2id == LABEL2ID, (
+    "Model label2id mapping does not match "
+    "the canonical mapping.\n"
+    f"Expected: {LABEL2ID}\n"
+    f"Actual:   {config_label2id}"
+)
+
 print(
-    "Frozen five-class model loaded."
+    "Frozen five-class model and label mapping verified."
 )
 
 
@@ -555,7 +632,7 @@ print(
 # ============================================================
 
 print(
-    "\nTokenizing held-out test set..."
+    "\nTokenizing test set..."
 )
 
 texts = (
@@ -607,7 +684,7 @@ test_loader = DataLoader(
 
 
 # ============================================================
-# 8. RUN FINAL HELD-OUT INFERENCE
+# 8. RUN FINAL TEST INFERENCE
 # ============================================================
 
 print("\n" + "=" * 70)
@@ -847,7 +924,7 @@ full_metrics = calculate_metrics(
 )
 
 print_metrics_summary(
-    "FULL FIVE-CLASS HELD-OUT TEST",
+    "FULL FIVE-CLASS TEST",
     full_metrics,
 )
 
@@ -932,10 +1009,20 @@ positive_prediction_df = (
     .copy()
 )
 
-assert len(
-    positive_prediction_df
-) == 2160, (
-    f"Expected 2,160 positive test rows, "
+expected_positive_test_rows = split_manifest.get(
+    "test_positive_rows"
+)
+
+if expected_positive_test_rows is None:
+    raise ValueError(
+        "split_manifest.json does not record test_positive_rows."
+    )
+
+assert len(positive_prediction_df) == int(
+    expected_positive_test_rows
+), (
+    f"Expected {int(expected_positive_test_rows):,} positive test rows "
+    f"from split_manifest.json, "
     f"found {len(positive_prediction_df):,}."
 )
 
@@ -1233,6 +1320,11 @@ if not model_weight_files:
     )
 
 
+if not model_weight_files:
+    raise FileNotFoundError(
+        f"No model weight files found in {MODEL_DIR}."
+    )
+
 model_weight_hashes = {}
 
 for model_file in model_weight_files:
@@ -1251,7 +1343,7 @@ for model_file in model_weight_files:
 results = {
     "experiment": (
         "MentalRoBERTa five-class final "
-        "held-out evaluation"
+        "test-partition evaluation"
     ),
 
     "evaluated_utc": (
@@ -1270,6 +1362,18 @@ results = {
         model_weight_hashes
     ),
 
+    "model_config_sha256": (
+        sha256_file(MODEL_DIR / "config.json")
+        if (MODEL_DIR / "config.json").exists()
+        else None
+    ),
+
+    "tokenizer_config_sha256": (
+        sha256_file(MODEL_DIR / "tokenizer_config.json")
+        if (MODEL_DIR / "tokenizer_config.json").exists()
+        else None
+    ),
+
     "test_file": str(
         TEST_FILE
     ),
@@ -1278,8 +1382,34 @@ results = {
         actual_test_hash
     ),
 
+    "split_manifest_file": str(
+        SPLIT_MANIFEST_FILE
+    ),
+
+    "split_manifest_sha256": sha256_file(
+        SPLIT_MANIFEST_FILE
+    ),
+
+    "training_summary_file": str(
+        TRAINING_SUMMARY_FILE
+    ),
+
+    "training_summary_sha256": (
+        sha256_file(TRAINING_SUMMARY_FILE)
+        if TRAINING_SUMMARY_FILE.exists()
+        else None
+    ),
+
+    "split_method": "user-disjoint",
+
+    "group_column": "users",
+
     "test_rows": int(
         len(test_df)
+    ),
+
+    "test_unique_users": int(
+        test_df["users"].nunique()
     ),
 
     "positive_test_rows": int(
@@ -1381,7 +1511,7 @@ with open(
 # ============================================================
 
 print("\n" + "=" * 70)
-print("FINAL HELD-OUT EVALUATION COMPLETE")
+print("FINAL TEST-PARTITION EVALUATION COMPLETE")
 print("=" * 70)
 
 print(
