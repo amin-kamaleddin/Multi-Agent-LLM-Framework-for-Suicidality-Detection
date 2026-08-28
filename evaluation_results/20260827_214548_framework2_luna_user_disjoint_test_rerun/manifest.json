@@ -1,0 +1,100 @@
+{
+  "schema_version": "1.0",
+  "run_id": "20260827_214548_framework2_luna_user_disjoint_test_rerun",
+  "status": "completed",
+  "created_at": "2026-08-28T01:45:48.815761+00:00",
+  "resume_count": 0,
+  "dataset": {
+    "sha256": "26540d5d84476127eed215c4b6b59938eb24646be955ca6b1f3b4269b6d06824",
+    "id_column": "ID",
+    "total_records": 4317,
+    "frozen_path": "sampled_dataset.csv"
+  },
+  "workflow": {
+    "name": "framework_2_parallel_with_evidence",
+    "config_sha256": "93c1c106c7a7dae3ca1f938b6f8ea232ad44815680ef8845a03192cedcbc5fb0",
+    "identity": {
+      "workflow_name": "framework_2_parallel_with_evidence",
+      "model_name": "openai/gpt-5.6-luna",
+      "requested_model_name": "gpt-5.6-luna",
+      "max_retries": 3,
+      "max_completion_tokens": 2000,
+      "temperature": 0.0,
+      "mode": "evidence",
+      "service_tier": "standard",
+      "workflow_config": {},
+      "agent_configuration": {
+        "Indicator_collector": {
+          "agent_name": "Indicator Evidence Collector",
+          "model_name": "openai/gpt-5.6-luna",
+          "temperature": 0.0
+        },
+        "Ideation_collector": {
+          "agent_name": "Ideation Evidence Collector",
+          "model_name": "openai/gpt-5.6-luna",
+          "temperature": 0.0
+        },
+        "Behavior_collector": {
+          "agent_name": "Behavior Evidence Collector",
+          "model_name": "openai/gpt-5.6-luna",
+          "temperature": 0.0
+        },
+        "Attempt_collector": {
+          "agent_name": "Attempt Evidence Collector",
+          "model_name": "openai/gpt-5.6-luna",
+          "temperature": 0.0
+        },
+        "Unsupportive_collector": {
+          "agent_name": "Unsupportive Evidence Collector",
+          "model_name": "openai/gpt-5.6-luna",
+          "temperature": 0.0
+        },
+        "judge": {
+          "agent_name": "Final Judge",
+          "model_name": "openai/gpt-5.6-luna",
+          "temperature": 0.0
+        }
+      }
+    }
+  },
+  "execution": {
+    "case_workers": 4,
+    "max_in_flight_llm": 15,
+    "checkpoint_every": 10,
+    "stop_after_tokens": null
+  },
+  "progress_store": "progress.sqlite",
+  "execution_attempts": [
+    {
+      "attempt_number": 1,
+      "start_date": "2026-08-28T01:45:48.815761+00:00",
+      "end_date": "2026-08-28T03:04:15.740945+00:00"
+    }
+  ],
+  "reset_running_records": 0,
+  "progress": {
+    "pending_records": 0,
+    "running_records": 0,
+    "completed_records": 4317,
+    "agent_execution_duration_s": 18728.292586361757,
+    "real_execution_duration_s": 4706.079690415878,
+    "failed_llm_attempts": 4,
+    "failed_records": 0
+  },
+  "token_stop": {
+    "threshold": null,
+    "current_session_total_tokens": 17659314
+  },
+  "checkpointed_at": "2026-08-28T03:04:09.654523+00:00",
+  "finished_at": "2026-08-28T03:04:15.740945+00:00",
+  "coverage": {
+    "expected_records": 4317,
+    "output_records": 4317,
+    "unique_output_ids": 4317,
+    "missing_ids": [],
+    "unexpected_ids": [],
+    "duplicate_ids": [],
+    "complete": true
+  },
+  "stop_reason": null
+}

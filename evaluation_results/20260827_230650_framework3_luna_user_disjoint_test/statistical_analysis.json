@@ -1,0 +1,142 @@
+{
+  "schema_version": "1.0",
+  "prespecification": {
+    "primary_endpoint": {
+      "name": "suicidal_intent_sensitivity",
+      "display_name": "Suicidal-intent sensitivity",
+      "definition": "TP / (TP + FN), where any of Indicator, Ideation, Behavior, or Attempt is positive.",
+      "rationale": "This safety-oriented endpoint measures missed suicidality signs and is invariant to deployment prevalence."
+    },
+    "secondary_endpoints": [
+      "suicidal_intent_specificity",
+      "observed_sample_ppv",
+      "observed_sample_npv",
+      "prevalence_adjusted_ppv_npv",
+      "positive_phase_macro_f1"
+    ],
+    "analysis_plan": "Two-sided 95% percentile confidence intervals from resampling users with replacement; all rows for a selected user remain together."
+  },
+  "bootstrap": {
+    "unit": "users",
+    "cluster_column": "users",
+    "cluster_count": 2036,
+    "replicates_requested": 2000,
+    "seed": 20260820,
+    "confidence_level": 0.95
+  },
+  "sample": {
+    "records": 4317,
+    "observed_positive_prevalence": 0.4996525364836692
+  },
+  "point_estimates": {
+    "sensitivity": 0.8011126564673157,
+    "specificity": 0.9856481481481482,
+    "ppv": 0.9823763501989767,
+    "npv": 0.8322908522283033,
+    "phase_macro_f1": 0.5235822616802382
+  },
+  "confidence_intervals_95": {
+    "sensitivity": {
+      "lower": 0.7560286418734422,
+      "upper": 0.8407524243774752,
+      "valid_replicates": 2000
+    },
+    "specificity": {
+      "lower": 0.9803272305370111,
+      "upper": 0.9903959347246042,
+      "valid_replicates": 2000
+    },
+    "ppv": {
+      "lower": 0.9732714947128416,
+      "upper": 0.9886782714568041,
+      "valid_replicates": 2000
+    },
+    "npv": {
+      "lower": 0.7827817676553465,
+      "upper": 0.8815462761791353,
+      "valid_replicates": 2000
+    },
+    "phase_macro_f1": {
+      "lower": 0.4788616587898888,
+      "upper": 0.5672441226871663,
+      "valid_replicates": 2000
+    }
+  },
+  "prevalence_adjusted_predictive_values": [
+    {
+      "target_prevalence": 0.01,
+      "ppv": 0.36054551287234093,
+      "ppv_ci_95": {
+        "lower": 0.29080413183217413,
+        "upper": 0.4590094604205528,
+        "valid_replicates": 2000
+      },
+      "npv": 0.9979659306421466,
+      "npv_ci_95": {
+        "lower": 0.9975049139172929,
+        "upper": 0.9983705569579552,
+        "valid_replicates": 2000
+      }
+    },
+    {
+      "target_prevalence": 0.05,
+      "ppv": 0.7460553796927536,
+      "ppv_ci_95": {
+        "lower": 0.6811798017746675,
+        "upper": 0.8155297724490234,
+        "valid_replicates": 2000
+      },
+      "npv": 0.9894914287679758,
+      "npv_ci_95": {
+        "lower": 0.9871344489683505,
+        "upper": 0.9915675973085232,
+        "valid_replicates": 2000
+      }
+    },
+    {
+      "target_prevalence": 0.1,
+      "ppv": 0.8611528135103316,
+      "ppv_ci_95": {
+        "lower": 0.818529059869974,
+        "upper": 0.9032233602715635,
+        "valid_replicates": 2000
+      },
+      "npv": 0.9780712823891057,
+      "npv_ci_95": {
+        "lower": 0.9732221826834989,
+        "upper": 0.98236350331769,
+        "valid_replicates": 2000
+      }
+    },
+    {
+      "target_prevalence": 0.2,
+      "ppv": 0.9331321307176993,
+      "ppv_ci_95": {
+        "lower": 0.910303275832876,
+        "upper": 0.9545442399706479,
+        "valid_replicates": 2000
+      },
+      "npv": 0.9519767458492722,
+      "npv_ci_95": {
+        "lower": 0.9417013009301655,
+        "upper": 0.9611738298134908,
+        "valid_replicates": 2000
+      }
+    },
+    {
+      "target_prevalence": 0.5,
+      "ppv": 0.9824003966997487,
+      "ppv_ci_95": {
+        "lower": 0.9759584847888494,
+        "upper": 0.9882349686040911,
+        "valid_replicates": 2000
+      },
+      "npv": 0.8320967628834262,
+      "npv_ci_95": {
+        "lower": 0.8015187923198124,
+        "upper": 0.8608977477488495,
+        "valid_replicates": 2000
+      }
+    }
+  ]
+}

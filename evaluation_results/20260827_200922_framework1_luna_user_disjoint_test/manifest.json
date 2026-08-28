@@ -1,0 +1,100 @@
+{
+  "schema_version": "1.0",
+  "run_id": "20260827_200922_framework1_luna_user_disjoint_test",
+  "status": "completed",
+  "created_at": "2026-08-28T00:09:22.258291+00:00",
+  "resume_count": 0,
+  "dataset": {
+    "sha256": "26540d5d84476127eed215c4b6b59938eb24646be955ca6b1f3b4269b6d06824",
+    "id_column": "ID",
+    "total_records": 4317,
+    "frozen_path": "sampled_dataset.csv"
+  },
+  "workflow": {
+    "name": "framework_1_parallel_no_evidence",
+    "config_sha256": "94dd13bf46bccaf681286b022558fc1bf0bb85a2ea144e9a8b9cd56f6157309f",
+    "identity": {
+      "workflow_name": "framework_1_parallel_no_evidence",
+      "model_name": "openai/gpt-5.6-luna",
+      "requested_model_name": "gpt-5.6-luna",
+      "max_retries": 3,
+      "max_completion_tokens": 2000,
+      "temperature": 0.0,
+      "mode": "bool",
+      "service_tier": "standard",
+      "workflow_config": {},
+      "agent_configuration": {
+        "Indicator_specialist": {
+          "agent_name": "Indicator Agent",
+          "model_name": "openai/gpt-5.6-luna",
+          "temperature": 0.0
+        },
+        "Ideation_specialist": {
+          "agent_name": "Ideation Agent",
+          "model_name": "openai/gpt-5.6-luna",
+          "temperature": 0.0
+        },
+        "Behavior_specialist": {
+          "agent_name": "Behavior Agent",
+          "model_name": "openai/gpt-5.6-luna",
+          "temperature": 0.0
+        },
+        "Attempt_specialist": {
+          "agent_name": "Attempt Agent",
+          "model_name": "openai/gpt-5.6-luna",
+          "temperature": 0.0
+        },
+        "Unsupportive_specialist": {
+          "agent_name": "Unsupportive Agent",
+          "model_name": "openai/gpt-5.6-luna",
+          "temperature": 0.0
+        },
+        "judge": {
+          "agent_name": "Final Judge",
+          "model_name": "openai/gpt-5.6-luna",
+          "temperature": 0.0
+        }
+      }
+    }
+  },
+  "execution": {
+    "case_workers": 8,
+    "max_in_flight_llm": 30,
+    "checkpoint_every": 10,
+    "stop_after_tokens": null
+  },
+  "progress_store": "progress.sqlite",
+  "execution_attempts": [
+    {
+      "attempt_number": 1,
+      "start_date": "2026-08-28T00:09:22.258291+00:00",
+      "end_date": "2026-08-28T00:45:47.630548+00:00"
+    }
+  ],
+  "reset_running_records": 0,
+  "progress": {
+    "pending_records": 0,
+    "running_records": 0,
+    "completed_records": 4317,
+    "agent_execution_duration_s": 17384.976859458024,
+    "real_execution_duration_s": 2184.640545041999,
+    "failed_llm_attempts": 3,
+    "failed_records": 0
+  },
+  "token_stop": {
+    "threshold": null,
+    "current_session_total_tokens": 8968081
+  },
+  "checkpointed_at": "2026-08-28T00:45:43.368311+00:00",
+  "finished_at": "2026-08-28T00:45:47.630548+00:00",
+  "coverage": {
+    "expected_records": 4317,
+    "output_records": 4317,
+    "unique_output_ids": 4317,
+    "missing_ids": [],
+    "unexpected_ids": [],
+    "duplicate_ids": [],
+    "complete": true
+  },
+  "stop_reason": null
+}

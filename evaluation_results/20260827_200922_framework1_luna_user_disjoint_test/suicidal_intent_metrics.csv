@@ -1,0 +1,2 @@
+﻿model_name,accuracy,precision,recall,f1,f1_score,support,positive_support,negative_support,tp,fp,tn,fn
+openai/gpt-5.6-luna,0.8892749594625897,0.97671777399205,0.7974038015762633,0.8779989790709546,0.8779989790709546,2157,2157,2160,1720,41,2119,437

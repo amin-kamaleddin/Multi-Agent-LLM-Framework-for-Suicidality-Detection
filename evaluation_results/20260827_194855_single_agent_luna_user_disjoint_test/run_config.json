@@ -1,0 +1,31 @@
+{
+  "model_name": "openai/gpt-5.6-luna",
+  "requested_model_name": "gpt-5.6-luna",
+  "sample_path": "../finetune_mentalroberta/data/splits/test.csv",
+  "dataset_audit_path": null,
+  "max_retries": 3,
+  "max_completion_tokens": 2000,
+  "temperature": 0.0,
+  "total_records": 4317,
+  "limit": null,
+  "mode": "single-class",
+  "service_tier": "standard",
+  "workflow_name": "single_agent",
+  "workflow_config": {},
+  "agent_configuration": {
+    "single_agent": {
+      "agent_name": "Single Agent",
+      "model_name": "openai/gpt-5.6-luna",
+      "temperature": 0.0
+    }
+  },
+  "error_stop_failed_llm_attempts": 200,
+  "error_stop_failed_records": 10,
+  "error_stop_rate": 0.1,
+  "error_stop_min_records": 100,
+  "case_workers": 8,
+  "max_in_flight_llm": 30,
+  "checkpoint_every": 10,
+  "stop_after_tokens": null,
+  "command": "evaluate"
+}

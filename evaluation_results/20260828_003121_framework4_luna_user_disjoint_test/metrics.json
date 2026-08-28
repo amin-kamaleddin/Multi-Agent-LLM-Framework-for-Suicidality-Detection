@@ -1,0 +1,338 @@
+{
+  "workflow_name": "framework_4_hierarchical_with_reviewer",
+  "model_name": "openai/gpt-5.6-luna",
+  "requested_model_name": "gpt-5.6-luna",
+  "mode": "bool",
+  "service_tier": "standard",
+  "evaluation_status": "completed",
+  "stop_reason": null,
+  "processed_records": 4317,
+  "total_records": 4317,
+  "coverage": {
+    "expected_records": 4317,
+    "output_records": 4317,
+    "unique_output_ids": 4317,
+    "missing_ids": [],
+    "unexpected_ids": [],
+    "duplicate_ids": [],
+    "complete": true
+  },
+  "token_stop": {
+    "threshold": null,
+    "current_session_total_tokens": 7504098,
+    "reached": false
+  },
+  "classification": {
+    "confusion_matrix": {
+      "Indicator": {
+        "Indicator": 80,
+        "Ideation": 196,
+        "Behavior": 26,
+        "Attempt": 5,
+        "Unsupportive": 374,
+        "Error": 0
+      },
+      "Ideation": {
+        "Indicator": 27,
+        "Ideation": 881,
+        "Behavior": 92,
+        "Attempt": 21,
+        "Unsupportive": 32,
+        "Error": 0
+      },
+      "Behavior": {
+        "Indicator": 3,
+        "Ideation": 158,
+        "Behavior": 129,
+        "Attempt": 15,
+        "Unsupportive": 1,
+        "Error": 0
+      },
+      "Attempt": {
+        "Indicator": 1,
+        "Ideation": 19,
+        "Behavior": 36,
+        "Attempt": 61,
+        "Unsupportive": 0,
+        "Error": 0
+      },
+      "Unsupportive": {
+        "Indicator": 9,
+        "Ideation": 24,
+        "Behavior": 3,
+        "Attempt": 0,
+        "Unsupportive": 2124,
+        "Error": 0
+      }
+    },
+    "total": 4317,
+    "failed_records": 0,
+    "failure_rate": 0.0
+  },
+  "suicidal_intent": {
+    "model_name": "openai/gpt-5.6-luna",
+    "accuracy": 0.8973824415103081,
+    "precision": 0.9798432250839866,
+    "recall": 0.8113120074177098,
+    "f1_score": 0.887648998224702,
+    "positive_precision": 0.9798432250839866,
+    "positive_recall": 0.8113120074177098,
+    "positive_f1": 0.887648998224702,
+    "tp": 1750,
+    "fp": 36,
+    "tn": 2124,
+    "fn": 407,
+    "positive_class_counts": {
+      "tp": 1750,
+      "tn": 2124,
+      "fp": 36,
+      "fn": 407
+    },
+    "binary_summary": {
+      "model_name": "openai/gpt-5.6-luna",
+      "accuracy": 0.8973824415103081,
+      "precision": 0.9798432250839866,
+      "recall": 0.8113120074177098,
+      "f1": 0.887648998224702,
+      "f1_score": 0.887648998224702,
+      "support": 2157,
+      "positive_support": 2157,
+      "negative_support": 2160,
+      "tp": 1750,
+      "fp": 36,
+      "tn": 2124,
+      "fn": 407
+    },
+    "confusion_matrix": {
+      "false": {
+        "false": 2124,
+        "true": 36,
+        "Error": 0
+      },
+      "true": {
+        "false": 407,
+        "true": 1750,
+        "Error": 0
+      }
+    },
+    "total": 4317,
+    "correct": 3874,
+    "failed_records": 0,
+    "failure_rate": 0.0,
+    "ground_truth_counts": {
+      "false": 2160,
+      "true": 2157
+    },
+    "has_both_ground_truth_classes": true,
+    "metric_limitation": null,
+    "class_mapping": {
+      "positive": [
+        "Indicator",
+        "Ideation",
+        "Behavior",
+        "Attempt"
+      ],
+      "negative": [
+        "Unsupportive"
+      ]
+    }
+  },
+  "positive_subclassification": {
+    "accuracy": 0.6577142857142857,
+    "precision": 0.619285539807589,
+    "recall": 0.5169460475326418,
+    "f1_score": 0.5382834374743943,
+    "support": 1750,
+    "correct": 1151,
+    "averaging": "macro",
+    "summary": {
+      "accuracy": 0.6577142857142857,
+      "precision": 0.619285539807589,
+      "recall": 0.5169460475326418,
+      "f1_score": 0.5382834374743943,
+      "support": 1750,
+      "correct": 1151,
+      "averaging": "macro"
+    },
+    "labels": [
+      "Indicator",
+      "Ideation",
+      "Behavior",
+      "Attempt"
+    ],
+    "confusion_matrix": {
+      "Indicator": {
+        "Indicator": 80,
+        "Ideation": 196,
+        "Behavior": 26,
+        "Attempt": 5
+      },
+      "Ideation": {
+        "Indicator": 27,
+        "Ideation": 881,
+        "Behavior": 92,
+        "Attempt": 21
+      },
+      "Behavior": {
+        "Indicator": 3,
+        "Ideation": 158,
+        "Behavior": 129,
+        "Attempt": 15
+      },
+      "Attempt": {
+        "Indicator": 1,
+        "Ideation": 19,
+        "Behavior": 36,
+        "Attempt": 61
+      }
+    },
+    "per_label": {
+      "Indicator": {
+        "tp": 80,
+        "fp": 31,
+        "fn": 227,
+        "support": 307,
+        "precision": 0.7207207207207207,
+        "recall": 0.26058631921824105,
+        "f1_score": 0.3827751196172249
+      },
+      "Ideation": {
+        "tp": 881,
+        "fp": 373,
+        "fn": 140,
+        "support": 1021,
+        "precision": 0.7025518341307815,
+        "recall": 0.8628795298726738,
+        "f1_score": 0.7745054945054944
+      },
+      "Behavior": {
+        "tp": 129,
+        "fp": 154,
+        "fn": 176,
+        "support": 305,
+        "precision": 0.4558303886925795,
+        "recall": 0.42295081967213116,
+        "f1_score": 0.4387755102040817
+      },
+      "Attempt": {
+        "tp": 61,
+        "fp": 41,
+        "fn": 56,
+        "support": 117,
+        "precision": 0.5980392156862745,
+        "recall": 0.5213675213675214,
+        "f1_score": 0.5570776255707763
+      }
+    },
+    "ground_truth_counts": {
+      "Indicator": 307,
+      "Ideation": 1021,
+      "Behavior": 305,
+      "Attempt": 117
+    },
+    "has_all_ground_truth_labels": true,
+    "metric_limitation": null
+  },
+  "runtime": {
+    "agent_execution_duration_s": 21733.426792676328,
+    "real_execution_duration_s": 5445.728885207791,
+    "call_count": 10870,
+    "llm_request_count": 10870,
+    "failed_llm_attempts": 5,
+    "json_parsing_errors": 1,
+    "errors_by_type": {
+      "APIConnectionError": 4,
+      "JSONDecodeError": 1
+    },
+    "latency_s": {
+      "min": 0.8944384157657623,
+      "max": 62.84207108290866,
+      "avg": 1.9979487817230048,
+      "total": 21717.703257329063
+    },
+    "tokens": {
+      "prompt_total": 6475484,
+      "completion_total": 1028614,
+      "total": 7504098,
+      "cached_total": 0,
+      "cache_write_total": 0,
+      "avg_prompt_per_request": 595.7206991720332,
+      "avg_completion_per_request": 94.62870285188592,
+      "avg_total_per_request": 690.3494020239191,
+      "avg_cached_per_request": 0.0,
+      "avg_cache_write_per_request": 0.0
+    },
+    "cost_usd": {
+      "total": 2.5456818,
+      "avg_per_call": 0.00023419335786568538
+    },
+    "provider_timing": {
+      "ttft_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "generation_time_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "provider_latency_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "moderation_latency_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "completion_tps": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "e2e_completion_tps": {
+        "count": 10866,
+        "min": 1.8936358708324745,
+        "max": 134.1623949562402,
+        "avg": 47.63698314077298
+      }
+    }
+  },
+  "compiled_reports": {
+    "compiled_csv": "logs/runs/20260828_003121_framework4_luna_user_disjoint_test/compiled_results.csv",
+    "compiled_markdown": "logs/runs/20260828_003121_framework4_luna_user_disjoint_test/compiled_results.md",
+    "statistical_analysis": "logs/runs/20260828_003121_framework4_luna_user_disjoint_test/statistical_analysis.json"
+  },
+  "artifact_status": {
+    "run_config.json": true,
+    "manifest.json": true,
+    "progress.sqlite": true,
+    "dataset_audit.json": true,
+    "sampled_dataset.csv": true,
+    "first_completion_input_prompts.json": true,
+    "llm_calls.jsonl": true,
+    "traces.jsonl": true,
+    "predictions.csv": true,
+    "suicidal_intent_metrics.csv": true,
+    "positive_subclassification_metrics.csv": true,
+    "statistical_analysis.json": true,
+    "metrics.json": true,
+    "results.json": true,
+    "metrics.md": true,
+    "misclassified_ids.txt": true,
+    "suicidal_intent_misclassified_ids.txt": true,
+    "suicidal_intent_metrics.svg": true,
+    "runtime_metrics.svg": true,
+    "trace_summary.json": true,
+    "errors.jsonl": true,
+    "compiled_results.csv": true,
+    "compiled_results.md": true
+  }
+}

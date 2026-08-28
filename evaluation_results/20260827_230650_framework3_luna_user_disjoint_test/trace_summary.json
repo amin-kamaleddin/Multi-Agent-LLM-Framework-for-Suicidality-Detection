@@ -1,0 +1,101 @@
+{
+  "workflow_name": "framework_3_hierarchical_no_reviewer",
+  "model_name": "openai/gpt-5.6-luna",
+  "requested_model_name": "gpt-5.6-luna",
+  "mode": "bool",
+  "service_tier": "standard",
+  "evaluation_status": "completed",
+  "processed_records": 4317,
+  "total_records": 4317,
+  "stop_reason": null,
+  "coverage": {
+    "expected_records": 4317,
+    "output_records": 4317,
+    "unique_output_ids": 4317,
+    "missing_ids": [],
+    "unexpected_ids": [],
+    "duplicate_ids": [],
+    "complete": true
+  },
+  "token_stop": {
+    "threshold": null,
+    "current_session_total_tokens": 8717580,
+    "reached": false
+  },
+  "runtime": {
+    "agent_execution_duration_s": 20178.383414035663,
+    "real_execution_duration_s": 5057.221786667127,
+    "call_count": 10702,
+    "llm_request_count": 10702,
+    "failed_llm_attempts": 2,
+    "json_parsing_errors": 2,
+    "errors_by_type": {
+      "JSONDecodeError": 2
+    },
+    "latency_s": {
+      "min": 0.8988479590043426,
+      "max": 14.683604832971469,
+      "avg": 1.8842429500092992,
+      "total": 20165.16805099952
+    },
+    "tokens": {
+      "prompt_total": 7864384,
+      "completion_total": 853196,
+      "total": 8717580,
+      "cached_total": 0,
+      "cache_write_total": 0,
+      "avg_prompt_per_request": 734.8518034012334,
+      "avg_completion_per_request": 79.7230424219772,
+      "avg_total_per_request": 814.5748458232106,
+      "avg_cached_per_request": 0.0,
+      "avg_cache_write_per_request": 0.0
+    },
+    "cost_usd": {
+      "total": 2.6242254,
+      "avg_per_call": 0.00024520887684544945
+    },
+    "provider_timing": {
+      "ttft_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "generation_time_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "provider_latency_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "moderation_latency_s": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "completion_tps": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "avg": null
+      },
+      "e2e_completion_tps": {
+        "count": 10702,
+        "min": 3.510981494091457,
+        "max": 94.0189578599211,
+        "avg": 42.200449872738105
+      }
+    }
+  },
+  "json_parsing_errors": 2,
+  "failed_records": 0,
+  "failure_rate": 0.0,
+  "llm_trace_file": "llm_calls.jsonl",
+  "node_trace_file": "traces.jsonl"
+}

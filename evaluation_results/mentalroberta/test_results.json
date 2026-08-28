@@ -1,0 +1,238 @@
+{
+    "experiment": "MentalRoBERTa five-class final test-partition evaluation",
+    "evaluated_utc": "2026-08-27T22:16:16.547069+00:00",
+    "random_seed": 42,
+    "model_directory": "models/mentalroberta_5class_user_disjoint/best_model",
+    "model_weight_sha256": {
+        "model.safetensors": "297b5b6f260889b3761a7d1956f969f5eda75665403cb3ba434704db5fe577f6"
+    },
+    "model_config_sha256": "fa5298c198ea02ad2b661df4568ce1431bdef031a6a73de8d217ae79e71cb50c",
+    "tokenizer_config_sha256": "aa6a8a3f069d2d98c09444ee3f9671d64c29ce647473dccd78169b10c490d359",
+    "test_file": "data/splits/test.csv",
+    "test_file_sha256": "1786dbe96e3898bc3ef336d0d021253ed0604ee8d73c1ef2dea409ce2dfe3f64",
+    "split_manifest_file": "data/splits/split_manifest.json",
+    "split_manifest_sha256": "63168a7040339de70e23c20fff585653bdb89b0d97e15f2f3d782cd334f2cf8c",
+    "training_summary_file": "results/training_user_disjoint/training_summary.json",
+    "training_summary_sha256": "15f8e4503a243493c16a9edb5089207e5a562a3bed0d130376d9e3b9b9a2cad6",
+    "split_method": "user-disjoint",
+    "group_column": "users",
+    "test_rows": 4317,
+    "test_unique_users": 2036,
+    "positive_test_rows": 2157,
+    "device": "Apple MPS",
+    "max_length": 512,
+    "batch_size": 8,
+    "labels": {
+        "Unsupportive": 0,
+        "Indicator": 1,
+        "Ideation": 2,
+        "Behavior": 3,
+        "Attempt": 4
+    },
+    "five_class_metrics": {
+        "accuracy": 0.8438730599953671,
+        "macro_precision": 0.7194751738140338,
+        "macro_recall": 0.7080728939416423,
+        "macro_f1": 0.7125930732314723,
+        "weighted_precision": 0.8454476750093143,
+        "weighted_recall": 0.8438730599953671,
+        "weighted_f1": 0.8442967136238854,
+        "classification_report": {
+            "Unsupportive": {
+                "precision": 0.9873595505617978,
+                "recall": 0.9763888888888889,
+                "f1-score": 0.9818435754189944,
+                "support": 2160.0
+            },
+            "Indicator": {
+                "precision": 0.7314814814814815,
+                "recall": 0.6960352422907489,
+                "f1-score": 0.7133182844243793,
+                "support": 681.0
+            },
+            "Ideation": {
+                "precision": 0.7391304347826086,
+                "recall": 0.7749287749287749,
+                "f1-score": 0.7566063977746871,
+                "support": 1053.0
+            },
+            "Behavior": {
+                "precision": 0.56797583081571,
+                "recall": 0.6143790849673203,
+                "f1-score": 0.5902668759811617,
+                "support": 306.0
+            },
+            "Attempt": {
+                "precision": 0.5714285714285714,
+                "recall": 0.47863247863247865,
+                "f1-score": 0.5209302325581395,
+                "support": 117.0
+            },
+            "accuracy": 0.8438730599953671,
+            "macro avg": {
+                "precision": 0.7194751738140338,
+                "recall": 0.7080728939416423,
+                "f1-score": 0.7125930732314723,
+                "support": 4317.0
+            },
+            "weighted avg": {
+                "precision": 0.8454476750093143,
+                "recall": 0.8438730599953671,
+                "f1-score": 0.8442967136238854,
+                "support": 4317.0
+            }
+        }
+    },
+    "positive_only_metrics": {
+        "accuracy": 0.7111729253592953,
+        "macro_precision": 0.6676968340203617,
+        "macro_recall": 0.6409938952048306,
+        "macro_f1": 0.6523039041701415,
+        "weighted_precision": 0.7221496649787078,
+        "weighted_recall": 0.7111729253592953,
+        "weighted_f1": 0.7153994903008533,
+        "classification_report": {
+            "Indicator": {
+                "precision": 0.7796052631578947,
+                "recall": 0.6960352422907489,
+                "f1-score": 0.7354538401861909,
+                "support": 681.0
+            },
+            "Ideation": {
+                "precision": 0.7458866544789763,
+                "recall": 0.7749287749287749,
+                "f1-score": 0.760130414531905,
+                "support": 1053.0
+            },
+            "Behavior": {
+                "precision": 0.56797583081571,
+                "recall": 0.6143790849673203,
+                "f1-score": 0.5902668759811617,
+                "support": 306.0
+            },
+            "Attempt": {
+                "precision": 0.5773195876288659,
+                "recall": 0.47863247863247865,
+                "f1-score": 0.5233644859813084,
+                "support": 117.0
+            },
+            "micro avg": {
+                "precision": 0.72018779342723,
+                "recall": 0.7111729253592953,
+                "f1-score": 0.7156519710753441,
+                "support": 2157.0
+            },
+            "macro avg": {
+                "precision": 0.6676968340203617,
+                "recall": 0.6409938952048306,
+                "f1-score": 0.6523039041701415,
+                "support": 2157.0
+            },
+            "weighted avg": {
+                "precision": 0.7221496649787078,
+                "recall": 0.7111729253592953,
+                "f1-score": 0.7153994903008533,
+                "support": 2157.0
+            }
+        }
+    },
+    "positive_subset_prediction_distribution": {
+        "Unsupportive": 27,
+        "Indicator": 608,
+        "Ideation": 1094,
+        "Behavior": 331,
+        "Attempt": 97
+    },
+    "binary_positive_vs_unsupportive": {
+        "accuracy": 0.9819318971507992,
+        "positive_precision": 0.9766162310866575,
+        "positive_recall": 0.9874826147426982,
+        "positive_f1": 0.9820193637621023,
+        "confusion_matrix": {
+            "true_unsupportive_pred_unsupportive": 2109,
+            "true_unsupportive_pred_positive": 51,
+            "true_positive_pred_unsupportive": 27,
+            "true_positive_pred_positive": 2130
+        }
+    },
+    "five_class_confusion_matrix": [
+        [
+            2109,
+            40,
+            10,
+            0,
+            1
+        ],
+        [
+            25,
+            474,
+            155,
+            16,
+            11
+        ],
+        [
+            2,
+            110,
+            816,
+            106,
+            19
+        ],
+        [
+            0,
+            21,
+            86,
+            188,
+            11
+        ],
+        [
+            0,
+            3,
+            37,
+            21,
+            56
+        ]
+    ],
+    "five_class_confusion_matrix_label_order": [
+        "Unsupportive",
+        "Indicator",
+        "Ideation",
+        "Behavior",
+        "Attempt"
+    ],
+    "training_summary": {
+        "base_model": "mental/mental-roberta-base",
+        "base_model_revision": "610e9d35d8f2550d713579077242d5e523209cea",
+        "random_seed": 42,
+        "best_checkpoint": "models/mentalroberta_5class_user_disjoint/checkpoints/checkpoint-6300",
+        "best_validation_macro_f1": 0.7184018809816678,
+        "validation_metrics": {
+            "eval_loss": 1.4385855197906494,
+            "eval_accuracy": 0.8434097753069261,
+            "eval_macro_precision": 0.7159485866813023,
+            "eval_macro_recall": 0.721449415779368,
+            "eval_macro_f1": 0.7184018809816678,
+            "eval_weighted_f1": 0.8437129002731186,
+            "eval_runtime": 91.1094,
+            "eval_samples_per_second": 47.383,
+            "eval_steps_per_second": 5.927,
+            "epoch": 5.0
+        },
+        "class_weights": {
+            "Unsupportive": 0.40003969041476484,
+            "Indicator": 1.2650141198619391,
+            "Ideation": 0.8200976403580147,
+            "Behavior": 2.825227750525578,
+            "Attempt": 7.330181818181818
+        },
+        "final_model_directory": "models/mentalroberta_5class_user_disjoint/best_model",
+        "test_set_used": false
+    },
+    "software_versions": {
+        "python": "3.12.13",
+        "torch": "2.13.0",
+        "transformers": "5.12.1",
+        "pandas": "3.0.3",
+        "numpy": "2.5.0",
+        "scikit_learn": "1.9.0"
+    }
+}

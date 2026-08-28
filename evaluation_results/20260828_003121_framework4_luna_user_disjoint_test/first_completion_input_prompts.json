@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "workflow_name": "framework_4_hierarchical_with_reviewer",
+  "sample_id": "27",
+  "final_output": {
+    "label_name": "Unsupportive",
+    "suicidal_intent": false
+  },
+  "agents": [
+    {
+      "role": "perspective_agent",
+      "model_name": "openai/gpt-5.6-luna",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are the Perspective / Risk-Relevance Agent.\n\nGoal:\nDetermine whether the text is about the author's own suicide/self-harm risk, or not.\n\nAvailable task labels:\n- Indicator: The post does NOT indicate the author's own suicidal risk, but might be a window into their inner thoughts related to suicide. Includes: discussion of another person's suicidality, general discussion/news, or explicit denial of own suicidal intent. Person does not seem at any risk, but suicide was mentioned or discussed, even if in an explicit denial, so it should be flagged accordingly. Also includes concern for someone else at risk.\n- Ideation: The author expresses suicidal thoughts, wishes, or desire to die/end life. Includes passive or active suicidal thinking, including hypothetical or unrealistic methods. No concrete self-harm/suicide action has been taken in the post.\n- Behavior: The author describes preparatory or self-harm behavior beyond verbal thoughts. Includes planning/preparation actions (for example, gathering means, writing notes, preparing for death). Includes non-suicidal self-harm when self-inflicted harm is described, even without explicit intent to die.\n- Attempt: The post mentions a suicide attempt (current or past). A past attempt should still be labeled Attempt, even if the current post does not express ongoing suicidal thoughts.\n- Unsupportive: The post does NOT indicate the author's own suicidal risk or any connection to suicidal ideation. Includes: discussion of topics unrelated to suicidal ideation or self harm, such as hobbies, nature, and any other topic. However, also includes discussions about different emotions, including negative ones such as anger, sadness and even depression, as long as the author does not indicate at all to be thinking or discussing suicide or self-harm.\n\nDecision options:\n- SELF_RISK: the author describes their own suicidal thoughts, self-harm,\n  preparation, behavior, or attempt.\n- INDICATOR: The post does NOT indicate the author's own suicidal risk, but might be a window into their inner thoughts related to suicide. Includes: discussion of another person's suicidality, general discussion/news, or explicit denial of own suicidal intent. Person does not seem at any risk, but suicide was mentioned or discussed, even if in an explicit denial, so it should be flagged accordingly. Also includes concern for someone else at risk.\n- UNSUPPORTIVE: The post does NOT indicate the author's own suicidal risk or any connection to suicidal ideation. Includes: discussion of topics unrelated to suicidal ideation or self harm, such as hobbies, nature, and any other topic. However, also includes discussions about different emotions, including negative ones such as anger, sadness and even depression, as long as the author does not indicate at all to be thinking or discussing suicide or self-harm.\n\nIMPORTANT:\nThis agent performs ONLY the FIRST decision in the hierarchy.\n\nThe value of \"decision\" MUST be EXACTLY one of:\n- SELF_RISK\n- INDICATOR\n- UNSUPPORTIVE\n\nNever output:\n- IDEATION\n- ACTION_PATHWAY\n- BEHAVIOR\n- ATTEMPT\n\nThose labels belong to later agents and are INVALID for this agent.\n\nReturn only valid JSON:\n{\n  \"decision\": \"SELF_RISK\" | \"INDICATOR\" | \"UNSUPPORTIVE\",\n  \"confidence\": 0.0,\n  \"reasoning\": \"brief explanation\"\n}\n\nRules:\n- Do not use INDICATOR merely because SELF_RISK is absent.\n- Use INDICATOR only when the text is still meaningfully suicide-related.\n- Use UNSUPPORTIVE when the text does not match the suicide-risk task.\n- Do not include markdown.\n- Do not include extra keys."
+        },
+        {
+          "role": "user",
+          "content": "Text to classify:\n\nI'm giving up I can't work like normal people can to afford a living. 40 hours a week stresses me out and feels like a huge waste of my life. Nothing motivates me or that I find pleasing to want to turn into a career. I love my girlfriend, but she deserves better. Someone that can grind the work life and afford a place for two people. I'm nothing but a fucking loser and a waste of life."
+        }
+      ]
+    },
+    {
+      "role": "judge_agent",
+      "model_name": "openai/gpt-5.6-luna",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are the Judge Agent in a hierarchical suicide-risk classification system.\n\nTask:\nUse the original text, the hierarchical decision path, and the proposed label\nto select the single best final label and identify the strongest competing\nlabel.\n\nValid final labels:\nIndicator, Ideation, Behavior, Attempt, Unsupportive\n\nReturn only valid JSON:\n{\n  \"label_name\": \"<one valid label>\",\n  \"confidence\": 0.0,\n  \"competing_label\": \"<a different valid label>\",\n  \"competing_confidence\": 0.0,\n  \"reasoning\": \"brief explanation\"\n}\n\nInput:\nYou receive:\n- the original text,\n- the proposed label,\n- and the hierarchical decision path.\n\nRules:\n- The two confidence values must each be between 0.0 and 1.0.\n- label_name and competing_label must be different.\n- Preserve the proposed label unless the text or path clearly supports\n  another valid label.\n- Distinguish UNSUPPORTIVE from INDICATOR carefully:\n  UNSUPPORTIVE is not meaningfully suicide-related, while INDICATOR remains\n  suicide-related but does not describe the author's own suicide risk.\n- Pay special attention to these clinically adjacent boundaries:\n  Indicator vs Ideation, and Behavior vs Attempt.\n- Confidence values are decision-support signals, not calibrated clinical\n  probabilities.\n- Do not include markdown.\n- Do not include extra keys."
+        },
+        {
+          "role": "user",
+          "content": "Original text:\nI'm giving up I can't work like normal people can to afford a living. 40 hours a week stresses me out and feels like a huge waste of my life. Nothing motivates me or that I find pleasing to want to turn into a career. I love my girlfriend, but she deserves better. Someone that can grind the work life and afford a place for two people. I'm nothing but a fucking loser and a waste of life.\n\nProposed label from the hierarchy: Unsupportive\n\nHierarchical path:\n[\n  {\n    \"agent\": \"perspective_agent\",\n    \"decision\": \"UNSUPPORTIVE\",\n    \"confidence\": 0.93,\n    \"reasoning\": \"The author expresses significant distress, hopelessness, low self-worth, and difficulty functioning, but does not mention suicidal thoughts, self-harm, or a desire to die.\"\n  }\n]"
+        }
+      ]
+    }
+  ]
+}
