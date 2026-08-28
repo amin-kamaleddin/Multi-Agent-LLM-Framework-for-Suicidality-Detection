@@ -626,7 +626,7 @@ def _statistical_analysis_markdown(
     statistics: dict[str, Any],
     comparisons: list[dict[str, Any]],
 ) -> str:
-    lines = ["## Prespecified Statistical Analysis", ""]
+    lines = ["## Final Comparative Statistical Analysis", ""]
     if not statistics.get("available", True):
         lines.extend([f"> Unavailable: {statistics.get('reason')}"])
         return "\n".join(lines)
@@ -637,9 +637,10 @@ def _statistical_analysis_markdown(
     confidence_intervals = statistics["confidence_intervals_95"]
     lines.extend(
         [
-            f"- Primary endpoint (prespecified): **{primary['display_name']}** — `{primary['definition']}`",
+            f"- Primary endpoint designated for the final comparison: **{primary['display_name']}** — `{primary['definition']}`",
             f"- Rationale: {primary['rationale']}",
             f"- CI method: two-sided 95% percentile user-cluster bootstrap ({bootstrap['replicates_requested']} resamples; {bootstrap['cluster_count']} users; seed {bootstrap['seed']}).",
+            "- Timing: retrospective analysis of existing model outputs; this is not a prospective preregistration.",
             "- The primary endpoint is prevalence-invariant. PPV and NPV are secondary and depend on prevalence.",
             "",
             "### Observed-Sample Estimates And 95% CIs",

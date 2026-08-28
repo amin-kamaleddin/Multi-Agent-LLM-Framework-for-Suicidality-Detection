@@ -1,4 +1,4 @@
-# Prespecified Statistical Analysis
+# Final Comparative Statistical Analysis Plan
 
 ## Scope
 
@@ -6,7 +6,8 @@ This analysis applies to completed `evaluate` run directories with a canonical `
 
 ## Primary endpoint
 
-The primary endpoint is **suicidal-intent sensitivity**:
+The primary endpoint designated for the final comparative analysis is
+**suicidal-intent sensitivity**:
 
 ```text
 TP / (TP + FN)
@@ -15,6 +16,19 @@ TP / (TP + FN)
 The positive class is `Indicator`, `Ideation`, `Behavior`, or `Attempt`; `Unsupportive` is negative. Sensitivity is prespecified because missed suicide-related content is safety-relevant and because it is invariant to the artificial positive/negative balance of an evaluation sample.
 
 The report uses a two-sided 95% percentile CI from 2,000 user-cluster bootstrap resamples, with a recorded deterministic seed. The primary comparison between workflows is the paired difference in sensitivity, `candidate - reference`, using the same user resamples for both runs. A CI wholly above zero is reported as `candidate higher`, wholly below zero as `reference higher`, otherwise `inconclusive`. This report intentionally does not turn bootstrap sign probabilities into p-values.
+
+For a percentile interval, the lower and upper limits are the 2.5th and 97.5th
+percentiles of the 2,000 bootstrap estimates. For example, `+1.02 percentage
+points (95% CI +0.55 to +1.55)` means the observed paired improvement is 1.02
+percentage points and the central 95% of the user-resampled improvement
+estimates runs from 0.55 to 1.55 percentage points. It is one interval formed
+from the resampled differences, not the subtraction of two workflows' separate
+confidence intervals.
+
+The completed model outputs predate this document. Therefore, this is a
+retrospective analysis plan designated before the final comparison, not a
+prospective preregistration. That timing must remain visible in paper and report
+language.
 
 ## Secondary endpoints
 

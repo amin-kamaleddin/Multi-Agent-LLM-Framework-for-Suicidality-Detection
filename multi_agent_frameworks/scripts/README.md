@@ -2,6 +2,27 @@
 
 Run the scripts in this directory from `multi_agent_frameworks/`.
 
+## Build the workflow statistical comparison
+
+`build_workflow_comparison.py` regenerates the final comparison of the completed
+Luna single-agent and Framework 1–4 runs. It uses suicidal-intent sensitivity
+as the primary endpoint, where all four suicidality phases are positive and
+`Unsupportive` is negative. Uncertainty and workflow differences use 2,000
+paired user-cluster bootstrap resamples by default.
+
+From `multi_agent_frameworks/`:
+
+```console
+uv run python scripts/build_workflow_comparison.py
+```
+
+The command validates dataset IDs, labels, and user assignments before writing
+`evaluation_results/workflow_comparison/workflow_comparison.json` and
+`workflow_comparison.md`. Framework 3's archived per-row predictions were
+pruned, so its exact binary decisions are reconstructed from its binary
+misclassification-ID file. Its clustered four-phase CI is therefore reported
+as unavailable rather than inferred from aggregate counts.
+
 ## Compare record-ID files
 
 `compare_id_files.py` finds IDs that appear in at least one input file but not

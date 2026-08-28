@@ -254,7 +254,7 @@ The calculations are implemented without an external metrics package in `evaluat
 
 ### Prespecified statistical analysis
 
-Completed canonical runs can be recompiled with a user-cluster bootstrap analysis. The prespecified primary endpoint is suicidal-intent sensitivity; PPV/NPV and positive-phase macro F1 are secondary. The report provides observed-sample PPV/NPV plus target-prevalence transport estimates, and can compare matching workflow runs with paired user-bootstrap confidence intervals. See [STATISTICAL_ANALYSIS.md](STATISTICAL_ANALYSIS.md) for the complete endpoint, formula, and command contract.
+Completed canonical runs can be recompiled with a user-cluster bootstrap analysis. The primary endpoint designated for the final comparative analysis is suicidal-intent sensitivity; PPV/NPV and positive-phase macro F1 are secondary. The report provides observed-sample PPV/NPV plus target-prevalence transport estimates, and can compare matching workflow runs with paired user-bootstrap confidence intervals. The completed model outputs predate this retrospective analysis plan, so it must not be described as a prospective preregistration. See [STATISTICAL_ANALYSIS.md](STATISTICAL_ANALYSIS.md) for the complete endpoint, formula, and command contract.
 
 ### Final-label confusion matrix
 

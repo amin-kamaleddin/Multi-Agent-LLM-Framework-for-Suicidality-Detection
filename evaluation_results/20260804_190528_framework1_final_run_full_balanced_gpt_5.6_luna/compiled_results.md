@@ -102,6 +102,36 @@ Formulas for each label `L`:
 | false | 14184 | 212 | 0 |
 | true | 2823 | 11573 | 0 |
 
+## Final Comparative Statistical Analysis
+
+- Primary endpoint designated for the final comparison: **Suicidal-intent sensitivity** — `TP / (TP + FN), where any of Indicator, Ideation, Behavior, or Attempt is positive.`
+- Rationale: This safety-oriented endpoint measures missed suicidality signs and is invariant to deployment prevalence.
+- CI method: two-sided 95% percentile user-cluster bootstrap (2000 resamples; 13575 users; seed 20260820).
+- Timing: retrospective analysis of existing model outputs; this is not a prospective preregistration.
+- The primary endpoint is prevalence-invariant. PPV and NPV are secondary and depend on prevalence.
+
+### Observed-Sample Estimates And 95% CIs
+
+| Metric | Estimate | 95% CI |
+|---|---:|---|
+| Sensitivity (primary) | 0.803904 | 0.782477 to 0.822983 |
+| Specificity | 0.985274 | 0.983309 to 0.987309 |
+| PPV at observed sample prevalence | 0.982011 | 0.978622 to 0.984979 |
+| NPV at observed sample prevalence | 0.834010 | 0.810588 to 0.856541 |
+| Positive-phase macro F1 | 0.499247 | 0.485920 to 0.512608 |
+
+### Prevalence-Adjusted Predictive Values
+
+These are transport estimates assuming sensitivity and specificity transfer to a target population. They are not estimates of the balanced evaluation sample's prevalence.
+
+| Target Positive Prevalence | PPV (95% CI) | NPV (95% CI) |
+|---:|---|---|
+| 1.00% | 0.355425 (0.326492 to 0.390939) | 0.997994 (0.997778 to 0.998189) |
+| 5.00% | 0.741811 (0.716382 to 0.769823) | 0.989633 (0.988530 to 0.990634) |
+| 10.00% | 0.858467 (0.842082 to 0.875939) | 0.978364 (0.976090 to 0.980432) |
+| 20.00% | 0.931729 (0.923064 to 0.940780) | 0.952602 (0.947763 to 0.957023) |
+| 50.00% | 0.982011 (0.979588 to 0.984507) | 0.834010 (0.819361 to 0.847725) |
+
 ## Label Distributions
 
 ### Ground Truth

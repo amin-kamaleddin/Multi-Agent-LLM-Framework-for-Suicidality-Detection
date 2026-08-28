@@ -110,7 +110,7 @@ def test_compile_run_results_writes_csv_and_markdown_tables(tmp_path):
     assert attempt["end_date"] in markdown
     assert "## Per-Agent Metrics" not in markdown
     assert "## Suicidal-Intent Positive-Class Grouping Metrics" in markdown
-    assert "## Prespecified Statistical Analysis" in markdown
+    assert "## Final Comparative Statistical Analysis" in markdown
     assert "Unavailable: User-cluster statistical analysis requires columns" in markdown
     assert "Positive: Indicator, Ideation, Behavior, Attempt" in markdown
     assert "| TP | 2 |" in markdown
