@@ -1,0 +1,358 @@
+{
+    "figure_generation": "Publication-style figures for six-system user-disjoint test-partition comparison",
+    "created_utc": "2026-08-28T15:19:21.536649+00:00",
+    "terminology_note": "Figures use 'test partition' and 'user-disjoint test partition' terminology and intentionally avoid 'held-out'.",
+    "uncertainty_note": "All displayed 95% confidence intervals are the percentile intervals from the paired user-cluster bootstrap produced by the six-system comparison analysis.",
+    "per_class_uncertainty_note": "Per-class F1 figure contains point estimates only because the comparison analysis did not produce per-class bootstrap confidence intervals.",
+    "primary_inference": "User-cluster bootstrap confidence intervals.",
+    "bootstrap_method": "Paired nonparametric user-cluster bootstrap. Unique test users are sampled with replacement. All posts belonging to each sampled user are included. Identical sampled user clusters are used for all systems within each replicate.",
+    "bootstrap_iterations": 5000,
+    "random_seed": 42,
+    "source_files": {
+        "summary": {
+            "path": "results/six_system_user_disjoint_comparison/tables/six_system_summary_with_ci.csv",
+            "sha256": "360e3f922da774bd5d1a5cbd8f96d3c10d3521e7304ee0146e2182fc517c8905"
+        },
+        "per_class": {
+            "path": "results/six_system_user_disjoint_comparison/tables/per_class_metrics_long.csv",
+            "sha256": "72bb7079d5cfbed286f0b44dabbda975c8709af66bb30d9e50bef3a55a592076"
+        },
+        "system_ci": {
+            "path": "results/six_system_user_disjoint_comparison/stats/system_user_cluster_bootstrap_ci.csv",
+            "sha256": "c5e636f4baf327cc5919c9eb21198ef25a11d9410a84602faebc66851a982a2a"
+        },
+        "pairwise_bootstrap": {
+            "path": "results/six_system_user_disjoint_comparison/stats/pairwise_user_cluster_bootstrap.csv",
+            "sha256": "e464359331519d8d77223461a384314fd12a38e8b4c58be6e5254860e562238e"
+        },
+        "mcnemar": {
+            "path": "results/six_system_user_disjoint_comparison/stats/pairwise_mcnemar_secondary.csv",
+            "sha256": "1cbee75b518f674a0528c57bd83343c8b03ef52fff11b866e7dcc975450fa39a"
+        }
+    },
+    "software": {
+        "python": "3.12.13",
+        "matplotlib": "3.11.0",
+        "numpy": "2.5.0",
+        "pandas": "3.0.3"
+    },
+    "output_formats": [
+        "PNG (600 dpi)",
+        "PDF (vector)",
+        "SVG (vector)"
+    ],
+    "figures": [
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_01_five_class_macro_f1_ci.pdf",
+            "sha256": "8d6decb13eb564e98ab82d0a9005eb720b1b6a57cca54f941beeb51c19cf26f1"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_01_five_class_macro_f1_ci.png",
+            "sha256": "4589edd35225b4cbe731c4600704f1f9cdb66cd4d1e78dcfb02bd37199a465a6"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_01_five_class_macro_f1_ci.svg",
+            "sha256": "4832363e9e18e74ab95356a17bf9b59706022d26164e6881f2242378d469e6a0"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_02_positive_only_macro_f1_ci.pdf",
+            "sha256": "7d9a1b0fb15c8695efbb81f41ffe9140af4197b1e350ca6aae25c41434b6eea2"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_02_positive_only_macro_f1_ci.png",
+            "sha256": "fb56c1351e15094af0bc42de6790431f4caeb1191c59d723858ee486b511b229"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_02_positive_only_macro_f1_ci.svg",
+            "sha256": "8d5588854239f724304a5862c09289c0f5d254a2551b13aeed3c910edb21ff9d"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_03_binary_recall_ci.pdf",
+            "sha256": "af852dafbb62a768d8b903ca59c74d35865b3f853d37e0fb8129e3e44ae8090d"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_03_binary_recall_ci.png",
+            "sha256": "15dcca59fd6a1bb8672aff740b8977eef2e1d25a6b4fb15758767fc2973ebbc2"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_03_binary_recall_ci.svg",
+            "sha256": "ed15507af258d4bd8d3f3cd6552c5680237cfecef6880049b263162ab43c791a"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_04_binary_f1_ci.pdf",
+            "sha256": "4ab6816100a5078b2c9ba08258aabdad46b9291607d4d3d6ea87260fd589cf5b"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_04_binary_f1_ci.png",
+            "sha256": "5fd186145a402e4a9d4adefd4e569f2516df9f17bfbde405435c26fdee32e4aa"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_04_binary_f1_ci.svg",
+            "sha256": "415e0dc2ea4dbfcfa842c965ee1dc99986467154e09a17e76420c9f17e2d7ef9"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_05_primary_metrics_panel.pdf",
+            "sha256": "65586a1a85ea78bba14c1fe8401ab260d948beb2df5fb22a2f757644728e1330"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_05_primary_metrics_panel.png",
+            "sha256": "b2f54b85ff657bbea85daba475e4e1725d539d3c55df65cdd6cc913bf44edf68"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_05_primary_metrics_panel.svg",
+            "sha256": "ab836ed40863bd05c8e58d2f4c085ade9650c56c442f4fca6df9c9908a6a8a61"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_06_per_class_f1.pdf",
+            "sha256": "a76c5a0e80c4c7aedd4f168ab98db4cab9f1d7c64e8642e4dd5c849096343003"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_06_per_class_f1.png",
+            "sha256": "3f8f0113a23312380b97e2f6153f52ae80a471262ceba89b179e046a6a57f969"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_06_per_class_f1.svg",
+            "sha256": "1b9762ba699543c5e89f767ceef148e503fa0559444ea0c647d49d10bfe413a7"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_07_mentalroberta_vs_llm_macro_f1_forest.pdf",
+            "sha256": "58d20e8ad5648b319c159fa777671ac37457fbbab79926156d0bbd0fd3a4ea0c"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_07_mentalroberta_vs_llm_macro_f1_forest.png",
+            "sha256": "23aee75e489ce5b65340b6bfc75af755387a92854149532d7b8c0c64ba7b74c7"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_07_mentalroberta_vs_llm_macro_f1_forest.svg",
+            "sha256": "17772eb0b2bc65a9c43ef705c90505d84a9c3e3394a27e448c0cc325c4c03634"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_08_mentalroberta_vs_llm_positive_f1_forest.pdf",
+            "sha256": "e422a60b9a84031b6c0598345958b77121afeb7887a71e97a860a2d46da49163"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_08_mentalroberta_vs_llm_positive_f1_forest.png",
+            "sha256": "5021cc4c5ea32e1d59ce681b2d6b04ca929389a8a1773005b9c4af7ca6a66e61"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_08_mentalroberta_vs_llm_positive_f1_forest.svg",
+            "sha256": "ddbbc4002a3d5981cde21c7cb8dfbf80f0b9ed7646bfbdcc6991521db531203e"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_09_llm_pairwise_macro_f1_forest.pdf",
+            "sha256": "0c97c7f052155f670fdbc327b1e54afbe8e05649e9080f5335e576fab2c06541"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_09_llm_pairwise_macro_f1_forest.png",
+            "sha256": "7e479e5e4f5536dda9f1127bc239ab55b928c6581dadf265282994c219637b05"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_09_llm_pairwise_macro_f1_forest.svg",
+            "sha256": "78396c6ff957855b1ac1b11335e3991b304e669a335914037242d7ca241cbd45"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_10_accuracy_and_macro_f1.pdf",
+            "sha256": "57bda6070d3b0bde56ad2bac88efb6e24deca09f497916bb9f57ac3357746ede"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_10_accuracy_and_macro_f1.png",
+            "sha256": "fc51ecfc683d0d6822f757cf5c71722c8ff994e54721418b8b909b1e6706d1de"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_10_accuracy_and_macro_f1.svg",
+            "sha256": "0984275641cfa28bdef02a31a34dd881d9c283ccb8889274672823c79ced75f0"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_11_confusion_matrix_counts_single_agent_luna.pdf",
+            "sha256": "2189b64cf5599b36f040eac72344383e331345b75cddd66ef946181189f8c94b"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_11_confusion_matrix_counts_single_agent_luna.png",
+            "sha256": "5b238656e86125c1054e9f17006d067c0f6cf47678baa6524931a91f60778570"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_11_confusion_matrix_counts_single_agent_luna.svg",
+            "sha256": "a57b9bcd87be8bebe64ba8b0cfe09b9418eb421803453dbf56ea2588cc6d1463"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_12_confusion_matrix_counts_framework1.pdf",
+            "sha256": "b37f0e373d6912d4a1f52f67bcb7d017ca751b180ce27d55943ac1bec1feec66"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_12_confusion_matrix_counts_framework1.png",
+            "sha256": "d66f1701b0f417b202fdc9c027210678e8418c627d7eee0155b7fc3c164861a3"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_12_confusion_matrix_counts_framework1.svg",
+            "sha256": "b0090eb96cb8f9c4da827a6f8cc5edbe47fea4afe827ddc571fef886acdf75b7"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_13_confusion_matrix_counts_framework2.pdf",
+            "sha256": "3db5b45de8836eb1b280259f888353ed66d3ba7885c4ee490a7cfcc44c8f6644"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_13_confusion_matrix_counts_framework2.png",
+            "sha256": "edc77afd301495ad5fc975f8da5a6c7159001295239988f7a38bcded9c48599b"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_13_confusion_matrix_counts_framework2.svg",
+            "sha256": "184d4d19d458b96e9bb41e5678493ad19e66d0834dee002dc52db27d3b82a975"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_14_confusion_matrix_counts_framework3.pdf",
+            "sha256": "5c55654272ffbf24964796c3eb6e5e318e9dd8e895f860c5c3fc725087cad75d"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_14_confusion_matrix_counts_framework3.png",
+            "sha256": "54e0dd4b218d8fc9654540d9f94aff6d26afb30f2194b2e27d484f056da69d18"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_14_confusion_matrix_counts_framework3.svg",
+            "sha256": "9c03e1116dba6feab8cd601fdec2e54571d6a7a0148a22411325c6cb397cdd81"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_15_confusion_matrix_counts_framework4.pdf",
+            "sha256": "7f01f06c54e8f1f0a7e62742a74829727fed5fd8c15bf973fbbf9bc87cd08882"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_15_confusion_matrix_counts_framework4.png",
+            "sha256": "30495eb29a81716302b4a4ab2eef8c3151b500080a7dd16113888fd9dd3ab20a"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_15_confusion_matrix_counts_framework4.svg",
+            "sha256": "36d09d3353a261c03042ec483dea5f66b99dd2335e339e03d50e7f19a8cee5ef"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_16_confusion_matrix_counts_mentalroberta_ft.pdf",
+            "sha256": "f52edf811eb034a13d61317d123dd1d624e81e6f96f76154e933faa3947210d8"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_16_confusion_matrix_counts_mentalroberta_ft.png",
+            "sha256": "f06e6ad20a059ea54105baa1d848f6f11cc09f5beb1687ac1e0c3b0f208b008b"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_16_confusion_matrix_counts_mentalroberta_ft.svg",
+            "sha256": "6074002120f3bef6602ee0629d2401fcc6cb298109384b2d6a823863792c08d9"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_17_confusion_matrix_normalized_single_agent_luna.pdf",
+            "sha256": "af170c4c51e37061d142e8eedbc1f438bb4d2a5afd5ec83a47d21c720d9d46ed"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_17_confusion_matrix_normalized_single_agent_luna.png",
+            "sha256": "4e80a16f8954c969e66d7a80fb9117d033c2f3c15b2bddf0a5bb8c00b1396ddc"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_17_confusion_matrix_normalized_single_agent_luna.svg",
+            "sha256": "5d138d0f4f71a7cde9fee3a81e2533ff3b217bbe19dca9c41963e3356a56cd00"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_18_confusion_matrix_normalized_framework1.pdf",
+            "sha256": "e5f2b7b453786f85ffb9abb281db19f19c959d5f148e33ed513f5121f8ac7b21"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_18_confusion_matrix_normalized_framework1.png",
+            "sha256": "17e20125ae11d1ea19fa5a3f53f7ec237e85e3af1ac5a619470605ca9aa5b107"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_18_confusion_matrix_normalized_framework1.svg",
+            "sha256": "69287d3b2875792f8355658c4df4d6e92f52838b4e5b1a6ade4115bf5d5509d2"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_19_confusion_matrix_normalized_framework2.pdf",
+            "sha256": "152673efc452edd779b93dbd35837a70c698cdf42d408123aec97c0ab3561669"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_19_confusion_matrix_normalized_framework2.png",
+            "sha256": "8d9f3f6ca27f32fe3e9ca0f94d9bbf8fa4c7cfa786e09324c4afb3f7537b4473"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_19_confusion_matrix_normalized_framework2.svg",
+            "sha256": "55fa093d2d565f1302fc074263e520ede0d050171e0e8467980ad75908d541c6"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_20_confusion_matrix_normalized_framework3.pdf",
+            "sha256": "1f1c3ad9e0dde35eacb659980a8b164391a1ecdee5ed2bb515661b9e4b0587fc"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_20_confusion_matrix_normalized_framework3.png",
+            "sha256": "22d05b2d695a9a6ec1938f5b08fce44bf4e5f44a999d98e00ee451b5c3f44f19"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_20_confusion_matrix_normalized_framework3.svg",
+            "sha256": "3532bda578efd3d01c315bd083ee404f0c793aff1b2f4fd497fae3de0071d0bb"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_21_confusion_matrix_normalized_framework4.pdf",
+            "sha256": "59819ed6d2f10828ee7b63c67a7b58f0726ccec34e294888307d5797cada26f4"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_21_confusion_matrix_normalized_framework4.png",
+            "sha256": "9b73620beab016de186dc83bc7310be50283ffe4c1eed24158e3ae26c5b2efae"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_21_confusion_matrix_normalized_framework4.svg",
+            "sha256": "01b970768fc2a772b7a1c354e3cbd5ce0773e93d4eae8b470e2b5ec5f85df825"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_22_confusion_matrix_normalized_mentalroberta_ft.pdf",
+            "sha256": "f34e0885e9b0172a8b4a3d3d0ad9fe556b35bfc46084339e1fc0fdbff6ce4e1e"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_22_confusion_matrix_normalized_mentalroberta_ft.png",
+            "sha256": "53c8064495cce33a16fecdad2b64214bec8385c64a3d36f6462c5f0e4517ed5a"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_22_confusion_matrix_normalized_mentalroberta_ft.svg",
+            "sha256": "67b50d2129d663b6fb1087c27bdae3c4676189f8ef14603d857d4e68b457e063"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_23_binary_confusion_counts.pdf",
+            "sha256": "40f66f7f32dea6cca0cded8dbfd4e32caf24384744b47e8e276c895faaf892c8"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_23_binary_confusion_counts.png",
+            "sha256": "c9b67fae04fa3ffa31f54f19ad976de138a3b5f1dc4e1f4d2a9e8d10d1b68ce1"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_23_binary_confusion_counts.svg",
+            "sha256": "72bc08c84de8932d39b2e8db132fe1ee670f2c058038d42914f5bb42536dca02"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_24_binary_error_tradeoff.pdf",
+            "sha256": "4053be4c197e441e4d2bbfecbf295e538692c9b8b6eb196e646d2ea85da6dfb1"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_24_binary_error_tradeoff.png",
+            "sha256": "af22cddff4ee150f1852387154543f0e5efcd25b1ade43d13fb5f54f2c679a29"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_24_binary_error_tradeoff.svg",
+            "sha256": "4e5e81583bf657f4901a7fbcf8518652af7c56e0cbcdbb61ef2c0179b92b7874"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_25_llm_macro_f1_ci.pdf",
+            "sha256": "fde717e0a8a41fdebaf6ecebff2d0be7eea7beeb660e1630095674c8b230d07c"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_25_llm_macro_f1_ci.png",
+            "sha256": "d05b8d48ac6f67a25531ef9eb5af3a5278d766e5e5a90a40a07b02d73177ddac"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_25_llm_macro_f1_ci.svg",
+            "sha256": "f88227bc446faa2f03f23128c1cdda7ed52f0d5b70e1578770ee3a66ca69d7de"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_26_pairwise_discordant_correctness.pdf",
+            "sha256": "c7d1d92c66792891cfacbfa2de2b58c4cdeedd107b84ea5309035eef4cd4cd3f"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_26_pairwise_discordant_correctness.png",
+            "sha256": "90c102aa2c9f2958e6f2ed9bdcc3f8941e0e2a7ea32ae6d7d3cf8d5e969fb77c"
+        },
+        {
+            "path": "results/six_system_user_disjoint_comparison/figures/figure_26_pairwise_discordant_correctness.svg",
+            "sha256": "90662db9d9b18f633a5ce0784097d03349c0857517049c7c002c28f2eb77b045"
+        }
+    ]
+}

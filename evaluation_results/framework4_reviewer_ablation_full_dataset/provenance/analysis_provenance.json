@@ -1,0 +1,48 @@
+{
+  "analysis_name": "Framework 4 secondary-reviewer ablation on original full-dataset run",
+  "created_utc": "2026-08-29T01:44:23.480072+00:00",
+  "run_directory": "../evaluation_results/20260802_142022_framework4_luna_full_final_run",
+  "full_workflow_records": 28792,
+  "paired_analyzable_records": 28791,
+  "excluded_records": 1,
+  "exclusion_rule": "Exclude records lacking either a valid five-class judge_complete.label_name or valid five-class workflow_finalized.final_label from the paired reviewer-effect analysis.",
+  "known_exception": "sample_id 12714 contains node_failed and judge_skipped events and final_label='Error'; it has no valid pre-review prediction.",
+  "pre_review_definition": "judge_complete.label_name",
+  "review_trigger_definition": "judge_complete.review_required == true",
+  "reviewer_recommendation_definition": "secondary_review_complete.reviewed_label",
+  "post_review_definition": "workflow_finalized.final_label",
+  "review_used_definition": "workflow_finalized.secondary_review_used",
+  "bootstrap_method": "Paired nonparametric user-cluster bootstrap: sample unique users with replacement, include all posts for each sampled user, and use identical resamples for pre-review and post-review predictions.",
+  "bootstrap_iterations": 5000,
+  "random_seed": 42,
+  "confidence_interval_method": "95% percentile intervals of the paired post-review minus pre-review bootstrap difference distribution.",
+  "event_counts": {
+    "perspective_complete": 28791,
+    "ideation_action_complete": 11255,
+    "judge_complete": 28791,
+    "workflow_finalized": 28792,
+    "behavior_attempt_complete": 2932,
+    "secondary_review_complete": 1184,
+    "node_failed": 1,
+    "judge_skipped": 1
+  },
+  "labels": [
+    "Unsupportive",
+    "Indicator",
+    "Ideation",
+    "Behavior",
+    "Attempt"
+  ],
+  "positive_labels": [
+    "Indicator",
+    "Ideation",
+    "Behavior",
+    "Attempt"
+  ],
+  "python_version": "3.13.14",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "numpy_version": "2.5.0",
+  "pandas_version": "3.0.3",
+  "scipy_version": "1.18.1",
+  "sklearn_version": "1.9.0"
+}

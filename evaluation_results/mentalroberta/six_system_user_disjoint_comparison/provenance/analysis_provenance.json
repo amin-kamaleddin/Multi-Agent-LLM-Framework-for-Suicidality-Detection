@@ -1,0 +1,80 @@
+{
+    "analysis_name": "Six-system user-disjoint test-partition comparison",
+    "created_utc": "2026-08-28T15:09:20.180027+00:00",
+    "random_seed": 42,
+    "bootstrap_iterations": 5000,
+    "bootstrap_method": "Paired nonparametric user-cluster bootstrap. Unique test users are sampled with replacement. All posts belonging to each sampled user are included. Identical sampled user clusters are used for all systems within each replicate.",
+    "confidence_interval_method": "95% percentile intervals from the paired user-cluster bootstrap.",
+    "primary_inference": "User-cluster bootstrap confidence intervals.",
+    "secondary_inference": "Exact paired McNemar tests on post-level correctness with Holm-Bonferroni correction across all 15 pairwise system comparisons.",
+    "test_file": "data/splits/test.csv",
+    "test_file_sha256": "1786dbe96e3898bc3ef336d0d021253ed0604ee8d73c1ef2dea409ce2dfe3f64",
+    "split_manifest_file": "data/splits/split_manifest.json",
+    "split_manifest_sha256": "63168a7040339de70e23c20fff585653bdb89b0d97e15f2f3d782cd334f2cf8c",
+    "test_rows": 4317,
+    "test_users": 2036,
+    "positive_test_rows": 2157,
+    "split_unit": "user",
+    "group_column": "users",
+    "all_labels": [
+        "Unsupportive",
+        "Indicator",
+        "Ideation",
+        "Behavior",
+        "Attempt"
+    ],
+    "positive_labels": [
+        "Indicator",
+        "Ideation",
+        "Behavior",
+        "Attempt"
+    ],
+    "system_order": [
+        "single_agent_luna",
+        "framework1",
+        "framework2",
+        "framework3",
+        "framework4",
+        "mentalroberta_ft"
+    ],
+    "number_of_systems": 6,
+    "number_of_pairwise_comparisons": 15,
+    "python_version": "3.12.13",
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "numpy_version": "2.5.0",
+    "pandas_version": "3.0.3",
+    "scipy_version": "1.18.0",
+    "sklearn_version": "1.9.0",
+    "prediction_files": {
+        "single_agent_luna": {
+            "display_name": "Single-Agent Luna",
+            "path": "../evaluation_results/20260827_194855_single_agent_luna_user_disjoint_test/predictions.csv",
+            "sha256": "83c0f2b3f60f62e9ed894cecc56a23fa356b8619298092b4ae2f044542577bfb"
+        },
+        "framework1": {
+            "display_name": "Framework 1 (Parallel, No Evidence)",
+            "path": "../evaluation_results/20260827_200922_framework1_luna_user_disjoint_test/predictions.csv",
+            "sha256": "62e4876e1bc24dc931104e756b2435265c8feb77007828ad032ab7cb46e8db3c"
+        },
+        "framework2": {
+            "display_name": "Framework 2 (Parallel + Evidence)",
+            "path": "../evaluation_results/20260827_214548_framework2_luna_user_disjoint_test_rerun/predictions.csv",
+            "sha256": "bbcb2dea5049271c59096be21b3cd35d5043eb6186700029b70599c9c8c68684"
+        },
+        "framework3": {
+            "display_name": "Framework 3 (Hierarchical, No Reviewer)",
+            "path": "../evaluation_results/20260827_230650_framework3_luna_user_disjoint_test/predictions.csv",
+            "sha256": "0c42215c73e04a22d07c2b7c3e94bd360f017c311dc47f8f7e6174504028c9b5"
+        },
+        "framework4": {
+            "display_name": "Framework 4 (Hierarchical + Reviewer)",
+            "path": "../evaluation_results/20260828_003121_framework4_luna_user_disjoint_test/predictions.csv",
+            "sha256": "37b5914ae2fac8f0601d1bc2d6af2768b38e305a5bfa4c1725f5f1f510abbfe0"
+        },
+        "mentalroberta_ft": {
+            "display_name": "Fine-Tuned MentalRoBERTa",
+            "path": "../evaluation_results/mentalroberta/test_predictions.csv",
+            "sha256": "31b2861134bff0062b6e0ec7af6d417e8c67a0043febe7f19236d682662ff57d"
+        }
+    }
+}
