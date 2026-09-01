@@ -78,6 +78,3 @@ python example/suicide_detection/evaluate_rsd15k_main.py --n-samples 2 --max-wor
 
 Each run writes a timestamped folder under `example/suicide_detection/_runs/` containing `result.md`, `all_cases.csv`, `all_cases.txt`, `failed_cases.txt`, and `Meta.json`.
 
-## Disclaimer
-
-This repository is research evaluation code, not a clinical assessment or deployment system.
