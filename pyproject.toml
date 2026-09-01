@@ -3,13 +3,11 @@ requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "EvalRing"
+name = "single_agent_frameworks"
 version = "0.1.0"
 description = "A unified evaluation framework for agents across LLMs and agent versions"
 readme = "README.md"
 license = { text = "MIT" }
-authors = [{ name = "EvalRing Team", email = "contact@evalring.org" }]
-maintainers = [{ name = "EvalRing Team", email = "contact@evalring.org" }]
 keywords = ["evaluation", "llm", "agents", "nlp", "machine learning"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -55,13 +53,13 @@ dev = [
 examples = ["jupyter>=1.0", "openai>=1.0.0", "transformers>=4.20.0"]
 
 [project.urls]
-Homepage = "https://github.com/evalring/evalring"
-Repository = "https://github.com/evalring/evalring"
-Documentation = "https://evalring.readthedocs.io"
-"Bug Tracker" = "https://github.com/evalring/evalring/issues"
+Homepage = "https://github.com/lucabaiocchi/suicide_detection_cleanup"
+Repository = "https://github.com/lucabaiocchi/suicide_detection_cleanup"
+"Bug Tracker" = "https://github.com/lucabaiocchi/suicide_detection_cleanup/issues"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["single_agent_frameworks"]
+include = ["single_agent_frameworks", "single_agent_frameworks.*"]
 
 [tool.black]
 line-length = 88

@@ -1,15 +1,15 @@
 # Suicide Detection Evaluation Pipeline
 
-This repository contains the complete pipeline for running and evaluating suicide detection models using the **EvalRing** framework. Below are the detailed steps for replicating this research and executing the end-to-end evaluation suite.
+This repository contains the complete pipeline for running and evaluating suicide detection models using the `single_agent_frameworks` framework. Below are the detailed steps for replicating this research and executing the end-to-end evaluation suite.
 
 ## 1. Environment Setup
 
 1. **Activate the Environment**
-   Ensure your Python virtual environment is activated and the `EvalRing` package is available. If you haven't installed dependencies, do so from the project root:
+   Ensure your Python virtual environment is activated and the `single_agent_frameworks` package is available. If you haven't installed dependencies, do so from the project root:
    
    ```bash
    pip install -r requirements.txt
-   # OR install EvalRing in editable mode
+   # OR install single_agent_frameworks in editable mode
    pip install -e .
    ```
 
@@ -37,7 +37,7 @@ By default, this will scan for the source data and output two processed `.csv` f
 
 ## 3. Running the Model Suite
 
-The primary evaluation execution is wrapped by `run_model_suite.py`. This script acts as an automated harness, leveraging `EvalRing.utils.suite_runner` to systematically traverse through a list of LLMs configured in a JSON file.
+The primary evaluation execution is wrapped by `run_model_suite.py`. This script acts as an automated harness, leveraging `single_agent_frameworks.utils.suite_runner` to systematically traverse through a list of LLMs configured in a JSON file.
 
 ### Basic Suite Execution
 To test models using default parameters:
@@ -82,7 +82,7 @@ python src/example/suicide_detection/evaluate_rsd15k_main.py \
 
 ## 5. Resuming and Retrying Runs
 
-In extensive programmatic runs, API instability can occur. The EvalRing framework handles persistent state tracking. A `Meta.json` artifact within the output directory acts as the run ledger.
+In extensive programmatic runs, API instability can occur. The `single_agent_frameworks` framework handles persistent state tracking. A `Meta.json` artifact within the output directory acts as the run ledger.
 
 ### Auto-Continue
 To resume operations that were interrupted, appending the `--continue` flag will bypass already successful evaluations from the previous payload, ensuring cost efficiency.
@@ -101,11 +101,11 @@ python src/example/suicide_detection/evaluate_rsd15k_main.py --retry-failed
 
 ## 6. Output Artifacts and Analysis
 
-Upon completion, output traces are bundled under the `_EvalRing/` output cache directory structure (timestamped per run).
+Upon completion, output traces are bundled under the `_runs/` output cache directory structure (timestamped per run).
 
 **Contents typically include:**
 - `Meta.json`: Comprehensive configuration tracing the parameters, inputs, constraints, and total latency.
 - Event JSON lines logging the prompts submitted, API replies generated, and token metadata.
 - Generated probability matrices (if `multi-class-chance` is the active topology).
 
-These detailed payload traces integrate downstream into `EvalRing.utils.visualizations` and significance verification libraries for final formal charting and statistics reporting.
+These detailed payload traces integrate downstream into `single_agent_frameworks.utils.visualizations` and significance verification libraries for final formal charting and statistics reporting.

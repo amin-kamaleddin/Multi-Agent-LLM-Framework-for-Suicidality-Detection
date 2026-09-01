@@ -67,7 +67,6 @@ __pypackages__/
 # Environments
 .env
 .venv
-.venv_EvalRing/
 env/
 venv/
 ENV/
@@ -101,8 +100,8 @@ models/
 *.pkl
 *.joblib
 
-# EvalRing (Legacy Name) run outputs (auto-generated, may contain results/keys)
-_EvalRing/
+# single_agent_frameworks run outputs (auto-generated, may contain results/keys)
+_runs/
 .deepeval/
 
 # Large datasets — do not commit raw data files

@@ -1,5 +1,5 @@
 """
-Dataset module for EvalRing.
+Dataset module for single_agent_frameworks.
 """
 
 from .base import BaseDataset, DataSample

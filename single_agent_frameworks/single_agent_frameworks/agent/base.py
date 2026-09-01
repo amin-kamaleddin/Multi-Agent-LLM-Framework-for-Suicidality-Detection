@@ -1,5 +1,5 @@
 """
-Base classes for agents in the EvalRing framework.
+Base classes for agents in the single_agent_frameworks framework.
 """
 
 from abc import ABC, abstractmethod
@@ -27,7 +27,7 @@ class AgentResponse:
 
 class BaseAgent(ABC):
     """
-    Abstract base class for all agents in EvalRing.
+    Abstract base class for all agents in single_agent_frameworks.
     
     This class provides a standardized interface for different types of agents
     (LLM-based, rule-based, ensemble, etc.) to ensure compatibility with the

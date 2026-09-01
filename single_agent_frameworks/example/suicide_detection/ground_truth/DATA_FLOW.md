@@ -86,4 +86,4 @@ While the original CounselBench focuses on response generation quality, it lacks
 
 ### Important implementation note
 
-EvalRing runners must use `ID` as the `id_field` (not `users`). This prevents duplicated/ambiguous `sample_id` values and makes resume/merge/retry logic correct.
+`single_agent_frameworks` runners must use `ID` as the `id_field` (not `users`). This prevents duplicated/ambiguous `sample_id` values and makes resume/merge/retry logic correct.

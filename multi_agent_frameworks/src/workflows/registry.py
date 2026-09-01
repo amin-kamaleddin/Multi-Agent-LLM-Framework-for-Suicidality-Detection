@@ -408,7 +408,7 @@ WORKFLOW_REGISTRY.register(
 WORKFLOW_REGISTRY.register(
     WorkflowRegistration(
         name="single_agent",
-        description="One model using an EvalRing-compatible classification mode.",
+        description="One model using a single_agent_frameworks-compatible classification mode.",
         runner=_run_single_agent,
         config_keys=SINGLE_AGENT_CONFIG_KEYS,
         default_mode="single-class",

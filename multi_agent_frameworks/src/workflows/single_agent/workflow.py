@@ -21,7 +21,7 @@ from .prompts import (
 )
 
 
-EVALRING_LABEL_ORDER = (
+SINGLE_AGENT_LABEL_ORDER = (
     "Unsupportive",
     "Ideation",
     "Behavior",
@@ -41,7 +41,7 @@ class CaseResult:
 
 
 class SingleAgentWorkflow:
-    """Run one model using one of EvalRing's non-host classification modes."""
+    """Run one model using one of single_agent_frameworks's non-host classification modes."""
 
     def __init__(
         self,
@@ -132,7 +132,7 @@ class SingleAgentWorkflow:
     @staticmethod
     def _parse_label(raw: str) -> str:
         clean = raw.strip('\'". \n').lower()
-        for label in EVALRING_LABEL_ORDER:
+        for label in SINGLE_AGENT_LABEL_ORDER:
             if label.lower() in clean:
                 return label
         raise ValueError(f"Could not parse a valid label from output: {raw}")
@@ -141,7 +141,7 @@ class SingleAgentWorkflow:
     def _parse_chances(raw: str) -> dict[str, float]:
         parsed = extract_json_object(raw)
         scores: dict[str, float] = {}
-        aliases = {label.lower(): label for label in EVALRING_LABEL_ORDER}
+        aliases = {label.lower(): label for label in SINGLE_AGENT_LABEL_ORDER}
         for raw_label, raw_score in parsed.items():
             label = aliases.get(str(raw_label).strip().lower())
             if label is None:
@@ -150,7 +150,7 @@ class SingleAgentWorkflow:
                 scores[label] = max(0.0, float(raw_score))
             except (TypeError, ValueError):
                 continue
-        for label in EVALRING_LABEL_ORDER:
+        for label in SINGLE_AGENT_LABEL_ORDER:
             scores.setdefault(label, 0.0)
         total = sum(scores.values())
         if total <= 0:
@@ -181,7 +181,7 @@ class SingleAgentWorkflow:
 
     @staticmethod
     def _winner(scores: dict[str, float]) -> str:
-        return max(EVALRING_LABEL_ORDER, key=lambda label: scores[label])
+        return max(SINGLE_AGENT_LABEL_ORDER, key=lambda label: scores[label])
 
     def run_case(self, *, sample_id: str, text: str) -> CaseResult:
         node_started_at_s = time.perf_counter()
@@ -215,7 +215,7 @@ class SingleAgentWorkflow:
 
         elif self.mode == "per-class-score":
             scores: dict[str, float] = {}
-            for target_class in EVALRING_LABEL_ORDER:
+            for target_class in SINGLE_AGENT_LABEL_ORDER:
                 parsed, mode_calls, mode_errors = self._invoke(
                     role=f"{target_class}_score",
                     system_prompt=per_class_system_prompt(target_class),
@@ -227,12 +227,12 @@ class SingleAgentWorkflow:
                 if parsed is None:
                     break
                 scores[target_class] = parsed
-            if len(scores) == len(EVALRING_LABEL_ORDER):
+            if len(scores) == len(SINGLE_AGENT_LABEL_ORDER):
                 final_label = self._winner(scores)
 
         else:
             current_winner = self.base_class
-            for target_class in EVALRING_LABEL_ORDER:
+            for target_class in SINGLE_AGENT_LABEL_ORDER:
                 if target_class == self.base_class:
                     continue
                 parsed, mode_calls, mode_errors = self._invoke(

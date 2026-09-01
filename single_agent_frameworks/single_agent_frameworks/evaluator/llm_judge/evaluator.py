@@ -515,7 +515,7 @@ class LLMJudgeEvaluator(BaseEvaluator):
 
         Args:
             result: The ``EvaluationResult`` returned by :meth:`evaluate`.
-            output_dir: Parent directory (e.g., ``"_EvalRing"``).
+            output_dir: Parent directory (e.g., ``"_runs"``).
             run_prefix: Prefix for the timestamped sub-folder.
 
         Returns:

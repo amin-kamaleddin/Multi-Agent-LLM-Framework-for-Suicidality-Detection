@@ -1,12 +1,11 @@
 """
-EvalRing: A unified evaluation framework for agents across LLMs and agent versions.
+single_agent_frameworks: a unified evaluation framework for agents across LLMs and agent versions.
 
 This package provides a comprehensive framework for evaluating AI agents with
 standardized metrics, datasets, and evaluation protocols.
 """
 
 __version__ = "0.1.0"
-__author__ = "EvalRing Team"
 
 from .dataset import BaseDataset, DataSample, JSONDataset, CSVDataset, DataFrameDataset
 from .agent import BaseAgent, AgentResponse, MockAgent, RuleBasedAgent, OpenAIAgent

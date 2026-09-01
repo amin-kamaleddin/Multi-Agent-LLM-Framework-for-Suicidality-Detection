@@ -1,5 +1,5 @@
 """
-Agent module for EvalRing.
+Agent module for single_agent_frameworks.
 """
 
 from .base import BaseAgent, AgentResponse

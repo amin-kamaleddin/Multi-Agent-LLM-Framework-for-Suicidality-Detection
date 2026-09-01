@@ -4,16 +4,14 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name="EvalRing",
+    name="single_agent_frameworks",
     version="0.1.0",
-    author="EvalRing Team",
-    author_email="contact@evalring.org",
     description="A unified evaluation framework for agents across LLMs and agent versions",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/evalring/evalring",
-    package_dir={"": "src"},
-    packages=find_packages(where="src"),
+    url="https://github.com/lucabaiocchi/suicide_detection_cleanup",
+    package_dir={"": "single_agent_frameworks"},
+    packages=find_packages(where="single_agent_frameworks", include=["single_agent_frameworks", "single_agent_frameworks.*"]),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
@@ -51,11 +49,6 @@ setup(
             "jupyter>=1.0",
             "openai>=1.0.0",
             "transformers>=4.20.0",
-        ],
-    },
-    entry_points={
-        "console_scripts": [
-            "evalring=EvalRing.cli:main",
         ],
     },
 )

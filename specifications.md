@@ -49,7 +49,7 @@ Responsibilities:
 - prompt LLMs for risk classification
 - run RSD-15K benchmarks
 - support multiple classification modes
-- write run artifacts under `_EvalRing`
+- write run artifacts under `_runs`
 
 Important files:
 

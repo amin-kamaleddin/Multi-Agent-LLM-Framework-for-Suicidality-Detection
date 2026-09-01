@@ -1,5 +1,5 @@
 """
-Example usage of the EvalRing framework.
+Example usage of the single_agent_frameworks framework.
 
 This module demonstrates how to use the base classes and implementations
 for common evaluation tasks.

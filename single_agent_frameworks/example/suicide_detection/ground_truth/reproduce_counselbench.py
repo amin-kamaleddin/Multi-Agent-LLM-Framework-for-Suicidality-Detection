@@ -10,7 +10,7 @@ from datetime import datetime
 from tqdm import tqdm
 
 # Add the CounselBench directory to the path
-# Relative path from EvalRing/src/example/suicide_detection/ground_truth to EvalRing/CounselBench
+# Relative path from single_agent_frameworks/example/suicide_detection/ground_truth to the repo-root CounselBench checkout
 counselbench_rel_path = os.path.join('..', '..', '..', '..', 'CounselBench')
 counselbench_path = os.path.abspath(os.path.join(os.path.dirname(__file__), counselbench_rel_path))
 

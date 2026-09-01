@@ -1,5 +1,5 @@
 """
-Generic utilities for EvalRing.
+Generic utilities for single_agent_frameworks.
 """
 
 from .suite_runner import run_suite

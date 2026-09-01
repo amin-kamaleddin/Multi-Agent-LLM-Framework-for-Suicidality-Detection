@@ -30,15 +30,15 @@ class ComparisonSystem:
     source_note: str = "Exact per-record final-label predictions."
 
 
-def parse_evalring_all_cases(path: str | Path) -> pd.DataFrame:
-    """Parse exact sample ID, ground truth, and prediction from an EvalRing log."""
+def parse_single_agent_all_cases(path: str | Path) -> pd.DataFrame:
+    """Parse exact sample ID, ground truth, and prediction from a single-agent run log."""
     records: list[dict[str, str]] = []
     current: dict[str, str] | None = None
     for line_number, line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), start=1):
         header = _CASE_HEADER.match(line)
         if header:
             if current is not None:
-                _finish_evalring_record(current, records, line_number)
+                _finish_single_agent_record(current, records, line_number)
             current = {"sample_id": header.group("sample_id").strip()}
             continue
         if current is None:
@@ -51,12 +51,12 @@ def parse_evalring_all_cases(path: str | Path) -> pd.DataFrame:
         if prediction:
             current["prediction"] = prediction.group("label")
     if current is not None:
-        _finish_evalring_record(current, records, line_number + 1)
+        _finish_single_agent_record(current, records, line_number + 1)
     frame = pd.DataFrame(records)
     if frame.empty:
-        raise ValueError(f"No EvalRing cases found in {path}")
+        raise ValueError(f"No single-agent cases found in {path}")
     if frame["sample_id"].duplicated().any():
-        raise ValueError(f"Duplicate sample IDs found in EvalRing cases: {path}")
+        raise ValueError(f"Duplicate sample IDs found in single-agent cases: {path}")
     return frame
 
 
@@ -117,7 +117,7 @@ def build_repository_comparison(
     systems = [
         ComparisonSystem(
             "Single agent",
-            _merge_with_dataset(parse_evalring_all_cases(single_cases), canonical_dataset, "Single agent"),
+            _merge_with_dataset(parse_single_agent_all_cases(single_cases), canonical_dataset, "Single agent"),
         ),
         ComparisonSystem(
             "Framework 1",
@@ -312,14 +312,14 @@ def _validate_canonical_predictions(
     return actual.loc[:, ["sample_id", "users", "ground_truth", "prediction"]]
 
 
-def _finish_evalring_record(
+def _finish_single_agent_record(
     current: dict[str, str],
     records: list[dict[str, str]],
     line_number: int,
 ) -> None:
     missing = {"sample_id", "ground_truth", "prediction"} - set(current)
     if missing:
-        raise ValueError(f"Incomplete EvalRing record before line {line_number}: missing {sorted(missing)}")
+        raise ValueError(f"Incomplete single-agent record before line {line_number}: missing {sorted(missing)}")
     records.append(current.copy())
 
 

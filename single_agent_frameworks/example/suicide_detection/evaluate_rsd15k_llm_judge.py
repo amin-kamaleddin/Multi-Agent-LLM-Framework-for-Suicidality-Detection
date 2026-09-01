@@ -14,11 +14,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Add src to path
+# Add the single_agent_frameworks package root to path
 current_file = Path(__file__).resolve()
-project_root = current_file.parent.parent.parent.parent
-src_path = project_root / "src"
-sys.path.append(str(src_path))
+project_root = current_file.parent.parent.parent
+sys.path.append(str(project_root))
 
 from single_agent_frameworks.dataset import CSVDataset
 from single_agent_frameworks.evaluator.llm_judge import LLMJudgeEvaluator, Rubric, RubricLevel
@@ -162,7 +161,7 @@ def run_llm_judge_eval():
     # ──────────────────────────────────────────────
     # 4. Save reports (one-liner)
     # ──────────────────────────────────────────────
-    run_dir = evaluator.save_reports(result, base_dir / "_EvalRing")
+    run_dir = evaluator.save_reports(result, base_dir / "_runs")
     print(f"\nReports saved to: {run_dir}")
     print("Done.")
 

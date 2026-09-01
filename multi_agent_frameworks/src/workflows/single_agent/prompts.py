@@ -1,4 +1,4 @@
-"""Prompts ported from EvalRing's single-model classification modes."""
+"""Prompts ported from single_agent_frameworks's single-model classification modes."""
 
 from __future__ import annotations
 

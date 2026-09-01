@@ -1,5 +1,5 @@
 """
-Base classes for evaluators in the EvalRing framework.
+Base classes for evaluators in the single_agent_frameworks framework.
 """
 
 from abc import ABC, abstractmethod
@@ -71,7 +71,7 @@ class EvaluationResult:
 
 class BaseEvaluator(ABC):
     """
-    Abstract base class for evaluators in EvalRing.
+    Abstract base class for evaluators in single_agent_frameworks.
     
     This class orchestrates the evaluation process, managing agents,
     datasets, and metric calculation.

@@ -1,5 +1,5 @@
 """
-Evaluator module for EvalRing.
+Evaluator module for single_agent_frameworks.
 """
 
 from .base import BaseEvaluator, EvaluationResult, EvaluationMetrics

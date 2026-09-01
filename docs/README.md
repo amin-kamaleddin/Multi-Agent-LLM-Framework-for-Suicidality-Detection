@@ -1,6 +1,6 @@
-# EvalRing Documentation
+# single_agent_frameworks Documentation
 
-This folder documents the current EvalRing implementation in this repository.
+This folder documents the current `single_agent_frameworks` implementation in this repository.
 
 ## Documents
 

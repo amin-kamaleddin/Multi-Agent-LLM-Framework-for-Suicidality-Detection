@@ -30,7 +30,7 @@ def run_local_suite(
     eval_script = script_dir / "evaluate_rsd15k_main.py"
     model_list_path = script_dir / models_file
     
-    resolved_cache = str(script_dir / "_EvalRing") if cache == "latest" else cache
+    resolved_cache = str(script_dir / "_runs") if cache == "latest" else cache
 
     return run_suite(
         eval_script=str(eval_script),

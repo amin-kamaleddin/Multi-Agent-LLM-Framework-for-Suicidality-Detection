@@ -1,5 +1,5 @@
 """
-Base classes for datasets in the EvalRing framework.
+Base classes for datasets in the single_agent_frameworks framework.
 """
 
 from abc import ABC, abstractmethod
@@ -30,7 +30,7 @@ class DataSample:
 
 class BaseDataset(ABC):
     """
-    Abstract base class for all datasets in EvalRing.
+    Abstract base class for all datasets in single_agent_frameworks.
     
     This class provides a standardized interface for loading and accessing
     different types of datasets (JSON, CSV, DataFrame, etc.).

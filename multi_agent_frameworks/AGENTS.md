@@ -69,7 +69,7 @@ The workflow derives `suicidal_intent` locally: `false` only for `Unsupportive`,
 - `src/domain/`: labels, evidence items, and the shared final judge contract.
 - `src/llm/`: model protocol, real-model factory, and deterministic smoke-test model.
 - `src/workflows/registry.py`: CLI registry for all five canonical workflow names.
-- `src/workflows/single_agent/`: one-model EvalRing-compatible classification modes.
+- `src/workflows/single_agent/`: one-model single_agent_frameworks-compatible classification modes.
 - `src/workflows/framework_1_parallel_no_evidence/`: parallel decision-making specialists.
 - `src/workflows/framework_2_parallel_with_evidence/`: parallel evidence collectors.
 - `src/workflows/framework_3_hierarchical_no_reviewer/`: hierarchy without a secondary reviewer.

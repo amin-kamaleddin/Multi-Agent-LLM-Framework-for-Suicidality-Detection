@@ -1,8 +1,8 @@
-# EvalRing Design Specification
+# single_agent_frameworks Design Specification
 
 ## 1. Purpose
 
-EvalRing (Legacy) is a lightweight evaluation framework for model and agent benchmarking.
+`single_agent_frameworks` is a lightweight evaluation framework for model and agent benchmarking.
 
 In the current repository state, the system has two layers:
 
@@ -306,14 +306,14 @@ This application provides a concrete research workflow around the RSD_15K datase
 ### Inputs
 
 - dataset: `data/rsd_15k.csv`
-- environment keys from `EvalRing/.env`
+- environment keys from `single_agent_frameworks/.env`
 - optional model override via environment variables
 
 ### Outputs per run
 
 Created under:
 
-- [single_agent_frameworks/example/suicide_detection/_EvalRing](../single_agent_frameworks/example/suicide_detection/_EvalRing)
+- [single_agent_frameworks/example/suicide_detection/_runs](../single_agent_frameworks/example/suicide_detection/_runs)
 
 Each run produces a timestamped folder containing:
 

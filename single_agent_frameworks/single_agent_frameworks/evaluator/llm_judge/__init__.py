@@ -1,5 +1,5 @@
 """
-LLM-as-a-Judge evaluation module for EvalRing.
+LLM-as-a-Judge evaluation module for single_agent_frameworks.
 
 Inspired by deepeval's GEval architecture, this module provides a generic
 framework for using LLMs as evaluators/judges of agent responses.

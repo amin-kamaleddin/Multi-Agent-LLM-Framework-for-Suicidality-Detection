@@ -18,11 +18,10 @@ from dotenv import load_dotenv
 # Load environment variables from .env file if present
 load_dotenv()
 
-# Add src directories to path
+# Add the single_agent_frameworks package root to path
 current_file = Path(__file__).resolve()
-project_root = current_file.parent.parent.parent.parent
-src_path = project_root / "src"
-sys.path.append(str(src_path))
+project_root = current_file.parent.parent.parent
+sys.path.append(str(project_root))
 
 try:
     import json
@@ -33,7 +32,7 @@ try:
     from single_agent_frameworks.utils.global_cache import _load_cached_cases as _load_cached_cases
     from llm_agent import OpenAISuicideDetectionAgent
 except ImportError as e:
-    print(f"Error importing EvalRing: {e}")
+    print(f"Error importing single_agent_frameworks: {e}")
     print(f"Current sys.path: {sys.path}")
     sys.exit(1)
 
@@ -110,7 +109,7 @@ def _to_int(v):
 
 
 def _latest_meta_path(base_dir: Path) -> Optional[Path]:
-    runs_root = base_dir / "_EvalRing"
+    runs_root = base_dir / "_runs"
     if not runs_root.exists():
         return None
     run_dirs = [p for p in runs_root.iterdir() if p.is_dir() and p.name.startswith("run_")]
@@ -905,7 +904,7 @@ def run_main_eval(
         if cache:
             evaluator.global_cache.base_runs_dir = Path(cache)
         else:
-            evaluator.global_cache.base_runs_dir = current_file.parent / "_EvalRing"
+            evaluator.global_cache.base_runs_dir = current_file.parent / "_runs"
             
         cache_info = evaluator.get_cache_info(
             agent=agent, dataset=dataset, agent_mode=agent_mode, base_class=base_class, show_progress=True
@@ -924,7 +923,7 @@ def run_main_eval(
             eval_dir = Path(out_dir) / f"run_{timestamp}_{dir_suffix}"
             eval_dir.mkdir(parents=True, exist_ok=True)
         else:
-            eval_dir = current_file.parent / "_EvalRing" / f"run_{timestamp}_{dir_suffix}"
+            eval_dir = current_file.parent / "_runs" / f"run_{timestamp}_{dir_suffix}"
             eval_dir.mkdir(parents=True, exist_ok=True)
     
     partial_path = eval_dir / "all_cases_partial.jsonl"
@@ -946,7 +945,7 @@ def run_main_eval(
     if cache:
         evaluator.global_cache.base_runs_dir = Path(cache)
     else:
-        evaluator.global_cache.base_runs_dir = current_file.parent / "_EvalRing"
+        evaluator.global_cache.base_runs_dir = current_file.parent / "_runs"
         
     if len(dataset._samples) > 0:
         if not no_confirm:

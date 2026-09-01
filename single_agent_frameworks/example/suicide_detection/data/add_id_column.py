@@ -2,7 +2,7 @@
 
 Why this exists:
 - The RSD_15K dataset includes a `users` column that is *not unique* (one user can post multiple times).
-- EvalRing requires a unique per-sample ID for correct resume/merge/retry behavior.
+- single_agent_frameworks requires a unique per-sample ID for correct resume/merge/retry behavior.
 
 This script prepends an `ID` column (0-based row index) as the *first* column.
 

@@ -1,6 +1,6 @@
 # Suicide Detection Sample Guide
 
-This document is a complete usage guide for the suicide detection sample under EvalRing.
+This document is a complete usage guide for the suicide detection sample under `single_agent_frameworks`.
 
 It covers:
 
@@ -71,13 +71,13 @@ Default generated files:
 From repository root:
 
 ```powershell
-Set-Location "EvalRing"
+Set-Location "single_agent_frameworks"
 ```
 
 Activate virtual environment (example path):
 
 ```powershell
-.\.venv_EvalRing\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 ```
 
 Required environment key (at least one):
@@ -194,7 +194,7 @@ python src/example/suicide_detection/evaluate_rsd15k_main.py --retry-failed
 Retry specific run:
 
 ```powershell
-python src/example/suicide_detection/evaluate_rsd15k_main.py --retry-failed --meta-path src/example/suicide_detection/_EvalRing/run_YYYYMMDD_HHMMSS/Meta.json
+python src/example/suicide_detection/evaluate_rsd15k_main.py --retry-failed --meta-path src/example/suicide_detection/_runs/run_YYYYMMDD_HHMMSS/Meta.json
 ```
 
 Behavior summary:
@@ -240,7 +240,7 @@ run_suite(
 
 ### Suite Folder Isolation
 
-When run, the suite natively isolates its outputs. It groups all individual model runs executed during its sequence into an encapsulated folder formatted as: `_EvalRing/run_suite_YYYYMMDD_HHMMSS`. 
+When run, the suite natively isolates its outputs. It groups all individual model runs executed during its sequence into an encapsulated folder formatted as: `_runs/run_suite_YYYYMMDD_HHMMSS`. 
 
 The suite auto-generates two summary files locally inside this target folder linking insights across all model testing iterations:
 - **Combined Markdown (`run_suite_{timestamp}.md`)**: A concatenated performance review documenting logic, accuracy, execution errors, F1-scores, and stripped down components extracted dynamically from every sub-model `result.md`.
@@ -257,7 +257,7 @@ Suite stop conditions:
 
 Run directories are created at:
 
-- [src/example/suicide_detection/_EvalRing](../../../src/example/suicide_detection/_EvalRing)
+- [src/example/suicide_detection/_runs](../../../src/example/suicide_detection/_runs)
 
 Each run contains:
 
@@ -317,6 +317,6 @@ For a new classification task (for example emotion categorization):
 2. define class labels and output prompt format
 3. optionally add base-vs-rest decomposition if binary comparisons are preferred
 4. return either label strings or class-score mapping outputs
-5. reuse [src/EvalRing/evaluator/implementations.py](../../../src/EvalRing/evaluator/implementations.py) without changing metric logic
+5. reuse [single_agent_frameworks/single_agent_frameworks/evaluator/implementations.py](../../../single_agent_frameworks/single_agent_frameworks/evaluator/implementations.py) without changing metric logic
 
 This keeps the evaluation flow stable while allowing task-specific prompting and parsing.

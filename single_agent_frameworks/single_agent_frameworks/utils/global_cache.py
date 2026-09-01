@@ -278,8 +278,8 @@ def load_legacy_runs(cache_dir: Path, model_name: str, agent_mode: str, base_cla
 
 class GlobalCache:
     """
-    A unified caching system for EvalRing LLM responses and evaluations.
-    Implements a thread/process-safe SQLite backend within _EvalRing/Cache.
+    A unified caching system for single_agent_frameworks LLM responses and evaluations.
+    Implements a thread/process-safe SQLite backend within _runs/Cache.
     """
     _instance = None
 
@@ -300,11 +300,11 @@ class GlobalCache:
         if workspace_root is None:
             workspace_root = os.getcwd()
 
-        self.cache_dir = Path(workspace_root) / "_EvalRing" / "Cache"
-        self.base_runs_dir = Path(workspace_root) / "_EvalRing"
+        self.cache_dir = Path(workspace_root) / "_runs" / "Cache"
+        self.base_runs_dir = Path(workspace_root) / "_runs"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
-        self.db_path = self.cache_dir / "evalring_cache.sqlite"
+        self.db_path = self.cache_dir / "cache.sqlite"
         self._legacy_cache_loaded = False
         self._legacy_cases: Dict[str, Dict[str, Any]] = {}
         self._conn = None

@@ -4,12 +4,12 @@ import pandas as pd
 import pytest
 
 from evaluation.workflow_comparison import (
-    parse_evalring_all_cases,
+    parse_single_agent_all_cases,
     reconstruct_binary_predictions,
 )
 
 
-def test_parse_evalring_all_cases_extracts_contract_fields(tmp_path: Path):
+def test_parse_single_agent_all_cases_extracts_contract_fields(tmp_path: Path):
     source = tmp_path / "all_cases.txt"
     source.write_text(
         """Header
@@ -26,7 +26,7 @@ Pred      : Indicator
         encoding="utf-8",
     )
 
-    result = parse_evalring_all_cases(source)
+    result = parse_single_agent_all_cases(source)
 
     assert result.to_dict("records") == [
         {"sample_id": "abc", "ground_truth": "Ideation", "prediction": "Ideation"},
@@ -34,12 +34,12 @@ Pred      : Indicator
     ]
 
 
-def test_parse_evalring_all_cases_rejects_incomplete_record(tmp_path: Path):
+def test_parse_single_agent_all_cases_rejects_incomplete_record(tmp_path: Path):
     source = tmp_path / "all_cases.txt"
     source.write_text("Sample ID : abc [PASS]\nGT : Ideation\n", encoding="utf-8")
 
-    with pytest.raises(ValueError, match="Incomplete EvalRing record"):
-        parse_evalring_all_cases(source)
+    with pytest.raises(ValueError, match="Incomplete single-agent record"):
+        parse_single_agent_all_cases(source)
 
 
 def test_reconstruct_binary_predictions_toggles_only_error_ids():

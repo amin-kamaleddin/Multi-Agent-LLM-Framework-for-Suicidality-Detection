@@ -1,5 +1,5 @@
 """
-Utilities for generating visualizations from EvalRing suite reports.
+Utilities for generating visualizations from single_agent_frameworks suite reports.
 """
 
 import json

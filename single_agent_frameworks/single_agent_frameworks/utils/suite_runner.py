@@ -1,5 +1,5 @@
 """
-Generic utility to run a suite of models alongside an EvalRing evaluation script.
+Generic utility to run a suite of models alongside a single_agent_frameworks evaluation script.
 """
 
 import json
@@ -193,7 +193,7 @@ def run_suite(
     if out_dir:
         suite_dir = Path(out_dir).resolve() / f"run_suite_{suite_stamp}_{agent_mode}"
     else:
-        suite_dir = script_dir / "_EvalRing" / f"run_suite_{suite_stamp}_{agent_mode}"
+        suite_dir = script_dir / "_runs" / f"run_suite_{suite_stamp}_{agent_mode}"
         
     suite_dir.mkdir(parents=True, exist_ok=True)
 
@@ -657,7 +657,7 @@ def run_suite(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run EvalRing suite.")
+    parser = argparse.ArgumentParser(description="Run a single_agent_frameworks suite.")
     parser.add_argument("--eval-script", type=str, required=True, help="Path to evaluation main script")
     parser.add_argument("--models-file", type=str, required=True, help="Path to model list JSON")
     parser.add_argument("--n-samples", type=int, default=29727)

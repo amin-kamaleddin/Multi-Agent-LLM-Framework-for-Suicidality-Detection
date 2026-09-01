@@ -21,10 +21,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Add the single_agent_frameworks package root to path
 current_file = Path(__file__).resolve()
-project_root = current_file.parent.parent.parent.parent
-src_path = project_root / "src"
-sys.path.append(str(src_path))
+project_root = current_file.parent.parent.parent
+sys.path.append(str(project_root))
 
 from single_agent_frameworks.dataset import CSVDataset
 from single_agent_frameworks.evaluator.llm_judge import (
@@ -204,7 +204,7 @@ def run_validation():
 
     # ── Save report ──
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = base_dir / "_EvalRing" / f"judge_validation_{timestamp}"
+    run_dir = base_dir / "_runs" / f"judge_validation_{timestamp}"
     run_dir.mkdir(parents=True, exist_ok=True)
 
     report = {
