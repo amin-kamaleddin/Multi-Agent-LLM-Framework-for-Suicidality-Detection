@@ -55,6 +55,3 @@ python example/suicide_detection/evaluate_rsd15k_main.py --n-samples 2 --max-wor
 
 See the README in each folder for full setup and usage instructions.
 
-## Disclaimer
-
-This repository is research evaluation code, not a clinical assessment or deployment system.
