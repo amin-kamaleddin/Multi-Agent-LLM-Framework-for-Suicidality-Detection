@@ -5,7 +5,7 @@ This folder contains two things:
 1. **`single_agent_frameworks/`** (the nested package) — a general-purpose, domain-agnostic framework for running and evaluating single agents against a dataset. It knows nothing about suicide detection specifically: it is a reusable evaluation harness (datasets, agents, evaluators, metrics, LLM-as-a-judge) that any classification task can be built on top of.
 2. **`example/`** — concrete applications built on that framework. The primary one is `example/suicide_detection/`, which benchmarks LLMs on the RSD-15K suicide-risk dataset.
 
-> **Legacy name:** the `single_agent_frameworks/single_agent_frameworks` package used to be developed and distributed as a standalone project called **EvalRing**. It has since been folded into this repository, renamed throughout, and is no longer maintained or published under that name.
+> **Legacy name:** the `single_agent_frameworks/single_agent_frameworks` general-usage package was initially developed as a standalone project called **EvalRing**, a (now depublished) open-source generalized agent evaluation framework from one of the authors, during the first weeks of this research project; after the team agreed upon developing a new framework infrastructure exclusive to this project, the legacy code has remained only in this folder, renamed throughout, and is no longer maintained or available under that name.
 
 ## Package: `single_agent_frameworks/single_agent_frameworks`
 
